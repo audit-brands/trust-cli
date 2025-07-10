@@ -97,7 +97,7 @@ export type PrivacyMode = 'strict' | 'moderate' | 'open';
  * AI Backend Type
  * Part of Trust: An Open System for Modern Assurance
  */
-export type AIBackend = 'ollama' | 'trust-local' | 'cloud';
+export type AIBackend = 'ollama' | 'huggingface' | 'cloud';
 
 /**
  * Trust Configuration
@@ -141,7 +141,7 @@ export interface TrustConfig {
       temperature: number;
       numPredict: number;
     };
-    trustLocal: {
+    huggingface: {
       enabled: boolean;
       gbnfFunctions: boolean;
     };

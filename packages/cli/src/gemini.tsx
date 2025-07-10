@@ -236,10 +236,10 @@ export async function main() {
   const extensions = loadExtensions(workspaceRoot);
   const config = await loadCliConfig(settings.merged, extensions, sessionId);
 
-  // set default fallback to Trust for local-first AI
+  // set default fallback to HuggingFace for local-first AI
   // this has to go after load cli because that's where the env is set
   if (!settings.merged.selectedAuthType) {
-    console.log('DEBUG: No auth type set, defaulting to trust-local');
+    console.log('DEBUG: No auth type set, defaulting to huggingface');
     settings.setValue(
       SettingScope.User,
       'selectedAuthType',

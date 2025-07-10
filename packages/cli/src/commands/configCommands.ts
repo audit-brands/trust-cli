@@ -12,7 +12,7 @@ export interface ConfigCommandArgs {
   action: 'show' | 'set' | 'get' | 'reset' | 'backend' | 'fallback' | 'export' | 'import';
   key?: string;
   value?: string;
-  backend?: 'ollama' | 'trust-local' | 'cloud';
+  backend?: 'ollama' | 'huggingface' | 'cloud';
   order?: string[];
   file?: string;
   verbose?: boolean;
@@ -106,10 +106,10 @@ export class ConfigCommandHandler {
       console.log(`   Num Predict: ${config.ai.ollama.numPredict}`);
     }
 
-    // Trust Local Configuration
-    console.log('\n🏠 Trust Local Configuration:');
-    console.log(`   Enabled: ${config.ai.trustLocal.enabled ? '✅' : '❌'}`);
-    console.log(`   GBNF Functions: ${config.ai.trustLocal.gbnfFunctions ? '✅' : '❌'}`);
+    // HuggingFace Configuration
+    console.log('\n🤗 HuggingFace Configuration:');
+    console.log(`   Enabled: ${config.ai.huggingface.enabled ? '✅' : '❌'}`);
+    console.log(`   GBNF Functions: ${config.ai.huggingface.gbnfFunctions ? '✅' : '❌'}`);
 
     // Cloud Configuration
     console.log('\n☁️  Cloud Configuration:');
@@ -187,7 +187,7 @@ export class ConfigCommandHandler {
     // For now, we'll just show what would be reset
     console.log('\n🔄 Configuration would be reset to defaults:');
     console.log('   - AI backend: ollama');
-    console.log('   - Fallback order: ollama → trust-local → cloud');
+    console.log('   - Fallback order: ollama → huggingface → cloud');
     console.log('   - Ollama timeout: 60s');
     console.log('   - Privacy mode: strict');
     console.log('   - And all other settings...');
@@ -196,7 +196,7 @@ export class ConfigCommandHandler {
     console.log('💡 Manually delete ~/.trustcli/config.json to reset');
   }
 
-  private async setBackend(backend: 'ollama' | 'trust-local' | 'cloud'): Promise<void> {
+  private async setBackend(backend: 'ollama' | 'huggingface' | 'cloud'): Promise<void> {
     this.config.setPreferredBackend(backend as any);
     await this.config.save();
     
@@ -206,12 +206,12 @@ export class ConfigCommandHandler {
     const isEnabled = this.config.isBackendEnabled(backend);
     if (!isEnabled && backend !== 'ollama') {
       console.log(`⚠️  Warning: ${backend} backend is currently disabled`);
-      console.log(`💡 Enable it with: trust config set ai.${backend === 'trust-local' ? 'trustLocal' : backend}.enabled true`);
+      console.log(`💡 Enable it with: trust config set ai.${backend === 'huggingface' ? 'huggingface' : backend}.enabled true`);
     }
   }
 
   private async setFallbackOrder(order: string[]): Promise<void> {
-    const validBackends = ['ollama', 'trust-local', 'cloud'];
+    const validBackends = ['ollama', 'huggingface', 'cloud'];
     const invalidBackends = order.filter(b => !validBackends.includes(b));
     
     if (invalidBackends.length > 0) {
@@ -313,8 +313,8 @@ export class ConfigCommandHandler {
       'ai.ollama.concurrency',
       'ai.ollama.temperature',
       'ai.ollama.numPredict',
-      'ai.trustLocal.enabled',
-      'ai.trustLocal.gbnfFunctions',
+      'ai.huggingface.enabled',
+      'ai.huggingface.gbnfFunctions',
       'ai.cloud.enabled',
       'ai.cloud.provider',
       'models.default',

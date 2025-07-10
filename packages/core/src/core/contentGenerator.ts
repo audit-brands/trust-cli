@@ -38,7 +38,7 @@ export enum AuthType {
   LOGIN_WITH_GOOGLE = 'oauth-personal',
   USE_GEMINI = 'gemini-api-key',
   USE_VERTEX_AI = 'vertex-ai',
-  USE_TRUST_LOCAL = 'trust-local',
+  USE_TRUST_LOCAL = 'huggingface',
 }
 
 export type ContentGeneratorConfig = {

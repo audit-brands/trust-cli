@@ -38,7 +38,7 @@ export const DEFAULT_TRUST_CONFIG: TrustConfig = {
   },
   ai: {
     preferredBackend: 'ollama',
-    fallbackOrder: ['ollama', 'trust-local', 'cloud'],
+    fallbackOrder: ['ollama', 'huggingface', 'cloud'],
     enableFallback: true,
     ollama: {
       baseUrl: 'http://localhost:11434',
@@ -50,7 +50,7 @@ export const DEFAULT_TRUST_CONFIG: TrustConfig = {
       temperature: 0.1, // Lower temperature for more consistent results
       numPredict: 1000, // Limit response length for faster generation
     },
-    trustLocal: {
+    huggingface: {
       enabled: true,
       gbnfFunctions: true,
     },
@@ -161,7 +161,7 @@ export class TrustConfiguration {
     return this.config.ai.preferredBackend;
   }
 
-  setPreferredBackend(backend: 'ollama' | 'trust-local' | 'cloud'): void {
+  setPreferredBackend(backend: 'ollama' | 'huggingface' | 'cloud'): void {
     this.config.ai.preferredBackend = backend;
   }
 
@@ -169,7 +169,7 @@ export class TrustConfiguration {
     return [...this.config.ai.fallbackOrder];
   }
 
-  setFallbackOrder(order: ('ollama' | 'trust-local' | 'cloud')[]): void {
+  setFallbackOrder(order: ('ollama' | 'huggingface' | 'cloud')[]): void {
     this.config.ai.fallbackOrder = order;
   }
 
@@ -189,12 +189,12 @@ export class TrustConfiguration {
     this.config.ai.ollama = { ...this.config.ai.ollama, ...config };
   }
 
-  getTrustLocalConfig() {
-    return { ...this.config.ai.trustLocal };
+  getHuggingFaceConfig() {
+    return { ...this.config.ai.huggingface };
   }
 
-  setTrustLocalConfig(config: Partial<TrustConfig['ai']['trustLocal']>): void {
-    this.config.ai.trustLocal = { ...this.config.ai.trustLocal, ...config };
+  setHuggingFaceConfig(config: Partial<TrustConfig['ai']['huggingface']>): void {
+    this.config.ai.huggingface = { ...this.config.ai.huggingface, ...config };
   }
 
   getCloudConfig() {
@@ -205,12 +205,12 @@ export class TrustConfiguration {
     this.config.ai.cloud = { ...this.config.ai.cloud, ...config };
   }
 
-  isBackendEnabled(backend: 'ollama' | 'trust-local' | 'cloud'): boolean {
+  isBackendEnabled(backend: 'ollama' | 'huggingface' | 'cloud'): boolean {
     switch (backend) {
       case 'ollama':
         return true; // Ollama is always enabled if available
-      case 'trust-local':
-        return this.config.ai.trustLocal.enabled;
+      case 'huggingface':
+        return this.config.ai.huggingface.enabled;
       case 'cloud':
         return this.config.ai.cloud.enabled;
       default:
@@ -218,10 +218,10 @@ export class TrustConfiguration {
     }
   }
 
-  setBackendEnabled(backend: 'trust-local' | 'cloud', enabled: boolean): void {
+  setBackendEnabled(backend: 'huggingface' | 'cloud', enabled: boolean): void {
     switch (backend) {
-      case 'trust-local':
-        this.config.ai.trustLocal.enabled = enabled;
+      case 'huggingface':
+        this.config.ai.huggingface.enabled = enabled;
         break;
       case 'cloud':
         this.config.ai.cloud.enabled = enabled;

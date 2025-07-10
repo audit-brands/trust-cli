@@ -89,8 +89,8 @@ export class TrustContentGenerator implements ContentGenerator {
       switch (backend) {
         case 'ollama':
           return await this.tryInitializeOllama();
-        case 'trust-local':
-          return await this.tryInitializeTrustLocal();
+        case 'huggingface':
+          return await this.tryInitializeHuggingFace();
         case 'cloud':
           return await this.tryInitializeCloud();
         default:
@@ -136,15 +136,15 @@ export class TrustContentGenerator implements ContentGenerator {
   }
 
   /**
-   * Try to initialize Trust Local models (HuggingFace GGUF fallback)
+   * Try to initialize HuggingFace models (GGUF fallback)
    */
-  private async tryInitializeTrustLocal(): Promise<boolean> {
-    console.log('🔍 Initializing Trust Local models...');
+  private async tryInitializeHuggingFace(): Promise<boolean> {
+    console.log('🔍 Initializing HuggingFace models...');
     
-    // Check if Trust Local is enabled
-    const trustLocalConfig = this.trustConfig.getTrustLocalConfig();
-    if (!trustLocalConfig.enabled) {
-      console.log('⚠️  Trust Local backend is disabled in configuration');
+    // Check if HuggingFace is enabled
+    const huggingFaceConfig = this.trustConfig.getHuggingFaceConfig();
+    if (!huggingFaceConfig.enabled) {
+      console.log('⚠️  HuggingFace backend is disabled in configuration');
       return false;
     }
     
@@ -174,7 +174,7 @@ export class TrustContentGenerator implements ContentGenerator {
         }
       }
     } else {
-      console.log('⚠️  No Trust Local models available');
+      console.log('⚠️  No HuggingFace models available');
       console.log('   Consider downloading models or using Ollama for local AI');
       return false;
     }
@@ -211,12 +211,12 @@ export class TrustContentGenerator implements ContentGenerator {
       return this.ollamaGenerator.generateContent(request);
     }
 
-    // Fallback to Trust Local models
+    // Fallback to HuggingFace models
     if (!this.modelClient.isModelLoaded()) {
-      throw new Error('No AI backend available. Please install Ollama or download Trust Local models.');
+      throw new Error('No AI backend available. Please install Ollama or download HuggingFace models.');
     }
     
-    console.log('🏠 Using Trust Local models for content generation');
+    console.log('🤗 Using HuggingFace models for content generation');
 
     try {
       // Convert Gemini request format to simple text prompt
@@ -264,12 +264,12 @@ export class TrustContentGenerator implements ContentGenerator {
       return this.ollamaGenerator.generateContentStream(request);
     }
 
-    // Fallback to Trust Local models
+    // Fallback to HuggingFace models
     if (!this.modelClient.isModelLoaded()) {
-      throw new Error('No AI backend available. Please install Ollama or download Trust Local models.');
+      throw new Error('No AI backend available. Please install Ollama or download HuggingFace models.');
     }
     
-    console.log('🏠 Using Trust Local models for streaming content generation');
+    console.log('🤗 Using HuggingFace models for streaming content generation');
 
     const prompt = this.convertRequestToPrompt(request);
     const options: GenerationOptions = {
