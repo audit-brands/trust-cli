@@ -23,7 +23,7 @@ ollama pull qwen2.5:1.5b
 trust
 ```
 
-### Option 2: Trust Local Models
+### Option 2: HuggingFace Models
 **Best for**: Complete offline operation, fine-grained control
 
 ```bash
@@ -33,7 +33,7 @@ trust model download qwen2.5-1.5b-instruct
 # 2. Switch to downloaded model
 trust model switch qwen2.5-1.5b-instruct
 
-# 3. Trust CLI uses Trust Local automatically
+# 3. Trust CLI uses HuggingFace automatically
 trust
 ```
 
@@ -56,7 +56,7 @@ trust
 ### Backend Selection Order
 Trust CLI tries backends in this order:
 1. **Ollama** (if running on localhost:11434)
-2. **Trust Local** (if GGUF models downloaded)
+2. **HuggingFace** (if GGUF models downloaded)
 3. **Cloud** (if configured and enabled)
 
 ### Intelligent Fallback
@@ -84,7 +84,7 @@ trust config get ai
 trust config set ai.preferredBackend ollama
 
 # Change fallback order
-trust config set ai.fallbackOrder "ollama,trust-local,cloud"
+trust config set ai.fallbackOrder "ollama,huggingface,cloud"
 
 # Disable fallback (use only preferred backend)
 trust config set ai.enableFallback false
@@ -105,13 +105,13 @@ trust config set ai.ollama.baseUrl http://your-server:11434
 trust config set ai.ollama.maxToolCalls 5
 ```
 
-### Trust Local Configuration
+### HuggingFace Configuration
 ```bash
-# Enable/disable Trust Local fallback
-trust config set ai.trustLocal.enabled true
+# Enable/disable HuggingFace fallback
+trust config set ai.huggingface.enabled true
 
 # Enable GBNF grammar-based function calling
-trust config set ai.trustLocal.gbnfFunctions true
+trust config set ai.huggingface.gbnfFunctions true
 ```
 
 ### Cloud Configuration
@@ -125,7 +125,7 @@ trust config set ai.cloud.provider google  # or 'openai', 'anthropic'
 
 ## 📊 Backend Comparison
 
-| Feature | Ollama | Trust Local | Cloud |
+| Feature | Ollama | HuggingFace | Cloud |
 |---------|---------|-------------|-------|
 | **Setup** | Simple | Moderate | Simple |
 | **Performance** | Fast | Medium | Fastest |
@@ -142,7 +142,7 @@ trust config set ai.cloud.provider google  # or 'openai', 'anthropic'
 ```bash
 # Complete local operation, no cloud fallback
 trust config set ai.enableFallback false
-trust config set ai.preferredBackend trust-local
+trust config set ai.preferredBackend huggingface
 trust config set ai.cloud.enabled false
 trust model download phi-3.5-mini-instruct
 ```
@@ -151,7 +151,7 @@ trust model download phi-3.5-mini-instruct
 ```bash
 # Ollama primary, cloud fallback for heavy tasks
 ollama pull qwen2.5:7b
-trust config set ai.fallbackOrder "ollama,cloud,trust-local"
+trust config set ai.fallbackOrder "ollama,cloud,huggingface"
 trust config set ai.cloud.enabled true
 ```
 
@@ -159,17 +159,17 @@ trust config set ai.cloud.enabled true
 ```bash
 # Local-only deployment with security policies
 trust config set ai.enableFallback false
-trust config set ai.preferredBackend trust-local
+trust config set ai.preferredBackend huggingface
 trust config set ai.cloud.enabled false
-trust config set ai.trustLocal.gbnfFunctions true
+trust config set ai.huggingface.gbnfFunctions true
 ```
 
 ### Hybrid Workflow Developer
 ```bash
-# Ollama for general use, Trust Local for sensitive work
+# Ollama for general use, HuggingFace for sensitive work
 ollama pull qwen2.5:7b
 trust model download deepseek-r1-distill-7b
-trust config set ai.fallbackOrder "ollama,trust-local,cloud"
+trust config set ai.fallbackOrder "ollama,huggingface,cloud"
 ```
 
 ## 🔧 Advanced Configuration
@@ -181,7 +181,7 @@ All settings are stored in `~/.trustcli/config.json`:
 {
   "ai": {
     "preferredBackend": "ollama",
-    "fallbackOrder": ["ollama", "trust-local", "cloud"],
+    "fallbackOrder": ["ollama", "huggingface", "cloud"],
     "enableFallback": true,
     "ollama": {
       "baseUrl": "http://localhost:11434",
@@ -189,7 +189,7 @@ All settings are stored in `~/.trustcli/config.json`:
       "timeout": 120000,
       "maxToolCalls": 3
     },
-    "trustLocal": {
+    "huggingface": {
       "enabled": true,
       "gbnfFunctions": true
     },

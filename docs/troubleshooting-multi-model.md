@@ -15,7 +15,7 @@ trust status
 trust config show
 
 # Check available models
-trust model list  # Trust Local
+trust model list  # HuggingFace
 ollama list       # Ollama
 ```
 
@@ -26,7 +26,7 @@ curl -fsSL https://ollama.ai/install.sh | sh
 ollama serve &
 ollama pull qwen2.5:1.5b
 
-# Option 2: Download Trust Local model
+# Option 2: Download HuggingFace model
 trust model download qwen2.5-1.5b-instruct
 
 # Option 3: Enable cloud fallback
@@ -66,7 +66,7 @@ curl -X POST http://localhost:11434/api/generate -d '{
 }'
 ```
 
-### 3. Trust Local Models Not Loading
+### 3. HuggingFace Models Not Loading
 
 **Symptoms**: Downloaded models not appearing or loading
 
@@ -94,8 +94,8 @@ trust model download qwen2.5-1.5b-instruct
 # Switch to available model
 trust model switch qwen2.5-1.5b-instruct
 
-# Check Trust Local configuration
-trust config set ai.trustLocal.enabled true
+# Check HuggingFace configuration
+trust config set ai.huggingface.enabled true
 ```
 
 ### 4. Fallback Chain Not Working
