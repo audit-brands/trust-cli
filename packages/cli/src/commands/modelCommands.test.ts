@@ -81,28 +81,120 @@ vi.mock('../../../core/dist/index.js', () => ({
   globalPerformanceMonitor: {
     getSystemMetrics: vi.fn().mockReturnValue({
       memoryUsage: {
-        total: 16,
-        available: 8,
-        used: 8,
-        usagePercentage: 50
+        total: 16 * 1024 * 1024 * 1024,
+        available: 8 * 1024 * 1024 * 1024,
+        used: 8 * 1024 * 1024 * 1024,
+        free: 8 * 1024 * 1024 * 1024
       },
-      cpuInfo: {
-        cores: 8,
-        model: 'Intel i7',
-        loadAverage: [1.2, 1.5, 1.8]
+      cpuUsage: 25,
+      nodeMemory: {
+        heapUsed: 100 * 1024 * 1024,
+        heapTotal: 200 * 1024 * 1024,
+        external: 50 * 1024 * 1024,
+        rss: 300 * 1024 * 1024
       },
-      platform: {
-        os: 'linux',
-        arch: 'x64',
-        nodeVersion: '20.0.0'
-      }
+      loadAverage: [1.2, 1.5, 1.8],
+      platform: 'linux',
+      uptime: 123456
     }),
     getOptimalModelSettings: vi.fn().mockReturnValue({
       recommendedRAM: 4,
       maxContextSize: 8192,
+      preferredQuantization: 'Q4_K_M',
       estimatedSpeed: 'fast'
     })
-  }
+  },
+  HardwareOptimizer: vi.fn().mockImplementation(() => ({
+    getSystemCapabilities: vi.fn().mockReturnValue({
+      totalRAMGB: 16,
+      availableRAMGB: 8,
+      cpuCores: 8,
+      cpuSpeed: 2600,
+      platform: 'linux',
+      architecture: 'x64',
+      recommendedConcurrency: 4
+    }),
+    analyzeModelSuitability: vi.fn().mockReturnValue([
+      {
+        model: {
+          name: 'qwen2.5-1.5b-instruct',
+          path: '/models/qwen2.5-1.5b-instruct.gguf',
+          type: 'qwen',
+          parameters: '1.5B',
+          contextSize: 4096,
+          quantization: 'Q4_K_M',
+          trustScore: 9,
+          ramRequirement: '2GB',
+          description: 'Lightweight model for quick questions - 1.5B parameters',
+          verificationHash: 'sha256:d7efb072e...',
+          downloadUrl: 'https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-gguf'
+        },
+        suitabilityScore: 95,
+        reason: 'Excellent match - optimal performance expected',
+        performanceEstimate: {
+          tokensPerSecond: 12.5,
+          ramUsageGB: 2,
+          cpuUtilization: 30
+        },
+        warnings: []
+      },
+      {
+        model: {
+          name: 'codellama-7b-instruct',
+          path: '/models/codellama-7b-instruct.gguf',
+          type: 'llama',
+          parameters: '7B',
+          contextSize: 8192,
+          quantization: 'Q4_K_M',
+          trustScore: 8,
+          ramRequirement: '4GB',
+          description: 'Code-focused model - 7B parameters',
+          verificationHash: 'sha256:pending'
+        },
+        suitabilityScore: 85,
+        reason: 'Good match - solid performance with available resources',
+        performanceEstimate: {
+          tokensPerSecond: 8.2,
+          ramUsageGB: 4,
+          cpuUtilization: 45
+        },
+        warnings: []
+      }
+    ]),
+    generateOptimizationRecommendations: vi.fn().mockReturnValue([
+      {
+        category: 'model',
+        priority: 'medium',
+        title: 'Consider Higher Quality Models',
+        description: 'Your system can handle Q8_0 or FP16 quantization for better quality',
+        implementation: 'Download Q8_0 variants of your preferred models',
+        expectedImprovement: 'Better response quality with minimal speed impact'
+      }
+    ]),
+    generateOptimizationReport: vi.fn().mockReturnValue(`
+🔧 Hardware Optimization Report
+════════════════════════════════════════════════════════════
+
+💻 System Capabilities:
+   Total RAM: 16.0GB
+   Available RAM: 8.0GB
+   CPU Cores: 8
+   CPU Speed: 2600MHz
+   Platform: linux (x64)
+   Recommended Concurrency: 4
+
+🏷️  Hardware Classification: Performance Desktop
+   Performance Tier: High
+   Optimal Model Size: 3-7B parameters with Q4_K_M/Q8_0
+
+⚡ Optimization Recommendations:
+1. 🟡 Consider Higher Quality Models
+   Category: model
+   Description: Your system can handle Q8_0 or FP16 quantization for better quality
+   Implementation: Download Q8_0 variants of your preferred models
+   Expected Improvement: Better response quality with minimal speed impact
+    `)
+  }))
 }));
 
 // Mock console methods
@@ -241,7 +333,7 @@ describe('ModelCommandHandler', () => {
       await commandHandler.handleCommand(args);
 
       expect(mockConsoleLog).toHaveBeenCalledWith(expect.stringContaining('Model Recommendation for "coding"'));
-      expect(mockConsoleLog).toHaveBeenCalledWith(expect.stringContaining('Recommended: qwen2.5-1.5b-instruct'));
+      expect(mockConsoleLog).toHaveBeenCalledWith(expect.stringContaining('🥇 qwen2.5-1.5b-instruct'));
     });
 
     it('should recommend model with RAM limit', async () => {
@@ -255,6 +347,7 @@ describe('ModelCommandHandler', () => {
       await commandHandler.handleCommand(args);
 
       expect(mockConsoleLog).toHaveBeenCalledWith(expect.stringContaining('Model Recommendation for "coding"'));
+      expect(mockConsoleLog).toHaveBeenCalledWith(expect.stringContaining('System RAM:'));
     });
 
     it('should handle no recommendations available', async () => {

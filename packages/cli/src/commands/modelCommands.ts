@@ -10,7 +10,7 @@ import * as fs from 'fs/promises';
 import * as path from 'path';
 
 export interface ModelCommandArgs {
-  action: 'list' | 'switch' | 'download' | 'recommend' | 'verify' | 'delete' | 'report' | 'trust' | 'help' | 'ui' | 'quick' | 'status';
+  action: 'list' | 'switch' | 'download' | 'recommend' | 'verify' | 'delete' | 'report' | 'trust' | 'help' | 'ui' | 'quick' | 'status' | 'optimize';
   modelName?: string;
   task?: string;
   ramLimit?: number;
@@ -87,6 +87,9 @@ export class ModelCommandHandler {
         break;
       case 'status':
         await this.detailedStatus();
+        break;
+      case 'optimize':
+        await this.optimizeHardware();
         break;
       default:
         if (!args.action || args.action === '--help' || args.action === '-h') {
@@ -308,55 +311,123 @@ export class ModelCommandHandler {
     console.log(`\n🎯 Model Recommendation for "${task}"`);
     console.log('─'.repeat(40));
     
-    // Import performance monitor for hardware analysis
-    const { globalPerformanceMonitor } = await import('@trust-cli/trust-cli-core');
-    const optimal = globalPerformanceMonitor.getOptimalModelSettings();
-    const systemMetrics = globalPerformanceMonitor.getSystemMetrics();
+    // Import hardware optimizer for comprehensive analysis
+    const { globalPerformanceMonitor, HardwareOptimizer } = await import('@trust-cli/trust-cli-core');
+    const hardwareOptimizer = new HardwareOptimizer(globalPerformanceMonitor);
+    const systemCapabilities = hardwareOptimizer.getSystemCapabilities();
     
-    const systemRAM = Math.floor(systemMetrics.memoryUsage.total / (1024 * 1024 * 1024));
-    const availableRAM = Math.floor(systemMetrics.memoryUsage.available / (1024 * 1024 * 1024));
-    const effectiveRAMLimit = ramLimit || optimal.recommendedRAM;
+    console.log(`System RAM: ${systemCapabilities.totalRAMGB.toFixed(1)}GB | Available: ${systemCapabilities.availableRAMGB.toFixed(1)}GB`);
+    console.log(`CPU: ${systemCapabilities.cpuCores} cores @ ${systemCapabilities.cpuSpeed}MHz`);
     
-    console.log(`System RAM: ${systemRAM}GB | Available: ${availableRAM}GB | Limit: ${effectiveRAMLimit}GB`);
+    const models = this.modelManager.listAvailableModels();
+    const modelRecommendations = hardwareOptimizer.analyzeModelSuitability(models);
     
-    const recommended = this.modelManager.getRecommendedModel(task, effectiveRAMLimit);
+    // Filter by task if specified
+    const taskFiltered = this.modelManager.getRecommendedModel(task, ramLimit || systemCapabilities.availableRAMGB);
     
-    if (recommended) {
-      console.log(`\n✅ Recommended: ${recommended.name}`);
-      console.log(`📝 ${recommended.description}`);
-      console.log(`💾 RAM Required: ${recommended.ramRequirement}`);
-      console.log(`⭐ Trust Score: ${recommended.trustScore}/10`);
+    if (modelRecommendations.length > 0) {
+      console.log(`\n🏆 Top Hardware-Optimized Recommendations:`);
       
-      // Show auto-detected optimization info
-      console.log(`\n🔧 Auto-detected settings:`);
-      console.log(`   Expected Performance: ${optimal.estimatedSpeed}`);
-      console.log(`   Optimal Context Size: ${optimal.maxContextSize} tokens`);
-      console.log(`   Recommended Quantization: ${optimal.preferredQuantization}`);
+      // Show top 3 recommendations
+      const topRecommendations = modelRecommendations.slice(0, 3);
       
-      // Performance analysis
-      const memoryPercent = (systemMetrics.memoryUsage.used / systemMetrics.memoryUsage.total) * 100;
-      if (memoryPercent > 80) {
-        console.log(`\n⚠️  Warning: High memory usage (${memoryPercent.toFixed(0)}%)`);
-        console.log('   Consider closing other applications before running inference');
-      } else if (memoryPercent < 50) {
-        console.log(`\n🟢 Good: Low memory usage (${memoryPercent.toFixed(0)}%)`);
-        console.log('   System has plenty of resources for larger models');
+      for (let i = 0; i < topRecommendations.length; i++) {
+        const rec = topRecommendations[i];
+        const rank = i === 0 ? '🥇' : i === 1 ? '🥈' : '🥉';
+        
+        console.log(`\n${rank} ${rec.model.name} (Score: ${rec.suitabilityScore.toFixed(0)}/100)`);
+        console.log(`   📝 ${rec.model.description}`);
+        console.log(`   💾 RAM: ${rec.model.ramRequirement} | Trust: ⭐ ${rec.model.trustScore}/10`);
+        console.log(`   🚀 Est. Performance: ${rec.performanceEstimate.tokensPerSecond} tokens/sec`);
+        console.log(`   📊 CPU Usage: ${rec.performanceEstimate.cpuUtilization}%`);
+        console.log(`   💡 ${rec.reason}`);
+        
+        if (rec.warnings && rec.warnings.length > 0) {
+          console.log(`   ⚠️  Warnings: ${rec.warnings.join(', ')}`);
+        }
+        
+        const isDownloaded = await this.modelManager.verifyModel(rec.model.path);
+        if (!isDownloaded) {
+          console.log(`   📥 Run: trust model download ${rec.model.name}`);
+        } else {
+          console.log(`   ✅ Ready to use: trust model switch ${rec.model.name}`);
+        }
       }
       
-      console.log(`\n💡 Run: trust model switch ${recommended.name}`);
-      
-      const isDownloaded = await this.modelManager.verifyModel(recommended.path);
-      if (!isDownloaded) {
-        console.log(`📥 Run: trust model download ${recommended.name}`);
+      // Show task-specific recommendation if different
+      if (taskFiltered && !topRecommendations.find(r => r.model.name === taskFiltered.name)) {
+        console.log(`\n🎯 Task-Specific Recommendation for "${task}":`);
+        console.log(`   📌 ${taskFiltered.name}`);
+        console.log(`   📝 ${taskFiltered.description}`);
+        console.log(`   💾 RAM: ${taskFiltered.ramRequirement}`);
       }
+      
+      // Show optimization recommendations
+      const optimizations = hardwareOptimizer.generateOptimizationRecommendations();
+      if (optimizations.length > 0) {
+        console.log(`\n⚡ Hardware Optimization Tips:`);
+        optimizations.slice(0, 3).forEach((opt, i) => {
+          const priorityIcon = opt.priority === 'high' ? '🔴' : opt.priority === 'medium' ? '🟡' : '🟢';
+          console.log(`   ${i + 1}. ${priorityIcon} ${opt.title}`);
+          console.log(`      ${opt.description}`);
+          console.log(`      💡 ${opt.implementation}`);
+        });
+        
+        console.log(`\n   📊 View full optimization report: trust model optimize`);
+      }
+      
     } else {
-      console.log('❌ No suitable model found for your requirements');
-      console.log(`\n🔧 Auto-detected optimal settings:`);
-      console.log(`   RAM Allocation: ${optimal.recommendedRAM}GB`);
-      console.log(`   Context Size: ${optimal.maxContextSize} tokens`);
-      console.log(`   Quantization: ${optimal.preferredQuantization}`);
-      console.log('💡 Try increasing RAM limit or choosing a different task type');
+      console.log('❌ No suitable models found for your hardware');
+      console.log(`\n🔧 System Analysis:`);
+      console.log(`   Available RAM: ${systemCapabilities.availableRAMGB.toFixed(1)}GB`);
+      console.log(`   CPU Cores: ${systemCapabilities.cpuCores}`);
+      console.log('💡 Try increasing available memory or choosing lighter models');
       console.log('💡 Available task types: coding, quick, complex, default');
+    }
+  }
+
+  private async optimizeHardware(): Promise<void> {
+    console.log(`\n🔧 Hardware Optimization Analysis`);
+    console.log('═'.repeat(60));
+    
+    try {
+      // Import hardware optimizer
+      const { globalPerformanceMonitor, HardwareOptimizer } = await import('@trust-cli/trust-cli-core');
+      const hardwareOptimizer = new HardwareOptimizer(globalPerformanceMonitor);
+      
+      // Generate and display comprehensive optimization report
+      const optimizationReport = hardwareOptimizer.generateOptimizationReport();
+      console.log(optimizationReport);
+      
+      // Show model suitability analysis
+      const models = this.modelManager.listAvailableModels();
+      const modelRecommendations = hardwareOptimizer.analyzeModelSuitability(models);
+      
+      if (modelRecommendations.length > 0) {
+        console.log('\n📊 Model Suitability Analysis:');
+        console.log('─'.repeat(40));
+        
+        modelRecommendations.forEach((rec, i) => {
+          const scoreColor = rec.suitabilityScore >= 80 ? '🟢' : rec.suitabilityScore >= 60 ? '🟡' : '🔴';
+          console.log(`${scoreColor} ${rec.model.name}: ${rec.suitabilityScore.toFixed(0)}/100`);
+          console.log(`   Performance: ${rec.performanceEstimate.tokensPerSecond} tokens/sec`);
+          console.log(`   RAM Usage: ${rec.performanceEstimate.ramUsageGB}GB`);
+          console.log(`   Reason: ${rec.reason}`);
+          
+          if (rec.warnings && rec.warnings.length > 0) {
+            console.log(`   ⚠️  ${rec.warnings.join(', ')}`);
+          }
+          
+          if (i < modelRecommendations.length - 1) console.log('');
+        });
+      }
+      
+      console.log('\n💡 Use these insights to optimize your model selection and system configuration.');
+      
+    } catch (error) {
+      console.error(`❌ Failed to generate optimization report: ${error}`);
+      console.log('\n🔧 Try running: trust status backend');
+      throw error;
     }
   }
 
