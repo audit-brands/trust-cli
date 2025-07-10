@@ -455,7 +455,7 @@ async function validateNonInterActiveAuth(
 
   selectedAuthType = selectedAuthType || AuthType.USE_TRUST_LOCAL;
   
-  // Trust authentication is always available for local inference
+  // HuggingFace authentication is always available for local inference
   if (selectedAuthType === AuthType.USE_TRUST_LOCAL) {
     await nonInteractiveConfig.refreshAuth(selectedAuthType);
     return nonInteractiveConfig;

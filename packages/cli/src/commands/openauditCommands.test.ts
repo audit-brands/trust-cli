@@ -2,8 +2,8 @@ import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { openauditNew, openauditAdd } from './openauditCommands.js';
 
 describe('openauditCommands', () => {
-  it('should return a message for the new command', () => {
-    const message = openauditNew('Test Engagement');
+  it('should return a message for the new command', async () => {
+    const message = await openauditNew('Test Engagement');
     expect(message).toContain("Success! New engagement scaffolded at:");
   });
 

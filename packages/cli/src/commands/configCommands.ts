@@ -187,7 +187,7 @@ export class ConfigCommandHandler {
     // For now, we'll just show what would be reset
     console.log('\n🔄 Configuration would be reset to defaults:');
     console.log('   - AI backend: ollama');
-    console.log('   - Fallback order: ollama → huggingface → cloud');
+    console.log('   - Fallback order: ollama → HuggingFace → cloud');
     console.log('   - Ollama timeout: 60s');
     console.log('   - Privacy mode: strict');
     console.log('   - And all other settings...');
