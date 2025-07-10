@@ -67,7 +67,7 @@ export async function createContentGeneratorConfig(
     authType,
   };
 
-  // if we are using google auth or trust local nothing else to validate for now
+  // if we are using google auth or huggingface nothing else to validate for now
   if (authType === AuthType.LOGIN_WITH_GOOGLE || authType === AuthType.USE_TRUST_LOCAL) {
     return contentGeneratorConfig;
   }

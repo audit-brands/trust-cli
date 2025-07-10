@@ -11,7 +11,7 @@ Trust CLI is evolving into a **flexible, multi-model AI coding assistant** that 
 | Model Type | Implementation | Privacy | Performance | Offline | Setup Complexity |
 |------------|---------------|---------|-------------|---------|------------------|
 | **🚀 Ollama** | OpenAI-compatible API | ✅ Private | 🔥 Fast | ✅ Yes | ⭐ Simple |
-| **🏠 Trust Local** | node-llama-cpp + GGUF | ✅ Private | ⚡ Medium | ✅ Yes | ⭐⭐ Moderate |
+| **🤗 HuggingFace** | node-llama-cpp + GGUF | ✅ Private | ⚡ Medium | ✅ Yes | ⭐⭐ Moderate |
 | **🌐 Cloud Models** | Google Gemini/Vertex | ❌ Shared | 🚀 Fastest | ❌ No | ⭐ Simple |
 
 ### 🔄 Intelligent Fallback Chain
@@ -21,7 +21,7 @@ flowchart TD
     A[Trust CLI Starts] --> B{Ollama Running?}
     B -->|Yes| C[🚀 Use Ollama]
     B -->|No| D{Local Models Available?}
-    D -->|Yes| E[🏠 Use Trust Local GGUF]
+    D -->|Yes| E[🤗 Use HuggingFace GGUF]
     D -->|No| F{Cloud Configured?}
     F -->|Yes| G[🌐 Use Cloud Models]
     F -->|No| H[❌ No Models Available]
@@ -65,7 +65,7 @@ flowchart TD
 - 📦 **Model Management**: Built-in model download/management
 - 🔄 **Hot Swapping**: Change models without restart
 
-### 2. Trust Local (Existing HuggingFace)
+### 2. HuggingFace (Local GGUF Models)
 **Status**: ✅ Production ready
 
 **Architecture**:
@@ -128,7 +128,7 @@ flowchart TD
 
 ### 1. Privacy-Focused Developer
 **Needs**: Complete local control, no cloud dependencies
-**Solution**: Ollama + Trust Local, cloud disabled
+**Solution**: Ollama + HuggingFace, cloud disabled
 **Config**: `trust config set fallback.cloud false`
 
 ### 2. Performance-Optimized Developer  
@@ -155,7 +155,7 @@ flowchart TD
 - **Audit Transparency**: Complete visibility into model selection decisions
 
 ### Privacy Levels
-1. **🔒 Maximum Privacy**: Local only (Ollama/Trust Local)
+1. **🔒 Maximum Privacy**: Local only (Ollama/HuggingFace)
 2. **🔐 Hybrid Privacy**: Local primary, cloud with consent
 3. **🌐 Performance Mode**: Cloud primary, local fallback
 4. **☁️ Cloud-First**: Legacy mode for existing users

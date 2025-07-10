@@ -16,7 +16,7 @@ This document summarizes the comprehensive Ollama integration implementation for
 - **OllamaClient**: Native OpenAI-compatible API client with tool calling support
 - **OllamaToolRegistry**: Tool management system for function calling
 - **OllamaContentGenerator**: Complete content generation with tool execution
-- **Multi-Model Architecture**: Intelligent fallback chain (Ollama → Trust Local → Cloud)
+- **Multi-Model Architecture**: Intelligent fallback chain (Ollama → HuggingFace → Cloud)
 
 ### Phase 3: Configuration System
 - **TrustConfiguration Extensions**: Added comprehensive AI backend configuration
@@ -45,7 +45,7 @@ This document summarizes the comprehensive Ollama integration implementation for
 │                TrustContentGenerator                        │
 │                 (Intelligent Router)                        │
 ├─────────────────┬───────────────────┬─────────────────────┤
-│   Ollama        │   Trust Local     │   Cloud AI          │
+│   Ollama        │   HuggingFace      │   Cloud AI          │
 │   (Primary)     │   (Fallback)      │   (Final Fallback)  │
 │                 │                   │                     │
 │ • qwen2.5:1.5b  │ • GGUF Models     │ • Google Gemini     │
@@ -58,7 +58,7 @@ This document summarizes the comprehensive Ollama integration implementation for
 ### Intelligent Fallback Chain
 
 1. **Ollama (Primary)**: Fast local inference with tool calling
-2. **Trust Local (Secondary)**: GGUF models with GBNF grammar
+2. **HuggingFace (Secondary)**: GGUF models with GBNF grammar
 3. **Cloud AI (Tertiary)**: External APIs when local models unavailable
 
 ## 🔧 Core Components Implemented
@@ -146,7 +146,7 @@ getBackendStatus(): BackendStatus
 {
   "ai": {
     "preferredBackend": "ollama",
-    "fallbackOrder": ["ollama", "trust-local", "cloud"],
+    "fallbackOrder": ["ollama", "huggingface", "cloud"],
     "enableFallback": true,
     "ollama": {
       "baseUrl": "http://localhost:11434",
@@ -208,7 +208,7 @@ trust config get <key>
 trust config set <key> <value>
 
 # Backend Management
-trust config backend <ollama|trust-local|cloud>
+trust config backend <ollama|huggingface|cloud>
 trust config fallback <backend1> <backend2> <backend3>
 
 # Configuration Transfer
@@ -293,7 +293,7 @@ trust config reset
 ## 🔄 Migration and Compatibility
 
 ### Backward Compatibility
-- Existing Trust Local functionality preserved
+- Existing HuggingFace functionality preserved
 - Cloud AI integration maintained
 - Original CLI commands unchanged
 - Configuration file format extended (not replaced)

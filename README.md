@@ -488,7 +488,7 @@ trust config get ai
 #### Customize Backend Order:
 ```bash
 # Change fallback order
-trust config set ai.fallbackOrder "ollama,trust-local,cloud"
+trust config set ai.fallbackOrder "ollama,huggingface,cloud"
 
 # Disable fallback (use only preferred backend)
 trust config set ai.enableFallback false
@@ -526,15 +526,15 @@ Trust CLI automatically selects the best available backend:
 # Example fallback scenario:
 # 1. Try Ollama (preferred) → Success ✅
 trust
-🔧 AI Backend Configuration: ollama → trust-local → cloud (fallback: enabled)
+🔧 AI Backend Configuration: ollama → huggingface → cloud (fallback: enabled)
 ✅ Successfully initialized ollama backend
 🚀 Using Ollama for content generation
 
 # 2. Try Ollama → Fail → Try HuggingFace → Success ✅  
 trust
-🔧 AI Backend Configuration: ollama → trust-local → cloud (fallback: enabled)
+🔧 AI Backend Configuration: ollama → huggingface → cloud (fallback: enabled)
 ❌ Failed to initialize ollama backend: connection refused
-✅ Successfully initialized trust-local backend
+✅ Successfully initialized huggingface backend
 🏠 Using HuggingFace models for content generation
 ```
 
@@ -565,7 +565,7 @@ trust  # Automatically detects and uses Ollama
 ```bash
 # Disable cloud, use only local models
 trust config set ai.cloud.enabled false
-trust config set ai.fallbackOrder "ollama,trust-local"
+trust config set ai.fallbackOrder "ollama,huggingface"
 trust model download phi-3.5-mini-instruct
 ```
 
@@ -574,14 +574,14 @@ trust model download phi-3.5-mini-instruct
 # Ollama for general use, HuggingFace for sensitive work
 ollama pull qwen2.5:7b
 trust model download deepseek-r1-distill-7b
-trust config set ai.fallbackOrder "ollama,trust-local,cloud"
+trust config set ai.fallbackOrder "ollama,huggingface,cloud"
 ```
 
 #### **Enterprise/Security (Local Only)**:
 ```bash
 # Complete local operation, no cloud fallback
 trust config set ai.enableFallback false
-trust config set ai.preferredBackend trust-local
+trust config set ai.preferredBackend huggingface
 trust config set ai.cloud.enabled false
 ```
 
@@ -592,7 +592,7 @@ All settings are stored in `~/.trustcli/config.json`:
 {
   "ai": {
     "preferredBackend": "ollama",
-    "fallbackOrder": ["ollama", "trust-local", "cloud"],
+    "fallbackOrder": ["ollama", "huggingface", "cloud"],
     "enableFallback": true,
     "ollama": {
       "baseUrl": "http://localhost:11434",
@@ -1005,7 +1005,7 @@ If you're getting OAuth authentication errors when expecting local model inferen
 ```bash
 # Quick fix - update settings to use local models
 echo '{
-  "selectedAuthType": "trust-local",
+  "selectedAuthType": "huggingface",
   "theme": "GitHub"
 }' > ~/.gemini/settings.json
 ```
@@ -1015,9 +1015,9 @@ echo '{
 # Edit your settings file
 nano ~/.gemini/settings.json
 
-# Change "oauth-personal" to "trust-local"
+# Change "oauth-personal" to "huggingface"
 # Change: "selectedAuthType": "oauth-personal"
-# To: "selectedAuthType": "trust-local"
+# To: "selectedAuthType": "huggingface"
 ```
 
 After updating, restart trust-cli and it should use local models instead of trying to authenticate with Google.

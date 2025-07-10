@@ -11,7 +11,7 @@
 ### Ollama Integration
 - **NEW**: Complete Ollama integration with OpenAI-compatible API
 - **NEW**: Native tool calling support for local AI models
-- **NEW**: Intelligent multi-model fallback chain (Ollama → Trust Local → Cloud)
+- **NEW**: Intelligent multi-model fallback chain (Ollama → HuggingFace → Cloud)
 - **NEW**: Zero-config startup with sensible defaults
 - **NEW**: Model preheating for faster first responses
 
@@ -117,7 +117,7 @@ project root/
 {
   "ai": {
     "preferredBackend": "ollama",
-    "fallbackOrder": ["ollama", "trust-local", "cloud"],
+    "fallbackOrder": ["ollama", "huggingface", "cloud"],
     "enableFallback": true,
     "ollama": {
       "baseUrl": "http://localhost:11434",
@@ -129,7 +129,7 @@ project root/
       "temperature": 0.1,
       "numPredict": 1000
     },
-    "trustLocal": {
+    "huggingface": {
       "enabled": true,
       "gbnfFunctions": true
     },
@@ -181,7 +181,7 @@ project root/
 ## 🔄 Migration and Compatibility
 
 ### Backward Compatibility
-- **MAINTAINED**: All existing Trust Local functionality
+- **MAINTAINED**: All existing HuggingFace functionality
 - **MAINTAINED**: Cloud AI integration and commands
 - **MAINTAINED**: Original CLI command structure
 - **MAINTAINED**: Configuration file backward compatibility

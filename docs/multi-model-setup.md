@@ -303,7 +303,7 @@ trust perf watch
 ```bash
 # Disable all external connections
 trust config set ai.cloud.enabled false
-trust config set ai.fallbackOrder "ollama,trust-local"
+trust config set ai.fallbackOrder "ollama,huggingface"
 
 # Verify no external calls
 trust config show | grep -E "(cloud|external)"

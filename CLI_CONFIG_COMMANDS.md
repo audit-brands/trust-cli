@@ -65,8 +65,8 @@ Quickly set the preferred AI backend:
 # Set to Ollama (local AI)
 trust config backend ollama
 
-# Set to Trust Local (GGUF models)
-trust config backend trust-local
+# Set to HuggingFace (GGUF models)
+trust config backend huggingface
 
 # Set to Cloud AI
 trust config backend cloud
@@ -77,11 +77,11 @@ trust config backend cloud
 Configure AI backend fallback order:
 
 ```bash
-# Set fallback order: Ollama → Trust Local → Cloud
-trust config fallback ollama trust-local cloud
+# Set fallback order: Ollama → HuggingFace → Cloud
+trust config fallback ollama huggingface cloud
 
-# Set fallback order: Trust Local → Ollama
-trust config fallback trust-local ollama
+# Set fallback order: HuggingFace → Ollama
+trust config fallback huggingface ollama
 ```
 
 ### 6. Export Configuration
@@ -132,9 +132,9 @@ trust config get ai.ollama.concurrency      # 2
 trust config get ai.ollama.temperature      # 0.1
 trust config get ai.ollama.maxToolCalls     # 3
 
-# Trust Local Configuration
-trust config get ai.trustLocal.enabled      # true
-trust config get ai.trustLocal.gbnfFunctions # true
+# HuggingFace Configuration
+trust config get ai.huggingface.enabled      # true
+trust config get ai.huggingface.gbnfFunctions # true
 
 # Cloud Configuration
 trust config get ai.cloud.enabled           # false
@@ -175,7 +175,7 @@ trust config get inference.stream            # true
 trust config backend ollama
 trust config set ai.ollama.defaultModel llama3.2:3b
 trust config set ai.enableFallback true
-trust config fallback ollama trust-local
+trust config fallback ollama huggingface
 ```
 
 **Performance Optimization**:
@@ -192,7 +192,7 @@ trust config set privacy.privacyMode strict
 trust config set privacy.auditLogging false
 trust config set transparency.logPrompts false
 trust config set transparency.logResponses false
-trust config backend trust-local
+trust config backend huggingface
 ```
 
 ### Backup and Restore
@@ -225,8 +225,8 @@ trust config import ./team-trust-config.json
 - `ai.ollama.concurrency`
 - `ai.ollama.temperature`
 - `ai.ollama.numPredict`
-- `ai.trustLocal.enabled`
-- `ai.trustLocal.gbnfFunctions`
+- `ai.huggingface.enabled`
+- `ai.huggingface.gbnfFunctions`
 - `ai.cloud.enabled`
 - `ai.cloud.provider`
 

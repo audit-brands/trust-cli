@@ -120,7 +120,7 @@ trust  # Test Ollama
 trust config set ai.enableFallback true
 
 # Fix fallback order
-trust config set ai.fallbackOrder "ollama,trust-local,cloud"
+trust config set ai.fallbackOrder "ollama,huggingface,cloud"
 
 # Enable backends
 trust config set ai.trustLocal.enabled true
