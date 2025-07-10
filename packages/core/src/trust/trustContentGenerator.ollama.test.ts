@@ -55,7 +55,7 @@ describe('TrustContentGenerator with Ollama', () => {
 
     mockTrustConfig = {
       initialize: vi.fn(),
-      getFallbackOrder: vi.fn().mockReturnValue(['ollama', 'trust-local', 'cloud']),
+      getFallbackOrder: vi.fn().mockReturnValue(['ollama', 'huggingface', 'cloud']),
       isFallbackEnabled: vi.fn().mockReturnValue(true),
       isBackendEnabled: vi.fn().mockReturnValue(true),
       getOllamaConfig: vi.fn().mockReturnValue({
@@ -64,7 +64,7 @@ describe('TrustContentGenerator with Ollama', () => {
         timeout: 120000,
         maxToolCalls: 3,
       }),
-      getTrustLocalConfig: vi.fn().mockReturnValue({
+      getHuggingFaceConfig: vi.fn().mockReturnValue({
         enabled: true,
         gbnfFunctions: true,
       }),
@@ -103,7 +103,7 @@ describe('TrustContentGenerator with Ollama', () => {
       expect(mockModelManager.initialize).not.toHaveBeenCalled(); // Should not fall back
     });
 
-    it('should fall back to Trust Local when Ollama unavailable', async () => {
+    it('should fall back to HuggingFace when Ollama unavailable', async () => {
       mockOllamaGenerator.initialize.mockRejectedValue(new Error('Ollama not running'));
       mockModelManager.getCurrentModel.mockReturnValue({
         name: 'test-model',
@@ -120,13 +120,13 @@ describe('TrustContentGenerator with Ollama', () => {
     });
 
     it('should respect fallback order configuration', async () => {
-      mockTrustConfig.getFallbackOrder.mockReturnValue(['trust-local', 'ollama', 'cloud']);
+      mockTrustConfig.getFallbackOrder.mockReturnValue(['huggingface', 'ollama', 'cloud']);
       mockModelManager.getCurrentModel.mockReturnValue(null);
       mockOllamaGenerator.initialize.mockResolvedValue(undefined);
 
       await contentGenerator.initialize();
 
-      // Should try Trust Local first based on config
+      // Should try HuggingFace first based on config
       expect(mockModelManager.initialize).toHaveBeenCalled();
     });
 
@@ -227,9 +227,9 @@ describe('TrustContentGenerator with Ollama', () => {
     it('should update backend preference and reinitialize', async () => {
       mockOllamaGenerator.initialize.mockResolvedValue(undefined);
       
-      await contentGenerator.setBackendPreference('trust-local');
+      await contentGenerator.setBackendPreference('huggingface');
 
-      expect(mockTrustConfig.setPreferredBackend).toHaveBeenCalledWith('trust-local');
+      expect(mockTrustConfig.setPreferredBackend).toHaveBeenCalledWith('huggingface');
       expect(mockTrustConfig.save).toHaveBeenCalled();
       expect(mockTrustConfig.initialize).toHaveBeenCalledWith(); // Called during reinit
     });
@@ -237,9 +237,9 @@ describe('TrustContentGenerator with Ollama', () => {
     it('should update fallback order and reinitialize', async () => {
       mockOllamaGenerator.initialize.mockResolvedValue(undefined);
       
-      await contentGenerator.setFallbackOrder(['trust-local', 'ollama', 'cloud']);
+      await contentGenerator.setFallbackOrder(['huggingface', 'ollama', 'cloud']);
 
-      expect(mockTrustConfig.setFallbackOrder).toHaveBeenCalledWith(['trust-local', 'ollama', 'cloud']);
+      expect(mockTrustConfig.setFallbackOrder).toHaveBeenCalledWith(['huggingface', 'ollama', 'cloud']);
       expect(mockTrustConfig.save).toHaveBeenCalled();
       expect(mockTrustConfig.initialize).toHaveBeenCalledWith(); // Called during reinit
     });
@@ -260,7 +260,7 @@ describe('TrustContentGenerator with Ollama', () => {
       const status = contentGenerator.getBackendStatus();
       expect(status).toEqual({
         ollama: true,
-        'trust-local': false,
+        huggingface: false,
         cloud: false,
       });
     });

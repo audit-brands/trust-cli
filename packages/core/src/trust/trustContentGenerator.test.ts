@@ -55,10 +55,10 @@ describe('TrustContentGenerator', () => {
 
     mockTrustConfig = {
       initialize: vi.fn(),
-      getFallbackOrder: vi.fn().mockReturnValue(['trust-local', 'ollama', 'cloud']), // Trust Local first for these tests
+      getFallbackOrder: vi.fn().mockReturnValue(['huggingface', 'ollama', 'cloud']), // HuggingFace first for these tests
       isFallbackEnabled: vi.fn().mockReturnValue(true),
       isBackendEnabled: vi.fn().mockReturnValue(true),
-      getTrustLocalConfig: vi.fn().mockReturnValue({
+      getHuggingFaceConfig: vi.fn().mockReturnValue({
         enabled: true,
         gbnfFunctions: true,
       }),
@@ -96,7 +96,7 @@ describe('TrustContentGenerator', () => {
 
       expect(mockTrustConfig.initialize).toHaveBeenCalled();
       expect(mockTrustConfig.getFallbackOrder).toHaveBeenCalled();
-      expect(mockModelManager.initialize).toHaveBeenCalled(); // Trust Local is first in fallback order
+      expect(mockModelManager.initialize).toHaveBeenCalled(); // HuggingFace is first in fallback order
     });
 
     it('should load default model if available', async () => {
@@ -250,7 +250,7 @@ describe('TrustContentGenerator', () => {
       };
 
       await expect(contentGenerator.generateContent(request)).rejects.toThrow(
-        'No AI backend available. Please install Ollama or download Trust Local models.'
+        'No AI backend available. Please install Ollama or download HuggingFace models.'
       );
     });
 

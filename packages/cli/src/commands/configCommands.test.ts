@@ -102,8 +102,10 @@ describe('ConfigCommandHandler', () => {
 
       expect(mockConfig.initialize).toHaveBeenCalled();
       expect(mockConsoleLog).toHaveBeenCalledWith('\n🛡️  Trust CLI - Configuration');
+      expect(mockConsoleLog).toHaveBeenCalledWith('\n🤖 AI Backend Configuration:');
       expect(mockConsoleLog).toHaveBeenCalledWith('   Preferred Backend: ollama');
-      expect(mockConsoleLog).toHaveBeenCalledWith('   Fallback Order: ollama → trust-local → cloud');
+      expect(mockConsoleLog).toHaveBeenCalledWith('\n🤗 HuggingFace Configuration:');
+      expect(mockConsoleLog).toHaveBeenCalledWith('   Fallback Order: ollama → huggingface → cloud');
     });
 
     it('should display verbose configuration when requested', async () => {
