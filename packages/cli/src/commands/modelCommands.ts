@@ -85,65 +85,169 @@ export class ModelCommandHandler {
     const models = this.modelManager.listAvailableModels();
     const currentModel = this.modelManager.getCurrentModel();
     
-    console.log('\n🛡️  Trust CLI - Available Models');
+    console.log('\n🤗 Trust CLI - HuggingFace Models');
     console.log('═'.repeat(60));
     
     if (models.length === 0) {
-      console.log('No models found. Use "trust model download <model>" to add models.');
+      console.log('📁 No models found.');
+      console.log('\n🚀 Quick Start:');
+      console.log('   trust model download qwen2.5-1.5b-instruct    # Lightweight model');
+      console.log('   trust model download phi-3.5-mini-instruct    # Coding model');
+      console.log('   trust model download deepseek-r1-distill-7b   # Advanced reasoning');
+      console.log('\n💡 Or use Ollama for faster setup:');
+      console.log('   ollama pull qwen2.5:1.5b && trust');
       return;
     }
 
-    for (const model of models) {
-      const isCurrent = currentModel?.name === model.name;
-      const status = isCurrent ? ' (current)' : '';
-      const verified = await this.modelManager.verifyModel(model.path) ? '✓' : '✗';
-      
-      console.log(`\n${isCurrent ? '→' : ' '} ${model.name}${status}`);
-      console.log(`   ${model.description}`);
-      console.log(`   Size: ${model.parameters} | RAM: ${model.ramRequirement} | Trust: ${model.trustScore}/10 | Status: ${verified}`);
-      
-      if (verbose) {
-        console.log(`   Type: ${model.type} | Quantization: ${model.quantization}`);
-        console.log(`   Context: ${model.contextSize} tokens`);
-        console.log(`   Path: ${model.path}`);
-        if (model.downloadUrl) {
-          console.log(`   Download: ${model.downloadUrl}`);
+    // Calculate status for all models in parallel
+    const modelStatuses = await Promise.all(
+      models.map(async (model) => {
+        const isCurrent = currentModel?.name === model.name;
+        const isDownloaded = await this.modelManager.verifyModel(model.path);
+        return {
+          model,
+          isCurrent,
+          isDownloaded,
+          status: isCurrent ? '🎯 current' : (isDownloaded ? '✅ ready' : '📄 not downloaded'),
+          icon: isCurrent ? '🎯' : (isDownloaded ? '✅' : '⚪'),
+        };
+      })
+    );
+
+    // Group models by status
+    const downloadedModels = modelStatuses.filter(m => m.isDownloaded);
+    const availableModels = modelStatuses.filter(m => !m.isDownloaded);
+
+    if (downloadedModels.length > 0) {
+      console.log('\n📦 Downloaded Models:');
+      for (const { model, status, icon } of downloadedModels) {
+        console.log(`   ${icon} ${model.name}`);
+        if (verbose) {
+          console.log(`      📊 ${model.type} | ${model.parameters} | ${model.ramRequirement} RAM`);
+          console.log(`      🎆 Trust Score: ${(model.trustScore || 0).toFixed(1)}/10`);
+          console.log(`      📝 ${model.description}`);
+          console.log(`      📁 ${model.path}`);
+          console.log('');
+        }
+      }
+    }
+
+    if (availableModels.length > 0) {
+      console.log('\n🚫 Available for Download:');
+      for (const { model, icon } of availableModels) {
+        console.log(`   ${icon} ${model.name} (${model.parameters}, ${model.ramRequirement} RAM)`);
+        if (verbose) {
+          console.log(`      📝 ${model.description}`);
+          console.log(`      🚀 Download: trust model download ${model.name}`);
+          console.log('');
         }
       }
     }
     
-    console.log('\n💡 Use "trust model switch <name>" to change models');
-    console.log('💡 Use "trust model recommend <task>" for recommendations');
+    // Show quick actions
+    console.log('\n🚀 Quick Actions:');
+    if (downloadedModels.length > 0 && !currentModel) {
+      console.log(`   trust model switch ${downloadedModels[0].model.name}`);
+    }
+    if (availableModels.length > 0) {
+      const recommended = availableModels.find(m => m.model.name.includes('qwen')) || availableModels[0];
+      console.log(`   trust model download ${recommended.model.name}`);
+    }
+    console.log('   trust model recommend <task>              # Get recommendations');
+    
+    if (!verbose) {
+      console.log('\n💡 Use --verbose for detailed information');
+    }
   }
 
   private async switchModel(modelName: string): Promise<void> {
     console.log(`\n🔄 Switching to model: ${modelName}`);
     
     try {
+      // Check if model is downloaded
+      const models = this.modelManager.listAvailableModels();
+      const targetModel = models.find(m => m.name === modelName);
+      
+      if (!targetModel) {
+        console.log(`❌ Model "${modelName}" not found.`);
+        console.log('\n📝 Available models:');
+        models.forEach(m => console.log(`   - ${m.name}`));
+        throw new Error(`Model "${modelName}" not found`);
+      }
+      
+      const isDownloaded = await this.modelManager.verifyModel(targetModel.path);
+      if (!isDownloaded) {
+        console.log(`📄 Model "${modelName}" is not downloaded yet.`);
+        console.log(`🚀 Download it first: trust model download ${modelName}`);
+        throw new Error(`Model "${modelName}" not downloaded`);
+      }
+      
+      // Show loading indicator
+      process.stdout.write('⚙️  Loading model...');
+      
       await this.modelManager.switchModel(modelName);
       this.config.setDefaultModel(modelName);
       await this.config.save();
       
+      // Clear loading indicator
+      process.stdout.write('\r\x1b[K');
+      
       console.log(`✅ Successfully switched to ${modelName}`);
-      console.log('💡 The new model will be used for all future conversations');
+      console.log(`📋 Model Details:`);
+      console.log(`   Type: ${targetModel.type}`);
+      console.log(`   Size: ${targetModel.parameters}`);
+      console.log(`   RAM: ${targetModel.ramRequirement}`);
+      console.log(`   Trust Score: ${targetModel.trustScore}/10`);
+      console.log('\n💡 The new model will be used for all future conversations');
       
     } catch (error) {
+      // Clear any loading indicator
+      process.stdout.write('\r\x1b[K');
       console.error(`❌ Failed to switch model: ${error}`);
       throw error;
     }
   }
 
   private async downloadModel(modelName: string): Promise<void> {
-    console.log(`\n⬇️  Downloading model: ${modelName}`);
-    console.log('This may take several minutes depending on model size and your internet connection...');
+    const models = this.modelManager.listAvailableModels();
+    const targetModel = models.find(m => m.name === modelName);
+    
+    if (!targetModel) {
+      console.log(`❌ Model "${modelName}" not found in catalog.`);
+      console.log('\n📝 Available models:');
+      models.forEach(m => console.log(`   - ${m.name} (${m.parameters}, ${m.ramRequirement})`));
+      throw new Error(`Model "${modelName}" not found`);
+    }
+    
+    // Check if already downloaded
+    const isDownloaded = await this.modelManager.verifyModel(targetModel.path);
+    if (isDownloaded) {
+      console.log(`✅ Model "${modelName}" is already downloaded and verified.`);
+      console.log(`🚀 Switch to it: trust model switch ${modelName}`);
+      return;
+    }
+    
+    console.log(`\n🚀 Downloading HuggingFace model: ${modelName}`);
+    console.log(`📝 ${targetModel.description}`);
+    console.log(`📊 Size: ${targetModel.parameters} | RAM: ${targetModel.ramRequirement}`);
+    console.log(`🔗 Source: ${targetModel.downloadUrl}`);
+    console.log('\n⏳ This may take several minutes depending on model size and connection...');
     
     try {
       await this.modelManager.downloadModel(modelName);
-      console.log(`✅ Successfully downloaded ${modelName}`);
-      console.log('💡 Use "trust model switch" to start using this model');
+      
+      console.log(`\n✅ Successfully downloaded ${modelName}`);
+      console.log(`📋 Model ready at: ${targetModel.path}`);
+      console.log(`\n🚀 Next steps:`);
+      console.log(`   trust model switch ${modelName}     # Set as active model`);
+      console.log(`   trust model verify ${modelName}     # Verify integrity`);
       
     } catch (error) {
       console.error(`❌ Failed to download model: ${error}`);
+      console.log(`\n🔧 Troubleshooting:`);
+      console.log('   - Check your internet connection');
+      console.log('   - Verify disk space availability');
+      console.log('   - Try downloading again');
       throw error;
     }
   }

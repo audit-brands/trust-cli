@@ -314,14 +314,45 @@ export class OllamaContentGenerator implements ContentGenerator {
   }
 
   /**
-   * Generate content stream (placeholder implementation)
+   * Generate content stream with improved UI feedback
    */
   async generateContentStream(request: GenerateContentParameters): Promise<AsyncGenerator<GenerateContentResponse>> {
-    // For now, return a single response as a stream
-    const response = await this.generateContent(request);
-    return (async function*() {
-      yield response;
-    })();
+    try {
+      // Convert Gemini request to Ollama format
+      const messages = this.convertGeminiToOllamaMessages(request);
+      
+      // Add messages to conversation history
+      this.conversationHistory.push(...messages);
+
+      // Yield initial "thinking" response
+      yield {
+        candidates: [{
+          content: {
+            parts: [{ text: "🤔 Thinking..." }],
+            role: 'model',
+          },
+          finishReason: 'CONTINUE' as any,
+          index: 0,
+        }],
+        text: "🤔 Thinking...",
+      } as GenerateContentResponse;
+
+      // Execute streaming tool calling loop
+      yield* this.executeStreamingToolCallingLoop();
+    } catch (error) {
+      console.error('Error in generateContentStream:', error);
+      yield {
+        candidates: [{
+          content: {
+            parts: [{ text: `❌ Error: ${error instanceof Error ? error.message : String(error)}` }],
+            role: 'model',
+          },
+          finishReason: 'OTHER' as any,
+          index: 0,
+        }],
+        text: `❌ Error: ${error instanceof Error ? error.message : String(error)}`,
+      } as GenerateContentResponse;
+    }
   }
 
   /**
@@ -402,6 +433,177 @@ export class OllamaContentGenerator implements ContentGenerator {
   clearConversationHistory(): void {
     const systemMessage = this.conversationHistory.find(m => m.role === 'system');
     this.conversationHistory = systemMessage ? [systemMessage] : [];
+  }
+
+  /**
+   * Execute streaming tool calling loop with real-time feedback
+   */
+  private async* executeStreamingToolCallingLoop(): AsyncGenerator<GenerateContentResponse> {
+    let toolCallCount = 0;
+    let finalContent = '';
+    let allToolCalls: FunctionCall[] = [];
+
+    while (toolCallCount < this.maxToolCalls) {
+      // Show current step
+      yield {
+        candidates: [{
+          content: {
+            parts: [{ text: `🔄 Processing step ${toolCallCount + 1}...` }],
+            role: 'model',
+          },
+          finishReason: 'CONTINUE' as any,
+          index: 0,
+        }],
+        text: `🔄 Processing step ${toolCallCount + 1}...`,
+      } as GenerateContentResponse;
+
+      // Get tools for this request
+      const tools = this.enableToolCalling ? this.toolRegistry.getToolDefinitions() : undefined;
+
+      // Generate completion
+      const response = await this.ollamaClient.chatCompletion(
+        this.conversationHistory,
+        tools,
+        {
+          temperature: 0.1,
+          maxTokens: 2000,
+        }
+      );
+
+      // Add assistant response to history
+      this.conversationHistory.push({
+        role: 'assistant',
+        content: response.content,
+        tool_calls: response.toolCalls.map(tc => ({
+          id: tc.id || `call_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          type: 'function' as const,
+          function: {
+            name: tc.name || 'unknown',
+            arguments: JSON.stringify(tc.args || {}),
+          },
+        })),
+      });
+
+      // If no tool calls, we're done
+      if (!response.toolCalls || response.toolCalls.length === 0) {
+        finalContent = response.content;
+        
+        // Yield final response
+        yield {
+          candidates: [{
+            content: {
+              parts: [{ text: finalContent }],
+              role: 'model',
+            },
+            finishReason: 'STOP' as any,
+            index: 0,
+          }],
+          text: finalContent,
+          functionCalls: allToolCalls,
+        } as GenerateContentResponse;
+        
+        return;
+      }
+
+      // Show tool execution status
+      for (const toolCall of response.toolCalls) {
+        yield {
+          candidates: [{
+            content: {
+              parts: [{ text: `🔧 Executing: ${toolCall.name}` }],
+              role: 'model',
+            },
+            finishReason: 'CONTINUE' as any,
+            index: 0,
+          }],
+          text: `🔧 Executing: ${toolCall.name}`,
+        } as GenerateContentResponse;
+
+        try {
+          const result = await this.toolRegistry.executeTool(toolCall.name || 'unknown', toolCall.args || {});
+          
+          if (result.success) {
+            allToolCalls.push(toolCall);
+            
+            // Show success
+            yield {
+              candidates: [{
+                content: {
+                  parts: [{ text: `✅ ${toolCall.name} completed` }],
+                  role: 'model',
+                },
+                finishReason: 'CONTINUE' as any,
+                index: 0,
+              }],
+              text: `✅ ${toolCall.name} completed`,
+            } as GenerateContentResponse;
+          } else {
+            // Show error
+            yield {
+              candidates: [{
+                content: {
+                  parts: [{ text: `❌ ${toolCall.name} failed: ${result.error}` }],
+                  role: 'model',
+                },
+                finishReason: 'CONTINUE' as any,
+                index: 0,
+              }],
+              text: `❌ ${toolCall.name} failed: ${result.error}`,
+            } as GenerateContentResponse;
+          }
+
+          // Add tool result to conversation history
+          this.conversationHistory.push({
+            role: 'tool',
+            content: result.success ? result.result : `Error: ${result.error}`,
+            tool_call_id: toolCall.id || `call_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+            name: toolCall.name || 'unknown',
+          });
+        } catch (error) {
+          const errorMsg = `Tool execution failed: ${error instanceof Error ? error.message : String(error)}`;
+          
+          yield {
+            candidates: [{
+              content: {
+                parts: [{ text: `❌ ${toolCall.name} error: ${errorMsg}` }],
+                role: 'model',
+              },
+              finishReason: 'CONTINUE' as any,
+              index: 0,
+            }],
+            text: `❌ ${toolCall.name} error: ${errorMsg}`,
+          } as GenerateContentResponse;
+          
+          // Add error to conversation history
+          this.conversationHistory.push({
+            role: 'tool',
+            content: errorMsg,
+            tool_call_id: toolCall.id || `call_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+            name: toolCall.name || 'unknown',
+          });
+        }
+      }
+
+      toolCallCount++;
+    }
+
+    if (toolCallCount >= this.maxToolCalls) {
+      const warningMsg = `⚠️ Maximum tool calls (${this.maxToolCalls}) reached. Task may be incomplete.`;
+      finalContent = finalContent || warningMsg;
+      
+      yield {
+        candidates: [{
+          content: {
+            parts: [{ text: finalContent }],
+            role: 'model',
+          },
+          finishReason: 'STOP' as any,
+          index: 0,
+        }],
+        text: finalContent,
+        functionCalls: allToolCalls,
+      } as GenerateContentResponse;
+    }
   }
 
   /**
