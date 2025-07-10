@@ -635,7 +635,7 @@ Assistant: \`\`\`json
     if (this.useOllama && this.ollamaGenerator) {
       return 'ollama';
     } else if (this.modelClient.isModelLoaded()) {
-      return 'trust-local';
+      return 'huggingface';
     } else {
       return 'cloud';
     }
@@ -644,7 +644,7 @@ Assistant: \`\`\`json
   getBackendStatus(): { [key: string]: boolean } {
     return {
       ollama: this.useOllama && !!this.ollamaGenerator,
-      'trust-local': this.modelClient.isModelLoaded(),
+      'huggingface': this.modelClient.isModelLoaded(),
       cloud: this.trustConfig.getCloudConfig().enabled,
     };
   }

@@ -413,9 +413,9 @@ async function validateNonInterActiveAuth(
   nonInteractiveConfig: Config,
 ) {
   // making a special case for the cli. many headless environments might not have a settings.json set
-  // Trust operates locally, so no API key is required for most operations
+  // HuggingFace models operate locally, so no API key is required for most operations
   if (!selectedAuthType) {
-    console.log('No authentication method set. Using Trust local inference mode.');
+    console.log('No authentication method set. Using HuggingFace local inference mode.');
   }
 
   selectedAuthType = selectedAuthType || AuthType.USE_TRUST_LOCAL;

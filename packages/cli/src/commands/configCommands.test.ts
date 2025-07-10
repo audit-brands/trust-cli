@@ -160,13 +160,13 @@ describe('ConfigCommandHandler', () => {
       const args: ConfigCommandArgs = { 
         action: 'set', 
         key: 'ai.preferredBackend', 
-        value: 'trust-local' 
+        value: 'huggingface' 
       };
 
       await commandHandler.handleCommand(args);
 
       expect(mockConfig.save).toHaveBeenCalled();
-      expect(mockConsoleLog).toHaveBeenCalledWith('✅ Configuration updated: ai.preferredBackend = trust-local');
+      expect(mockConsoleLog).toHaveBeenCalledWith('✅ Configuration updated: ai.preferredBackend = huggingface');
     });
 
     it('should set boolean configuration value', async () => {
@@ -214,13 +214,13 @@ describe('ConfigCommandHandler', () => {
 
   describe('backend command', () => {
     it('should set preferred backend', async () => {
-      const args: ConfigCommandArgs = { action: 'backend', backend: 'trust-local' };
+      const args: ConfigCommandArgs = { action: 'backend', backend: 'huggingface' };
 
       await commandHandler.handleCommand(args);
 
-      expect(mockConfig.setPreferredBackend).toHaveBeenCalledWith('trust-local');
+      expect(mockConfig.setPreferredBackend).toHaveBeenCalledWith('huggingface');
       expect(mockConfig.save).toHaveBeenCalled();
-      expect(mockConsoleLog).toHaveBeenCalledWith('✅ Preferred AI backend set to: trust-local');
+      expect(mockConsoleLog).toHaveBeenCalledWith('✅ Preferred AI backend set to: huggingface');
     });
 
     it('should warn about disabled backend', async () => {

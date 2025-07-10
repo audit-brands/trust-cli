@@ -424,13 +424,13 @@ trust config set ai.ollama.timeout 180000  # 3 minutes
 trust config set ai.ollama.baseUrl http://your-server:11434
 ```
 
-### 🏠 **Trust Local Models (HuggingFace GGUF)**
+### 🏠 **HuggingFace Models (Local GGUF)**
 
 **Best for**: Complete offline operation, fine-grained control, zero dependencies
 
 This is the original Trust CLI approach using locally downloaded GGUF models.
 
-#### Trust Local Setup:
+#### HuggingFace Local Setup:
 ```bash
 # Download models directly
 trust model download qwen2.5-1.5b-instruct
@@ -439,12 +439,12 @@ trust model download phi-3.5-mini-instruct
 # Switch to downloaded model
 trust model switch qwen2.5-1.5b-instruct
 
-# Trust CLI will use Trust Local if Ollama isn't available
+# Trust CLI will use HuggingFace models if Ollama isn't available
 ```
 
-#### Trust Local Configuration:
+#### HuggingFace Local Configuration:
 ```bash
-# Enable/disable Trust Local fallback
+# Enable/disable HuggingFace local fallback
 trust config set ai.trustLocal.enabled true
 
 # Enable GBNF grammar-based function calling
@@ -471,7 +471,7 @@ trust auth login --provider google
 
 ### ⚙️ **Backend Configuration & Preferences**
 
-Trust CLI automatically tries backends in order: **Ollama → Trust Local → Cloud**
+Trust CLI automatically tries backends in order: **Ollama → HuggingFace → Cloud**
 
 #### View Current Configuration:
 ```bash
@@ -504,7 +504,7 @@ trust config set ai.ollama.defaultModel qwen2.5:1.5b
 trust config set ai.ollama.timeout 120000
 trust config set ai.ollama.maxToolCalls 3
 
-# Trust Local settings  
+# HuggingFace local settings  
 trust config set ai.trustLocal.enabled true
 trust config set ai.trustLocal.gbnfFunctions true
 
@@ -518,7 +518,7 @@ trust config set ai.cloud.provider google
 Trust CLI automatically selects the best available backend:
 
 1. **🚀 Ollama**: If running on `localhost:11434`
-2. **🏠 Trust Local**: If GGUF models are downloaded  
+2. **🏠 HuggingFace**: If GGUF models are downloaded  
 3. **🌐 Cloud**: If configured and enabled
 
 #### Fallback Behavior:
@@ -530,17 +530,17 @@ trust
 ✅ Successfully initialized ollama backend
 🚀 Using Ollama for content generation
 
-# 2. Try Ollama → Fail → Try Trust Local → Success ✅  
+# 2. Try Ollama → Fail → Try HuggingFace → Success ✅  
 trust
 🔧 AI Backend Configuration: ollama → trust-local → cloud (fallback: enabled)
 ❌ Failed to initialize ollama backend: connection refused
 ✅ Successfully initialized trust-local backend
-🏠 Using Trust Local models for content generation
+🏠 Using HuggingFace models for content generation
 ```
 
 ### 📊 **Backend Comparison**
 
-| Feature | Ollama | Trust Local | Cloud |
+| Feature | Ollama | HuggingFace | Cloud |
 |---------|---------|-------------|-------|
 | **Setup** | Simple | Moderate | Simple |
 | **Performance** | Fast | Medium | Fastest |
@@ -561,7 +561,7 @@ ollama pull qwen2.5:1.5b
 trust  # Automatically detects and uses Ollama
 ```
 
-#### **Maximum Privacy (Trust Local Only)**:
+#### **Maximum Privacy (HuggingFace Only)**:
 ```bash
 # Disable cloud, use only local models
 trust config set ai.cloud.enabled false
@@ -571,7 +571,7 @@ trust model download phi-3.5-mini-instruct
 
 #### **Hybrid Setup (Best of Both)**:
 ```bash
-# Ollama for general use, Trust Local for sensitive work
+# Ollama for general use, HuggingFace for sensitive work
 ollama pull qwen2.5:7b
 trust model download deepseek-r1-distill-7b
 trust config set ai.fallbackOrder "ollama,trust-local,cloud"

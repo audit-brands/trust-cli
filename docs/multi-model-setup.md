@@ -227,7 +227,7 @@ ollama serve
 journalctl -f -u ollama  # Linux systemd
 ```
 
-### Trust Local Models Not Loading
+### HuggingFace Models Not Loading
 ```bash
 # Check downloaded models
 trust model list
@@ -276,7 +276,7 @@ ollama pull llama3.1:8b   # 16GB RAM
 trust config set ai.ollama.timeout 300000  # 5 minutes
 ```
 
-### Trust Local Optimization
+### HuggingFace Local Optimization
 ```bash
 # Enable GBNF for better function calling
 trust config set ai.trustLocal.gbnfFunctions true
