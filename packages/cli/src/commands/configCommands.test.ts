@@ -31,7 +31,7 @@ describe('ConfigCommandHandler', () => {
         ai: {
           preferredBackend: 'ollama',
           enableFallback: true,
-          fallbackOrder: ['ollama', 'trust-local', 'cloud'],
+          fallbackOrder: ['ollama', 'huggingface', 'cloud'],
           ollama: {
             baseUrl: 'http://localhost:11434',
             defaultModel: 'qwen2.5:1.5b',
@@ -42,7 +42,7 @@ describe('ConfigCommandHandler', () => {
             temperature: 0.1,
             numPredict: 1000,
           },
-          trustLocal: {
+          huggingface: {
             enabled: true,
             gbnfFunctions: true,
           },
@@ -243,27 +243,27 @@ describe('ConfigCommandHandler', () => {
     it('should set fallback order', async () => {
       const args: ConfigCommandArgs = { 
         action: 'fallback', 
-        order: ['trust-local', 'ollama', 'cloud'] 
+        order: ['huggingface', 'ollama', 'cloud'] 
       };
 
       await commandHandler.handleCommand(args);
 
-      expect(mockConfig.setFallbackOrder).toHaveBeenCalledWith(['trust-local', 'ollama', 'cloud']);
+      expect(mockConfig.setFallbackOrder).toHaveBeenCalledWith(['huggingface', 'ollama', 'cloud']);
       expect(mockConfig.save).toHaveBeenCalled();
-      expect(mockConsoleLog).toHaveBeenCalledWith('✅ Fallback order set to: trust-local → ollama → cloud');
+      expect(mockConsoleLog).toHaveBeenCalledWith('✅ Fallback order set to: huggingface → ollama → cloud');
     });
 
     it('should show backend status after setting fallback order', async () => {
       const args: ConfigCommandArgs = { 
         action: 'fallback', 
-        order: ['ollama', 'trust-local'] 
+        order: ['ollama', 'huggingface'] 
       };
 
       await commandHandler.handleCommand(args);
 
       expect(mockConsoleLog).toHaveBeenCalledWith('\n📊 Backend Status:');
       expect(mockConsoleLog).toHaveBeenCalledWith('   ollama: ✅ Enabled');
-      expect(mockConsoleLog).toHaveBeenCalledWith('   trust-local: ✅ Enabled');
+      expect(mockConsoleLog).toHaveBeenCalledWith('   huggingface: ✅ Enabled');
     });
 
     it('should reject invalid backends', async () => {
@@ -273,7 +273,7 @@ describe('ConfigCommandHandler', () => {
       };
 
       await expect(commandHandler.handleCommand(args)).rejects.toThrow(
-        'Invalid backends: invalid-backend. Valid options: ollama, trust-local, cloud'
+        'Invalid backends: invalid-backend. Valid options: ollama, huggingface, cloud'
       );
     });
 

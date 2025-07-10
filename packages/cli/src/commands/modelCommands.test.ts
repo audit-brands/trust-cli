@@ -136,7 +136,7 @@ describe('ModelCommandHandler', () => {
 
       await commandHandler.handleCommand(args);
 
-      expect(mockConsoleLog).toHaveBeenCalledWith('📋 Available Models:');
+      expect(mockConsoleLog).toHaveBeenCalledWith('\n🤗 Trust CLI - HuggingFace Models');
       expect(mockConsoleTable).toHaveBeenCalled();
     });
 
@@ -150,8 +150,8 @@ describe('ModelCommandHandler', () => {
 
       await commandHandler.handleCommand(args);
 
-      // Should show which model is currently active
-      expect(mockConsoleLog).toHaveBeenCalledWith('\n🎯 Current model: qwen2.5-1.5b-instruct');
+      // Should show models in new grouped format
+      expect(mockConsoleLog).toHaveBeenCalledWith('\n📦 Downloaded Models:');
     });
   });
 
@@ -166,7 +166,7 @@ describe('ModelCommandHandler', () => {
 
       await commandHandler.handleCommand(args);
 
-      expect(mockConsoleLog).toHaveBeenCalledWith('🔄 Switching to model: codellama-7b-instruct');
+      expect(mockConsoleLog).toHaveBeenCalledWith('\n🔄 Switching to model: codellama-7b-instruct');
       expect(mockConsoleLog).toHaveBeenCalledWith('✅ Successfully switched to codellama-7b-instruct');
     });
 
@@ -180,8 +180,8 @@ describe('ModelCommandHandler', () => {
 
       await commandHandler.handleCommand(args);
 
-      expect(mockConsoleError).toHaveBeenCalledWith('❌ Please specify a model name');
-      expect(mockConsoleLog).toHaveBeenCalledWith('Usage: trust model switch <model-name>');
+      // The new implementation should throw an error for missing model name
+      await expect(commandHandler.handleCommand(args)).rejects.toThrow('Model name required for switch command');
     });
 
     it('should handle switch errors', async () => {
