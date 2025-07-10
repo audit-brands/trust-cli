@@ -10,7 +10,7 @@ import * as fs from 'fs/promises';
 import * as path from 'path';
 
 export interface ModelCommandArgs {
-  action: 'list' | 'switch' | 'download' | 'recommend' | 'verify' | 'delete' | 'report' | 'trust';
+  action: 'list' | 'switch' | 'download' | 'recommend' | 'verify' | 'delete' | 'report' | 'trust' | 'help' | 'ui';
   modelName?: string;
   task?: string;
   ramLimit?: number;
@@ -76,8 +76,18 @@ export class ModelCommandHandler {
       case 'trust':
         await this.showTrustedModels(args.export);
         break;
+      case 'help':
+        this.showHelp();
+        break;
+      case 'ui':
+        await this.launchUI();
+        break;
       default:
-        throw new Error(`Unknown model command: ${args.action}`);
+        if (!args.action || args.action === '--help' || args.action === '-h') {
+          this.showHelp();
+        } else {
+          throw new Error(`Unknown model command: ${args.action}`);
+        }
     }
   }
 
@@ -558,6 +568,72 @@ export class ModelCommandHandler {
     console.log(`   • Run 'trust model verify' to check all models`);
     console.log(`   • Run 'trust model report <name>' for detailed integrity report`);
     console.log(`   • Run 'trust model trust --export' to backup trusted model database`);
+  }
+
+  private showHelp(): void {
+    console.log(`
+🛡️  Trust CLI - Model Management Commands
+════════════════════════════════════════════════════════════
+
+📦 Model Operations:
+   trust model list [--verbose]              List all available models
+   trust model switch <model-name>           Switch to a specific model
+   trust model download <model-name>         Download a model from HuggingFace
+   trust model recommend [task] [--ram N]    Get model recommendations
+
+🔍 Verification & Security:
+   trust model verify [model-name]           Verify model integrity
+   trust model trust [--export]              Show/export trusted models
+   trust model report <model-name>           Generate detailed model report
+
+🗑️  Management:
+   trust model delete <model-name>           Delete a downloaded model
+   trust model ui                            Launch interactive model manager
+
+💡 Task Types for Recommendations:
+   • coding     - Code analysis and generation
+   • quick      - Fast responses and simple tasks  
+   • complex    - Multi-step reasoning and analysis
+   • default    - General purpose usage
+
+📊 Examples:
+   trust model list --verbose
+   trust model recommend coding --ram 8
+   trust model switch phi-3.5-mini-instruct
+   trust model verify qwen2.5-1.5b-instruct
+   trust model ui
+
+🎯 Backend Integration:
+   • Ollama models: Managed via 'ollama' command
+   • HuggingFace models: Downloaded and managed by Trust CLI
+   • Use 'trust status backend' to see current configuration
+`);
+  }
+
+  private async launchUI(): Promise<void> {
+    console.log('🚀 Launching interactive model manager...');
+    
+    // Import the UI component
+    const { render } = await import('ink');
+    const React = await import('react');
+    const { ModelManagerUI } = await import('../ui/modelManagerUI.js');
+    
+    // Set up exit handler
+    let appInstance: any;
+    const handleExit = () => {
+      if (appInstance) {
+        appInstance.unmount();
+      }
+      process.exit(0);
+    };
+    
+    // Render the UI
+    appInstance = render(
+      React.createElement(ModelManagerUI, { onExit: handleExit }),
+      { exitOnCtrlC: true }
+    );
+    
+    console.log('💡 Use arrow keys to navigate, press Q to quit');
   }
 }
 

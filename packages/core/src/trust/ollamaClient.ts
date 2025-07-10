@@ -250,16 +250,20 @@ export class OllamaClient {
   ): Promise<OllamaResponse> {
     return this.executeWithConcurrency(async () => {
       try {
-        const completion = await this.client.chat.completions.create({
+        const requestPayload = {
           model: this.model,
           messages: messages as any, // Type assertion for OpenAI compatibility
           tools: tools as any,
-          tool_choice: tools && tools.length > 0 ? 'auto' : undefined,
+          tool_choice: tools && tools.length > 0 ? 'auto' as const : undefined,
           temperature: options.temperature ?? 0.1,
           max_tokens: options.maxTokens ?? 1000, // Reduced for faster responses
-          stream: false, // We'll handle streaming separately if needed
+          stream: false as const, // We'll handle streaming separately if needed
           // Note: Ollama-specific options handled via separate API calls
-        });
+        };
+        
+        // Debug logging removed for performance
+        
+        const completion = await this.client.chat.completions.create(requestPayload);
 
       const choice = completion.choices[0];
       if (!choice) {
@@ -300,7 +304,7 @@ export class OllamaClient {
         } : undefined,
       };
       } catch (error) {
-        console.error('Error in chat completion:', error);
+        console.error('Ollama chat completion error:', error instanceof Error ? error.message : String(error));
         throw new Error(`Ollama chat completion failed: ${error instanceof Error ? error.message : String(error)}`);
       }
     });

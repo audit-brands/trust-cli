@@ -235,6 +235,21 @@ export async function main() {
     }
   }
 
+  // OpenAudit command
+  if (args[0] === 'openaudit') {
+    const { handleOpenAuditCommand } = await import('./commands/openauditCommands.js');
+    try {
+      await handleOpenAuditCommand({
+        action: args[1] as string,
+        args: args.slice(2),
+      });
+      return;
+    } catch (error) {
+      console.error(`❌ OpenAudit command failed: ${error}`);
+      process.exit(1);
+    }
+  }
+
   const workspaceRoot = process.cwd();
   const settings = loadSettings(workspaceRoot);
   

@@ -294,6 +294,9 @@ const Header: React.FC = () => (
     <Box flexDirection="column" width="100%">
       <Text color="blue" bold>🛡️  Trust CLI - Advanced Model Manager</Text>
       <Text color="gray">Trust: An Open System for Modern Assurance</Text>
+      <Text color="gray">
+        🦙 Ollama • 🤗 HuggingFace • ☁️  Cloud
+      </Text>
     </Box>
   </Box>
 );
@@ -324,10 +327,13 @@ const ModelListItem: React.FC<{
   const selector = isSelected ? '▶' : ' ';
   const status = model.verificationHash ? '✓' : '✗';
   
+  // Determine backend based on model characteristics
+  const backend = model.name.includes('ollama') ? '🦙' : '🤗';
+  
   return (
     <Box>
       <Text color={isSelected ? 'blue' : undefined} backgroundColor={isSelected ? 'white' : undefined}>
-        {selector} {indicator} {model.name} [{status}]
+        {selector} {indicator} {backend} {model.name} [{status}]
       </Text>
       <Text color="gray"> - {model.description}</Text>
     </Box>
@@ -346,6 +352,8 @@ const ModelDetailView: React.FC<{ state: UIState }> = ({ state }) => {
       
       <Box flexDirection="column" marginLeft={2}>
         <Text><Text bold>Description:</Text> {model.description}</Text>
+        <Text><Text bold>Backend:</Text> {model.name.includes('ollama') ? '🦙 Ollama (Local Inference)' : 
+                                          '🤗 HuggingFace (Local GGUF)'}</Text>
         <Text><Text bold>Type:</Text> {model.type}</Text>
         <Text><Text bold>Parameters:</Text> {model.parameters}</Text>
         <Text><Text bold>RAM Required:</Text> {model.ramRequirement}</Text>
@@ -460,8 +468,8 @@ const NavigationHelp: React.FC<{ view: ViewMode }> = ({ view }) => {
     list: '↑↓: Navigate • Enter: Details • D: Downloads • B: Benchmark • S: Settings • R: Refresh • Q: Quit',
     detail: 'S: Switch Model • V: Verify • D: Download • B: Back • Q: Quit',
     download: 'B: Back • Q: Quit',
-    benchmark: 'B: Back • Q: Quit',
-    settings: 'B: Back • Q: Quit',
+    benchmark: 'T: Test Model • B: Back • Q: Quit',
+    settings: 'E: Edit Settings • B: Back • Q: Quit',
   };
   
   return (
