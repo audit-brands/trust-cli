@@ -387,6 +387,108 @@ describe('PrivacyManager', () => {
 
       expect(openReport.recommendations).not.toEqual(strictReport.recommendations);
     });
+
+    it('should generate detailed audit report with analytics', async () => {
+      // Mock audit log file content
+      const mockAuditEntries = [
+        { timestamp: '2023-01-01T10:00:00Z', sessionId: 'session1', operation: 'data_encrypted', privacyMode: 'strict', dataType: 'sensitive', sanitized: true, details: {} },
+        { timestamp: '2023-01-01T10:05:00Z', sessionId: 'session1', operation: 'data_sanitized', privacyMode: 'strict', dataType: 'user_input', sanitized: true, details: {} },
+        { timestamp: '2023-01-01T10:10:00Z', sessionId: 'session1', operation: 'cleanup_performed', privacyMode: 'strict', dataType: 'audit_logs', sanitized: false, details: {} }
+      ];
+      
+      const mockLogContent = mockAuditEntries.map(entry => JSON.stringify(entry)).join('\n');
+      mockFs.readFile.mockResolvedValue(mockLogContent);
+      mockFs.readdir.mockResolvedValue([]);
+
+      const report = await privacyManager.generateDetailedAuditReport();
+
+      expect(report).toBeDefined();
+      expect(report.metadata).toBeDefined();
+      expect(report.summary).toBeDefined();
+      expect(report.compliance).toBeDefined();
+      expect(report.security).toBeDefined();
+      expect(report.recommendations).toBeDefined();
+      expect(Array.isArray(report.rawLogs)).toBe(true);
+      expect(report.metadata.totalEntries).toBe(3);
+      expect(report.summary.sanitizationStats.sanitizedCount).toBe(2);
+    });
+
+    it('should generate compliance report', async () => {
+      // Mock audit log file content
+      const mockLogContent = JSON.stringify({
+        timestamp: '2023-01-01T10:00:00Z',
+        sessionId: 'session1',
+        operation: 'data_encrypted',
+        privacyMode: 'strict',
+        dataType: 'sensitive',
+        sanitized: true,
+        details: {}
+      });
+      mockFs.readFile.mockResolvedValue(mockLogContent);
+      mockFs.readdir.mockResolvedValue([]);
+
+      const report = await privacyManager.generateComplianceReport();
+
+      expect(report).toBeDefined();
+      expect(report.complianceFramework).toBe('Privacy and Data Protection');
+      expect(report.systemConfiguration).toBeDefined();
+      expect(report.dataProcessingActivities).toBeDefined();
+      expect(report.securityMeasures).toBeDefined();
+      expect(report.incidents).toBeDefined();
+      expect(report.attestation).toBeDefined();
+    });
+
+    it('should export audit logs in JSON format', async () => {
+      const mockLogContent = JSON.stringify({
+        timestamp: '2023-01-01T10:00:00Z',
+        sessionId: 'session1',
+        operation: 'test_operation',
+        privacyMode: 'moderate',
+        dataType: 'test_data',
+        sanitized: true,
+        details: { test: 'value' }
+      });
+      mockFs.readFile.mockResolvedValue(mockLogContent);
+      mockFs.readdir.mockResolvedValue([]);
+
+      const exported = await privacyManager.exportAuditLogs('json');
+
+      expect(exported).toBeDefined();
+      expect(typeof exported).toBe('string');
+      expect(() => JSON.parse(exported)).not.toThrow();
+    });
+
+    it('should export audit logs in CSV format', async () => {
+      const mockLogContent = JSON.stringify({
+        timestamp: '2023-01-01T10:00:00Z',
+        sessionId: 'session1',
+        operation: 'test_operation',
+        privacyMode: 'moderate',
+        dataType: 'test_data',
+        sanitized: true,
+        details: { test: 'value' }
+      });
+      mockFs.readFile.mockResolvedValue(mockLogContent);
+      mockFs.readdir.mockResolvedValue([]);
+
+      const exported = await privacyManager.exportAuditLogs('csv');
+
+      expect(exported).toBeDefined();
+      expect(typeof exported).toBe('string');
+      expect(exported).toContain('timestamp,sessionId,operation,privacyMode,dataType,sanitized,details');
+      expect(exported).toContain('2023-01-01T10:00:00Z');
+    });
+
+    it('should handle missing audit log files gracefully', async () => {
+      mockFs.readFile.mockRejectedValue(new Error('File not found'));
+      mockFs.readdir.mockRejectedValue(new Error('Directory not found'));
+
+      const report = await privacyManager.generateDetailedAuditReport();
+
+      expect(report).toBeDefined();
+      expect(report.metadata.totalEntries).toBe(0);
+      expect(report.rawLogs.length).toBe(0);
+    });
   });
 
   describe('error handling', () => {
