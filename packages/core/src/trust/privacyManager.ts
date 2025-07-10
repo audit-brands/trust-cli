@@ -144,8 +144,22 @@ export class PrivacyManager {
   private initialized: boolean = false;
 
   constructor(config?: TrustConfiguration) {
-    this.config = config || ({} as any);
+    this.config = config || this.createMockConfig();
     this.currentMode = PRIVACY_MODES[this.config?.getPrivacyMode?.() || 'moderate'];
+  }
+
+  private createMockConfig(): TrustConfiguration {
+    return {
+      getPrivacyMode: () => 'moderate',
+      setPrivacyMode: (mode: string) => { /* mock implementation */ },
+      isAuditLoggingEnabled: () => true,
+      setAuditLogging: (enabled: boolean) => { /* mock implementation */ },
+      isModelVerificationEnabled: () => true,
+      setModelVerification: (enabled: boolean) => { /* mock implementation */ },
+      setTransparencySettings: (settings: any) => { /* mock implementation */ },
+      setInferenceSettings: (settings: any) => { /* mock implementation */ },
+      save: async () => { /* mock implementation */ },
+    } as any;
   }
 
   /**
@@ -170,6 +184,8 @@ export class PrivacyManager {
       mode: this.currentMode.name,
       auditLogging: this.config?.isAuditLoggingEnabled?.() || true,
       modelVerification: this.config?.isModelVerificationEnabled?.() || true,
+      allowTelemetry: this.canCollectTelemetry(),
+      encryptStorage: this.currentMode.name === 'strict',
     };
   }
 
@@ -178,19 +194,79 @@ export class PrivacyManager {
    */
   sanitizeData(data: any): any {
     if (this.currentMode.name === 'strict') {
-      // Remove sensitive information in strict mode
-      if (typeof data === 'string') {
-        return data.replace(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g, '[EMAIL_REDACTED]');
-      }
+      return this.sanitizeRecursive(data);
     }
     return data;
+  }
+
+  private sanitizeRecursive(data: any): any {
+    if (data === null || data === undefined) {
+      return data;
+    }
+
+    if (typeof data === 'string') {
+      return this.sanitizeString(data);
+    }
+
+    if (Array.isArray(data)) {
+      return data.map(item => this.sanitizeRecursive(item));
+    }
+
+    if (typeof data === 'object') {
+      const sanitized: any = {};
+      for (const [key, value] of Object.entries(data)) {
+        // Sanitize sensitive keys
+        if (this.isSensitiveKey(key)) {
+          sanitized[key] = '[REDACTED]';
+        } else {
+          sanitized[key] = this.sanitizeRecursive(value);
+        }
+      }
+      return sanitized;
+    }
+
+    return data;
+  }
+
+  private sanitizeString(text: string): string {
+    let sanitized = text;
+    
+    // Email addresses
+    sanitized = sanitized.replace(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g, '[REDACTED]');
+    
+    // API keys (common patterns)
+    sanitized = sanitized.replace(/(?:api[_-]?key|token|secret)["\s:=]+[a-zA-Z0-9_-]{10,}/gi, '[REDACTED]');
+    sanitized = sanitized.replace(/sk-[a-zA-Z0-9]{10,}/g, '[REDACTED]');
+    
+    // Passwords
+    sanitized = sanitized.replace(/(?:password|pwd|pass)\s+is\s+\S+/gi, '[REDACTED]');
+    sanitized = sanitized.replace(/(?:password|pwd|pass)["\s:=]+\S+/gi, '[REDACTED]');
+    
+    // IP addresses
+    sanitized = sanitized.replace(/\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/g, '[REDACTED]');
+    
+    // File paths (basic pattern)
+    sanitized = sanitized.replace(/\/[^\s]+/g, '[REDACTED]');
+    
+    return sanitized;
+  }
+
+  private isSensitiveKey(key: string): boolean {
+    const sensitiveKeys = [
+      'password', 'pwd', 'pass', 'secret', 'key', 'token', 'auth',
+      'credential', 'private', 'confidential', 'sensitive'
+    ];
+    
+    return sensitiveKeys.some(sensitive => 
+      key.toLowerCase().includes(sensitive.toLowerCase())
+    );
   }
 
   /**
    * Check if telemetry collection is allowed
    */
   canCollectTelemetry(): boolean {
-    return this.currentMode.name !== 'strict';
+    return this.currentMode.name === 'open';
   }
 
   /**

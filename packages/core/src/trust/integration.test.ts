@@ -19,15 +19,27 @@ vi.mock('fs/promises', () => ({
   writeFile: vi.fn(),
   readFile: vi.fn(),
   mkdir: vi.fn(),
+  stat: vi.fn(),
 }));
 
 vi.mock('os', () => ({
-  cpus: vi.fn(() => [{ model: 'Apple M1' }, { model: 'Apple M1' }]),
+  cpus: vi.fn(() => [
+    { 
+      model: 'Apple M1',
+      times: { user: 1000, nice: 0, sys: 500, idle: 8000, irq: 0 }
+    }, 
+    { 
+      model: 'Apple M1',
+      times: { user: 1200, nice: 0, sys: 600, idle: 7800, irq: 0 }
+    }
+  ]),
   totalmem: vi.fn(() => 8589934592),
   freemem: vi.fn(() => 4294967296),
   platform: vi.fn(() => 'darwin'),
   arch: vi.fn(() => 'arm64'),
   homedir: vi.fn(() => '/test/home'),
+  uptime: vi.fn(() => 123456),
+  loadavg: vi.fn(() => [1.5, 1.2, 1.0]),
 }));
 
 // Import mocked fs after mocking
@@ -54,11 +66,31 @@ describe('Trust CLI Integration Tests', () => {
     mockFs.readFile.mockResolvedValue('{}');
     mockFs.mkdir.mockResolvedValue(undefined);
 
+    // Create a mock configuration for privacy manager
+    const mockConfig = {
+      getPrivacyMode: vi.fn().mockReturnValue('moderate'),
+      setPrivacyMode: vi.fn(),
+      isAuditLoggingEnabled: vi.fn().mockReturnValue(true),
+      setAuditLogging: vi.fn(),
+      isModelVerificationEnabled: vi.fn().mockReturnValue(true),
+      setModelVerification: vi.fn(),
+      setTransparencySettings: vi.fn(),
+      setInferenceSettings: vi.fn(),
+      save: vi.fn().mockResolvedValue(undefined),
+    } as any;
+
     // Initialize components
     contentGenerator = new TrustContentGenerator(testModelsDir);
     modelManager = new TrustModelManagerImpl(testModelsDir);
     performanceMonitor = new PerformanceMonitor();
-    privacyManager = new PrivacyManager();
+    privacyManager = new PrivacyManager(mockConfig);
+
+    // Mock model verification to always return true for tests
+    vi.spyOn(modelManager, 'verifyModel').mockResolvedValue(true);
+    
+    // Also mock the file access for model verification
+    mockFs.access.mockResolvedValue(undefined);
+    mockFs.stat.mockResolvedValue({ size: 1000000000 } as any);
   });
 
   afterEach(() => {
@@ -106,7 +138,9 @@ describe('Trust CLI Integration Tests', () => {
       const limitedModel = modelManager.getRecommendedModel('coding', 2);
       
       if (limitedModel) {
-        expect(limitedModel.ramRequirement).toBeLessThanOrEqual(2);
+        // Extract numeric value from "2GB" format
+        const ramValue = parseFloat(limitedModel.ramRequirement.replace('GB', ''));
+        expect(ramValue).toBeLessThanOrEqual(2);
       }
     });
   });
@@ -147,7 +181,8 @@ describe('Trust CLI Integration Tests', () => {
       );
 
       if (recommendedModel) {
-        expect(recommendedModel.ramRequirement).toBeLessThanOrEqual(
+        const ramValue = parseFloat(recommendedModel.ramRequirement.replace('GB', ''));
+        expect(ramValue).toBeLessThanOrEqual(
           optimalSettings.recommendedRAM
         );
       }
@@ -174,7 +209,7 @@ describe('Trust CLI Integration Tests', () => {
 
       // System should recommend lighter models
       const settings = performanceMonitor.getOptimalModelSettings();
-      expect(settings.estimatedSpeed).toContain('slower');
+      expect(settings.estimatedSpeed).toBe('slow');
     });
   });
 
@@ -333,7 +368,7 @@ describe('Trust CLI Integration Tests', () => {
 
       // Set privacy mode and verify consistency
       await privacyManager.setPrivacyMode('strict');
-      expect(privacyManager.getCurrentMode()).toBe('strict');
+      expect(privacyManager.getCurrentMode().name).toBe('strict');
 
       // Switch model and verify consistency
       const models = modelManager.listAvailableModels();

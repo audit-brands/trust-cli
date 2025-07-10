@@ -79,14 +79,34 @@ export class PerformanceMonitor {
 
   private getCPUUsage(): number {
     const cpus = os.cpus();
+    
+    // Handle cases where CPU data is not available or properly mocked
+    if (!cpus || cpus.length === 0) {
+      return 0;
+    }
+
     let totalIdle = 0;
     let totalTick = 0;
 
     for (const cpu of cpus) {
-      for (const type in cpu.times) {
-        totalTick += cpu.times[type as keyof typeof cpu.times];
+      if (!cpu.times) {
+        continue;
       }
-      totalIdle += cpu.times.idle;
+      
+      for (const type in cpu.times) {
+        const time = cpu.times[type as keyof typeof cpu.times];
+        if (typeof time === 'number') {
+          totalTick += time;
+        }
+      }
+      
+      if (typeof cpu.times.idle === 'number') {
+        totalIdle += cpu.times.idle;
+      }
+    }
+
+    if (totalTick === 0) {
+      return 0;
     }
 
     const idle = totalIdle / cpus.length;
