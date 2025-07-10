@@ -105,14 +105,158 @@ export class OllamaApiServer {
     console.log(`📡 Proxying to Ollama at http://localhost:11434`);
     console.log(`🛠️  Tool calling enabled with ${await this.getToolCount()} tools`);
 
-    // In a real implementation, you would use Express.js or similar
-    // For now, we'll create a placeholder that shows the structure
-    console.log(`✅ API server would be running at http://${host}:${port}`);
-    console.log(`📋 Endpoints available:`);
-    console.log(`   POST /v1/chat/completions     # OpenAI chat completions`);
-    console.log(`   GET  /v1/models               # List available models`);
-    console.log(`   GET  /health                  # Health check`);
-    console.log(`   GET  /status                  # Server status`);
+    // Create Express server
+    const express = await import('express');
+    const cors = await import('cors');
+    const app = express.default();
+
+    // Middleware
+    app.use(express.json({ limit: '10mb' }));
+    
+    if (serverConfig.cors) {
+      app.use(cors.default({
+        origin: true,
+        credentials: true,
+      }));
+    }
+
+    // API Key middleware
+    if (serverConfig.apiKey) {
+      app.use('/v1/*', (req: any, res: any, next: any) => {
+        const authHeader = req.headers.authorization;
+        const providedKey = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
+        
+        if (!providedKey || providedKey !== serverConfig.apiKey) {
+          return res.status(401).json({
+            error: {
+              message: 'Invalid API key',
+              type: 'authentication_error',
+              code: 'invalid_api_key'
+            }
+          });
+        }
+        next();
+      });
+    }
+
+    // Routes
+    app.post('/v1/chat/completions', async (req: any, res: any) => {
+      try {
+        const response = await this.handleChatCompletion(req.body);
+        res.json(response);
+      } catch (error) {
+        res.status(400).json({
+          error: {
+            message: error instanceof Error ? error.message : 'Unknown error',
+            type: 'invalid_request_error',
+            code: 'bad_request'
+          }
+        });
+      }
+    });
+
+    app.get('/v1/models', async (req: any, res: any) => {
+      try {
+        const response = await this.handleModelsRequest();
+        res.json(response);
+      } catch (error) {
+        res.status(500).json({
+          error: {
+            message: error instanceof Error ? error.message : 'Unknown error',
+            type: 'api_error',
+            code: 'internal_error'
+          }
+        });
+      }
+    });
+
+    app.get('/health', async (req: any, res: any) => {
+      try {
+        const health = await this.getHealth();
+        res.json(health);
+      } catch (error) {
+        res.status(500).json({
+          error: {
+            message: error instanceof Error ? error.message : 'Unknown error',
+            type: 'api_error',
+            code: 'internal_error'
+          }
+        });
+      }
+    });
+
+    app.get('/status', async (req: any, res: any) => {
+      try {
+        const status = await this.getStatus();
+        res.json(status);
+      } catch (error) {
+        res.status(500).json({
+          error: {
+            message: error instanceof Error ? error.message : 'Unknown error',
+            type: 'api_error',
+            code: 'internal_error'
+          }
+        });
+      }
+    });
+
+    // OpenAI compatibility - model info endpoint
+    app.get('/v1/models/:model', async (req: any, res: any) => {
+      try {
+        const models = await this.ollamaClient.listModels();
+        const model = models.find(m => m === req.params.model);
+        
+        if (!model) {
+          return res.status(404).json({
+            error: {
+              message: 'Model not found',
+              type: 'invalid_request_error',
+              code: 'model_not_found'
+            }
+          });
+        }
+
+        res.json({
+          id: model,
+          object: 'model',
+          created: Date.now(),
+          owned_by: 'ollama',
+          permission: [],
+          root: model,
+          parent: null
+        });
+      } catch (error) {
+        res.status(500).json({
+          error: {
+            message: error instanceof Error ? error.message : 'Unknown error',
+            type: 'api_error',
+            code: 'internal_error'
+          }
+        });
+      }
+    });
+
+    // Catch-all for unsupported endpoints
+    app.all('*', (req: any, res: any) => {
+      res.status(404).json({
+        error: {
+          message: `The endpoint ${req.method} ${req.path} is not supported.`,
+          type: 'invalid_request_error',
+          code: 'unsupported_endpoint'
+        }
+      });
+    });
+
+    // Start the server
+    this.server = app.listen(port, host, () => {
+      console.log(`✅ API server running at http://${host}:${port}`);
+      console.log(`📋 Endpoints available:`);
+      console.log(`   POST /v1/chat/completions     # OpenAI chat completions`);
+      console.log(`   GET  /v1/models               # List available models`);
+      console.log(`   GET  /v1/models/{id}          # Get model details`);
+      console.log(`   GET  /health                  # Health check`);
+      console.log(`   GET  /status                  # Server status`);
+    });
 
     this.isRunning = true;
   }
@@ -158,10 +302,37 @@ export class OllamaApiServer {
       // Convert OpenAI format to Ollama format
       const ollamaMessages = this.convertToOllamaMessages(request.messages);
       
+      // Get available tools from registry if tools are requested
+      let tools: ToolDefinition[] | undefined;
+      if (request.tools && request.tools.length > 0) {
+        // Use provided tools (OpenAI format)
+        tools = request.tools;
+      } else {
+        // Auto-include Trust CLI tools
+        try {
+          const availableTools = this.toolRegistry.getAllTools();
+          tools = availableTools.map((tool: any) => ({
+            type: 'function' as const,
+            function: {
+              name: tool.name,
+              description: tool.description,
+              parameters: tool.parameters || {
+                type: 'object',
+                properties: {},
+                required: []
+              }
+            }
+          }));
+        } catch (error) {
+          console.warn('Failed to load Trust CLI tools:', error);
+          tools = undefined;
+        }
+      }
+      
       // Execute chat completion with tools
       const response = await this.ollamaClient.chatCompletion(
         ollamaMessages,
-        request.tools,
+        tools,
         {
           temperature: request.temperature || 0.7,
           maxTokens: request.max_tokens || 1000,
@@ -340,9 +511,10 @@ export class OllamaApiServer {
    */
   private async getAvailableTools(): Promise<string[]> {
     try {
-      // This would integrate with the actual tool registry
-      return ['file_system', 'shell', 'web_search', 'memory']; // Example tools
+      const tools = this.toolRegistry.getAllTools();
+      return tools.map((tool: any) => tool.name);
     } catch (error) {
+      console.error('Error getting available tools:', error);
       return [];
     }
   }

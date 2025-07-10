@@ -7,6 +7,7 @@
 // Export config
 export * from './config/config.js';
 export * from './config/trustConfig.js';
+export { AuthType } from './core/contentGenerator.js';
 
 // Export Core Logic
 export * from './core/client.js';
@@ -60,3 +61,7 @@ export * from './tools/mcp-tool.js';
 // Export telemetry functions
 export * from './telemetry/index.js';
 export { sessionId } from './utils/session.js';
+
+// Export Trust CLI components
+export * from './trust/ollamaApiServer.js';
+export { TrustConfiguration } from './config/trustConfig.js';

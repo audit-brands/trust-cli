@@ -249,6 +249,25 @@ export async function main() {
       process.exit(1);
     }
   }
+  
+  // API Server command
+  if (args[0] === 'serve') {
+    const { handleServeCommand } = await import('./commands/serveCommands.js');
+    try {
+      await handleServeCommand({
+        port: args.includes('--port') ? parseInt(args[args.indexOf('--port') + 1]) : 8080,
+        host: args.includes('--host') ? args[args.indexOf('--host') + 1] : 'localhost',
+        cors: args.includes('--cors'),
+        apiKey: args.includes('--api-key') ? args[args.indexOf('--api-key') + 1] : undefined,
+        verbose: args.includes('--verbose') || args.includes('-v'),
+        help: args.includes('--help') || args.includes('-h'),
+      });
+      return;
+    } catch (error) {
+      console.error(`❌ Serve command failed: ${error}`);
+      process.exit(1);
+    }
+  }
 
   const workspaceRoot = process.cwd();
   const settings = loadSettings(workspaceRoot);

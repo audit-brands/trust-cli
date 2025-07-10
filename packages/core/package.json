@@ -30,8 +30,10 @@
     "@opentelemetry/sdk-node": "^0.52.0",
     "@types/glob": "^8.1.0",
     "@types/html-to-text": "^9.0.4",
+    "cors": "^2.8.5",
     "diff": "^7.0.0",
     "dotenv": "^16.6.1",
+    "express": "^4.21.2",
     "gaxios": "^6.1.1",
     "glob": "^10.4.5",
     "google-auth-library": "^9.11.0",
@@ -47,8 +49,10 @@
     "ws": "^8.18.0"
   },
   "devDependencies": {
+    "@types/cors": "^2.8.17",
     "@types/diff": "^7.0.2",
     "@types/dotenv": "^6.1.1",
+    "@types/express": "^5.0.0",
     "@types/micromatch": "^4.0.8",
     "@types/minimatch": "^5.1.2",
     "@types/ws": "^8.5.10",
