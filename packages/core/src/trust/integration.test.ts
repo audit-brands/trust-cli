@@ -27,6 +27,7 @@ vi.mock('os', () => ({
   freemem: vi.fn(() => 4294967296),
   platform: vi.fn(() => 'darwin'),
   arch: vi.fn(() => 'arm64'),
+  homedir: vi.fn(() => '/test/home'),
 }));
 
 // Import mocked fs after mocking

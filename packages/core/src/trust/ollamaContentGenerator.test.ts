@@ -41,6 +41,7 @@ describe('OllamaContentGenerator', () => {
       chatCompletion: vi.fn(),
       getStatus: vi.fn(),
       setModel: vi.fn(),
+      preheatModel: vi.fn().mockResolvedValue(undefined),
     };
     
     mockOllamaToolRegistry = {
