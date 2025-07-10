@@ -68,4 +68,5 @@ export { TrustConfiguration } from './config/trustConfig.js';
 export * from './trust/modelManager.js';
 export * from './trust/performanceMonitor.js';
 export * from './trust/hardwareOptimizer.js';
+export * from './trust/performanceBenchmark.js';
 export { globalPerformanceMonitor } from './trust/performanceMonitor.js';
