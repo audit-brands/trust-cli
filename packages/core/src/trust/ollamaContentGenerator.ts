@@ -317,6 +317,8 @@ export class OllamaContentGenerator implements ContentGenerator {
    * Generate content stream with improved UI feedback
    */
   async generateContentStream(request: GenerateContentParameters): Promise<AsyncGenerator<GenerateContentResponse>> {
+    // Create and return an async generator
+    const generator = async function* (this: OllamaContentGenerator): AsyncGenerator<GenerateContentResponse> {
     try {
       // Convert Gemini request to Ollama format
       const messages = this.convertGeminiToOllamaMessages(request);
@@ -353,6 +355,9 @@ export class OllamaContentGenerator implements ContentGenerator {
         text: `❌ Error: ${error instanceof Error ? error.message : String(error)}`,
       } as GenerateContentResponse;
     }
+    }.bind(this);
+    
+    return generator();
   }
 
   /**

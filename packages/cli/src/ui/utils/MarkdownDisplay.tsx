@@ -9,6 +9,7 @@ import { Text, Box } from 'ink';
 import { Colors } from '../colors.js';
 import { colorizeCode } from './CodeColorizer.js';
 import { TableRenderer } from './TableRenderer.js';
+import { StreamingCursor } from '../components/messages/StreamingCursor.js';
 
 interface MarkdownDisplayProps {
   text: string;
@@ -269,6 +270,15 @@ const MarkdownDisplayInternal: React.FC<MarkdownDisplayProps> = ({
         rows={tableRows}
         terminalWidth={terminalWidth}
       />,
+    );
+  }
+
+  // Add streaming cursor at the end if content is pending
+  if (isPending && contentBlocks.length > 0) {
+    contentBlocks.push(
+      <Box key="streaming-cursor">
+        <StreamingCursor isActive={true} />
+      </Box>
     );
   }
 

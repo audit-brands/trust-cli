@@ -165,8 +165,6 @@ export class OllamaApiServer {
         {
           temperature: request.temperature || 0.7,
           maxTokens: request.max_tokens || 1000,
-          topP: request.top_p || 1.0,
-          stopSequences: request.stop,
         }
       );
 

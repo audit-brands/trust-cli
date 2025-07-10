@@ -18,6 +18,7 @@ import {
   DEFAULT_GEMINI_EMBEDDING_MODEL,
   FileDiscoveryService,
   TelemetryTarget,
+  AuthType,
 } from '@trust-cli/trust-cli-core';
 import { DEFAULT_TRUST_MODEL } from '@trust-cli/trust-cli-core';
 import { Settings } from './settings.js';
@@ -191,7 +192,7 @@ export async function loadCliConfig(
   let memoryContent = '';
   let fileCount = 0;
   
-  if (settings.selectedAuthType !== 'trust-local') {
+  if (settings.selectedAuthType !== AuthType.USE_TRUST_LOCAL) {
     // Call the (now wrapper) loadHierarchicalGeminiMemory which calls the server's version
     const memoryResult = await loadHierarchicalGeminiMemory(
       process.cwd(),

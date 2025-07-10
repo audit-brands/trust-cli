@@ -28,6 +28,7 @@ import { useAutoAcceptIndicator } from './hooks/useAutoAcceptIndicator.js';
 import { useConsoleMessages } from './hooks/useConsoleMessages.js';
 import { Header } from './components/Header.js';
 import { LoadingIndicator } from './components/LoadingIndicator.js';
+import { StreamingIndicator } from './components/StreamingIndicator.js';
 import { AutoAcceptIndicator } from './components/AutoAcceptIndicator.js';
 import { ShellModeIndicator } from './components/ShellModeIndicator.js';
 import { InputPrompt } from './components/InputPrompt.js';
@@ -711,6 +712,13 @@ const App = ({ config, settings, startupWarnings = [] }: AppProps) => {
                     : currentLoadingPhrase
                 }
                 elapsedTime={elapsedTime}
+              />
+              <StreamingIndicator
+                isStreaming={streamingState === StreamingState.Responding}
+                charactersStreamed={
+                  pendingHistoryItems.find(item => item?.type === 'gemini' || item?.type === 'gemini_content')?.text?.length || 0
+                }
+                startTime={elapsedTime > 0 ? Date.now() - elapsedTime : undefined}
               />
               <Box
                 marginTop={1}
