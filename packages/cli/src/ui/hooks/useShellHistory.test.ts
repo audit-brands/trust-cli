@@ -5,15 +5,38 @@
  */
 
 import { renderHook, act, waitFor } from '@testing-library/react';
-import { useShellHistory } from './useShellHistory.js';
-import * as fs from 'fs/promises';
 import * as path from 'path';
-import * as os from 'os';
-import * as crypto from 'crypto';
+
+// Mock os module before any imports that use it
+vi.mock('os', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('os')>();
+  return {
+    ...actual,
+    homedir: () => '/test/home',
+  };
+});
 
 vi.mock('fs/promises');
-vi.mock('os');
 vi.mock('crypto');
+
+// Mock the core function that uses os.homedir()
+vi.mock('@trust-cli/trust-cli-core', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@trust-cli/trust-cli-core')>();
+  return {
+    ...actual,
+    getProjectTempDir: (projectRoot: string) => {
+      const path = require('path');
+      // Return the expected mocked hash instead of calculating it
+      return path.join('/test/home', '.gemini', 'tmp', 'mocked_hash');
+    },
+  };
+});
+
+// Import after mocks are set up
+import { useShellHistory } from './useShellHistory.js';
+import * as fs from 'fs/promises';
+import * as os from 'os';
+import * as crypto from 'crypto';
 
 const MOCKED_PROJECT_ROOT = '/test/project';
 const MOCKED_HOME_DIR = '/test/home';
@@ -38,7 +61,7 @@ describe('useShellHistory', () => {
     mockedFs.readFile.mockResolvedValue('');
     mockedFs.writeFile.mockResolvedValue(undefined);
     mockedFs.mkdir.mockResolvedValue(undefined);
-    mockedOs.homedir.mockReturnValue(MOCKED_HOME_DIR);
+    // homedir is already mocked in the module mock above
 
     const hashMock = {
       update: vi.fn().mockReturnThis(),
