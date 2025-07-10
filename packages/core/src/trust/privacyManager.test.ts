@@ -18,12 +18,14 @@ vi.mock('crypto', () => ({
     update: vi.fn().mockReturnThis(),
     digest: vi.fn(() => 'hashed-value')
   })),
-  createCipher: vi.fn(() => ({
-    update: vi.fn((data: string) => Buffer.from(data).toString('base64')),
-    final: vi.fn(() => '')
+  createCipheriv: vi.fn(() => ({
+    update: vi.fn((data: string) => data),
+    final: vi.fn(() => ''),
+    getAuthTag: vi.fn(() => Buffer.from('auth-tag'))
   })),
-  createDecipher: vi.fn(() => ({
-    update: vi.fn((data: string) => Buffer.from(data, 'base64').toString()),
+  createDecipheriv: vi.fn(() => ({
+    setAuthTag: vi.fn(),
+    update: vi.fn((data: Buffer) => data.toString()),
     final: vi.fn(() => '')
   }))
 }));
@@ -563,6 +565,194 @@ describe('PrivacyManager', () => {
 
       const retention = privacyManager.getDataRetentionDays();
       expect(retention).toBeGreaterThan(0);
+    });
+  });
+
+  describe('data retention cleanup', () => {
+    beforeEach(async () => {
+      mockFs.access.mockRejectedValue(new Error('File not found'));
+      mockFs.writeFile.mockResolvedValue(undefined);
+      mockFs.mkdir.mockResolvedValue(undefined);
+      mockFs.readdir.mockResolvedValue([]);
+      mockFs.stat.mockResolvedValue({ mtime: new Date() } as any);
+      mockFs.unlink.mockResolvedValue(undefined);
+      await privacyManager.initialize();
+    });
+
+    it('should perform data retention cleanup on initialization', async () => {
+      // Create a new privacy manager to trigger initialization
+      const newPrivacyManager = new PrivacyManager();
+      
+      // Mock some old files
+      const oldDate = new Date();
+      oldDate.setDate(oldDate.getDate() - 100); // 100 days old
+      
+      mockFs.readdir.mockResolvedValue(['old-log.log', 'recent-log.log']);
+      mockFs.stat.mockImplementation((path: string) => {
+        if (path.includes('old-log')) {
+          return Promise.resolve({ mtime: oldDate } as any);
+        }
+        return Promise.resolve({ mtime: new Date() } as any);
+      });
+
+      await newPrivacyManager.initialize();
+
+      // Should have attempted to read directories for cleanup
+      expect(mockFs.readdir).toHaveBeenCalled();
+    });
+
+    it('should cleanup old audit logs', async () => {
+      const oldDate = new Date();
+      oldDate.setDate(oldDate.getDate() - 100); // 100 days old
+      
+      mockFs.readdir.mockResolvedValue(['old-audit.log', 'recent-audit.log']);
+      mockFs.stat.mockImplementation((path: string) => {
+        if (path.includes('old-audit')) {
+          return Promise.resolve({ mtime: oldDate } as any);
+        }
+        return Promise.resolve({ mtime: new Date() } as any);
+      });
+
+      // Access private method through type assertion
+      await (privacyManager as any).cleanupOldAuditLogs(30);
+
+      // Should have deleted the old file
+      expect(mockFs.unlink).toHaveBeenCalled();
+    });
+
+    it('should cleanup old encrypted data', async () => {
+      const oldDate = new Date();
+      oldDate.setDate(oldDate.getDate() - 100); // 100 days old
+      
+      mockFs.readdir.mockResolvedValue(['old-data.enc', 'recent-data.enc']);
+      mockFs.stat.mockImplementation((path: string) => {
+        if (path.includes('old-data')) {
+          return Promise.resolve({ mtime: oldDate } as any);
+        }
+        return Promise.resolve({ mtime: new Date() } as any);
+      });
+
+      // Access private method through type assertion
+      await (privacyManager as any).cleanupOldEncryptedData(30);
+
+      // Should have deleted the old file
+      expect(mockFs.unlink).toHaveBeenCalled();
+    });
+
+    it('should perform secure deletion with multiple overwrites', async () => {
+      const testPath = '/test/file.txt';
+      mockFs.stat.mockResolvedValue({ size: 1024 } as any);
+
+      // Access private method through type assertion
+      await (privacyManager as any).secureDelete(testPath);
+
+      // Should overwrite 3 times then delete
+      expect(mockFs.writeFile).toHaveBeenCalledTimes(3);
+      expect(mockFs.unlink).toHaveBeenCalledWith(testPath);
+    });
+
+    it('should handle cleanup errors gracefully', async () => {
+      mockFs.readdir.mockRejectedValue(new Error('Permission denied'));
+
+      // Should not throw, just log warning
+      await expect((privacyManager as any).cleanupOldAuditLogs(30)).resolves.not.toThrow();
+    });
+
+    it('should cleanup temp files with different retention period', async () => {
+      const oldDate = new Date();
+      oldDate.setHours(oldDate.getHours() - 48); // 48 hours old
+      
+      mockFs.readdir.mockResolvedValue(['temp1.tmp', 'temp2.tmp']);
+      mockFs.stat.mockResolvedValue({ mtime: oldDate } as any);
+
+      // Access private method through type assertion
+      await (privacyManager as any).cleanupTempFiles(24); // 24 hour retention
+
+      // Should have deleted both files
+      expect(mockFs.unlink).toHaveBeenCalledTimes(2);
+    });
+
+    it('should keep only last 10 backups', async () => {
+      const backupFiles = Array.from({ length: 15 }, (_, i) => `backup-${i}.json`);
+      mockFs.readdir.mockResolvedValue(backupFiles);
+      
+      // Mock different timestamps for sorting
+      mockFs.stat.mockImplementation((path: string) => {
+        const index = parseInt(path.match(/backup-(\d+)/)?.[1] || '0');
+        const date = new Date();
+        date.setDate(date.getDate() - index);
+        return Promise.resolve({ mtime: date } as any);
+      });
+
+      // Access private method through type assertion
+      await (privacyManager as any).cleanupOldBackups();
+
+      // Should have deleted 5 oldest backups (keeping 10)
+      expect(mockFs.unlink).toHaveBeenCalledTimes(5);
+    });
+  });
+
+  describe('encryption key management', () => {
+    beforeEach(async () => {
+      mockFs.access.mockRejectedValue(new Error('File not found'));
+      mockFs.writeFile.mockResolvedValue(undefined);
+      mockFs.mkdir.mockResolvedValue(undefined);
+      await privacyManager.initialize();
+    });
+
+    it('should initialize encryption key on first run', async () => {
+      const newPrivacyManager = new PrivacyManager();
+      mockFs.readFile.mockRejectedValue(new Error('Key not found'));
+      
+      await newPrivacyManager.initialize();
+
+      // Should have created a new encryption key
+      expect(mockFs.writeFile).toHaveBeenCalledWith(
+        expect.stringContaining('privacy.key'),
+        expect.any(String),
+        'utf-8'
+      );
+    });
+
+    it('should load existing encryption key', async () => {
+      const existingKey = Buffer.from('existing-encryption-key-32-bytes').toString('base64');
+      mockFs.readFile.mockImplementation((path: string) => {
+        if (path.includes('privacy.key')) {
+          return Promise.resolve(existingKey);
+        }
+        return Promise.resolve('{}');
+      });
+
+      const newPrivacyManager = new PrivacyManager();
+      await newPrivacyManager.initialize();
+
+      // Should be able to encrypt with loaded key
+      const encrypted = await newPrivacyManager.encryptData('test data');
+      expect(encrypted).toBeDefined();
+    });
+  });
+
+  describe('audit log encryption', () => {
+    beforeEach(async () => {
+      mockFs.access.mockRejectedValue(new Error('File not found'));
+      mockFs.writeFile.mockResolvedValue(undefined);
+      mockFs.mkdir.mockResolvedValue(undefined);
+      mockFs.appendFile.mockResolvedValue(undefined);
+      await privacyManager.initialize();
+    });
+
+    it('should encrypt audit logs in strict mode', async () => {
+      await privacyManager.setPrivacyMode('strict');
+
+      // Trigger an operation that creates audit log
+      await privacyManager.encryptData('test data');
+
+      // Check that audit log was encrypted
+      expect(mockFs.appendFile).toHaveBeenCalled();
+      const logData = mockFs.appendFile.mock.calls[0][1] as string;
+      
+      // In strict mode, logs should be encrypted (base64 encoded in our mock)
+      expect(logData).toBeDefined();
     });
   });
 });

@@ -54,12 +54,14 @@ vi.mock('crypto', () => ({
     update: vi.fn().mockReturnThis(),
     digest: vi.fn(() => 'hashed-value')
   })),
-  createCipher: vi.fn(() => ({
-    update: vi.fn((data: string) => Buffer.from(data).toString('base64')),
-    final: vi.fn(() => '')
+  createCipheriv: vi.fn(() => ({
+    update: vi.fn((data: string) => data),
+    final: vi.fn(() => ''),
+    getAuthTag: vi.fn(() => Buffer.from('auth-tag'))
   })),
-  createDecipher: vi.fn(() => ({
-    update: vi.fn((data: string) => Buffer.from(data, 'base64').toString()),
+  createDecipheriv: vi.fn(() => ({
+    setAuthTag: vi.fn(),
+    update: vi.fn((data: Buffer) => data.toString()),
     final: vi.fn(() => '')
   }))
 }));

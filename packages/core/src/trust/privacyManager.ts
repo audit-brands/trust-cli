@@ -465,7 +465,25 @@ export class PrivacyManager {
       ...entry
     };
 
-    const logLine = JSON.stringify(auditEntry) + '\n';
+    let logLine = JSON.stringify(auditEntry) + '\n';
+    
+    // Encrypt audit logs in strict mode
+    if (this.currentMode.name === 'strict' && this.privacyConfig.encryptStorage) {
+      try {
+        // Don't log encryption of audit logs to prevent infinite loop
+        if (entry.operation !== 'audit_log_encrypted') {
+          const encryptedEntry = await this.encryptData(JSON.stringify(auditEntry));
+          logLine = JSON.stringify({
+            encrypted: true,
+            data: encryptedEntry,
+            timestamp: auditEntry.timestamp
+          }) + '\n';
+        }
+      } catch (encryptError) {
+        // Fall back to unencrypted if encryption fails
+        console.warn('Failed to encrypt audit log entry:', encryptError);
+      }
+    }
     
     try {
       await fs.appendFile(CURRENT_AUDIT_LOG, logLine, 'utf-8');
@@ -499,20 +517,23 @@ export class PrivacyManager {
 
     try {
       // Check if crypto functions are available (for test compatibility)
-      if (!crypto.createCipher || !crypto.randomBytes) {
+      if (!crypto.createCipheriv || !crypto.randomBytes) {
         // Fallback to simple base64 for test environments
         const result = Buffer.from(stringData).toString('base64');
-        await this.logAuditEntry({
-          operation: 'data_encrypted',
-          dataType: 'sensitive',
-          sanitized: true,
-          details: { dataLength: stringData.length, method: 'base64-fallback' }
-        });
+        // Don't log encryption of audit logs to prevent infinite loop
+        if (!stringData.includes('"operation"') || !stringData.includes('"privacyMode"')) {
+          await this.logAuditEntry({
+            operation: 'data_encrypted',
+            dataType: 'sensitive',
+            sanitized: true,
+            details: { dataLength: stringData.length, method: 'base64-fallback' }
+          });
+        }
         return result;
       }
 
       const iv = crypto.randomBytes(16);
-      const cipher = crypto.createCipher('aes-256-gcm', this.encryptionKey);
+      const cipher = crypto.createCipheriv('aes-256-gcm', this.encryptionKey, iv);
       
       let encrypted = cipher.update(stringData, 'utf8', 'hex');
       encrypted += cipher.final('hex');
@@ -522,12 +543,15 @@ export class PrivacyManager {
       // Combine IV, auth tag, and encrypted data
       const result = Buffer.concat([iv, authTag, Buffer.from(encrypted, 'hex')]).toString('base64');
       
-      await this.logAuditEntry({
-        operation: 'data_encrypted',
-        dataType: 'sensitive',
-        sanitized: true,
-        details: { dataLength: stringData.length, method: 'aes-256-gcm' }
-      });
+      // Don't log encryption of audit logs to prevent infinite loop
+      if (!stringData.includes('"operation"') || !stringData.includes('"privacyMode"')) {
+        await this.logAuditEntry({
+          operation: 'data_encrypted',
+          dataType: 'sensitive',
+          sanitized: true,
+          details: { dataLength: stringData.length, method: 'aes-256-gcm' }
+        });
+      }
       
       return result;
     } catch (error) {
@@ -553,7 +577,7 @@ export class PrivacyManager {
 
     try {
       // Check if crypto functions are available (for test compatibility)
-      if (!crypto.createDecipher) {
+      if (!crypto.createDecipheriv) {
         // Fallback to simple base64 for test environments
         const result = Buffer.from(encryptedData, 'base64').toString('utf-8');
         await this.logAuditEntry({
@@ -570,7 +594,7 @@ export class PrivacyManager {
       const authTag = combined.subarray(16, 32);
       const encrypted = combined.subarray(32);
       
-      const decipher = crypto.createDecipher('aes-256-gcm', this.encryptionKey);
+      const decipher = crypto.createDecipheriv('aes-256-gcm', this.encryptionKey, iv);
       decipher.setAuthTag(authTag);
       
       let decrypted = decipher.update(encrypted, undefined, 'utf8');
@@ -868,6 +892,68 @@ export class PrivacyManager {
    */
   getCurrentMode(): PrivacyModeConfig {
     return this.currentMode;
+  }
+
+  /**
+   * Schedule periodic data retention cleanup
+   */
+  scheduleRetentionCleanup(intervalHours: number = 24): NodeJS.Timer {
+    // Run cleanup immediately
+    this.performDataRetentionCleanup().catch(error => {
+      console.warn('Scheduled retention cleanup failed:', error);
+    });
+
+    // Schedule periodic cleanup
+    return setInterval(() => {
+      this.performDataRetentionCleanup().catch(error => {
+        console.warn('Scheduled retention cleanup failed:', error);
+      });
+    }, intervalHours * 60 * 60 * 1000);
+  }
+
+  /**
+   * Get encryption statistics
+   */
+  async getEncryptionStats(): Promise<{
+    totalEncryptedFiles: number;
+    totalEncryptedSize: number;
+    encryptionKeyAge: number;
+    lastEncryption: string | null;
+  }> {
+    try {
+      const encryptedDataDir = path.join(ENCRYPTED_DATA_DIR, 'sensitive-data');
+      const files = await fs.readdir(encryptedDataDir);
+      let totalSize = 0;
+      let lastModified: Date | null = null;
+
+      for (const file of files) {
+        const filePath = path.join(encryptedDataDir, file);
+        const stats = await fs.stat(filePath);
+        totalSize += stats.size;
+        
+        if (!lastModified || stats.mtime > lastModified) {
+          lastModified = stats.mtime;
+        }
+      }
+
+      // Get key age
+      const keyStats = await fs.stat(ENCRYPTION_KEY_FILE);
+      const keyAgeDays = Math.floor((Date.now() - keyStats.mtime.getTime()) / (1000 * 60 * 60 * 24));
+
+      return {
+        totalEncryptedFiles: files.length,
+        totalEncryptedSize: totalSize,
+        encryptionKeyAge: keyAgeDays,
+        lastEncryption: lastModified?.toISOString() || null
+      };
+    } catch (error) {
+      return {
+        totalEncryptedFiles: 0,
+        totalEncryptedSize: 0,
+        encryptionKeyAge: 0,
+        lastEncryption: null
+      };
+    }
   }
 
   /**
@@ -1347,18 +1433,34 @@ export class PrivacyManager {
     try {
       // Read current audit log
       const currentLogContent = await fs.readFile(CURRENT_AUDIT_LOG, 'utf-8');
-      const currentEntries = currentLogContent.split('\n')
-        .filter(line => line.trim())
-        .map(line => {
-          try {
-            return JSON.parse(line) as AuditLogEntry;
-          } catch {
-            return null;
-          }
-        })
-        .filter(entry => entry !== null) as AuditLogEntry[];
+      const currentEntries = await Promise.all(
+        currentLogContent.split('\n')
+          .filter(line => line.trim())
+          .map(async line => {
+            try {
+              const parsed = JSON.parse(line);
+              
+              // Check if the entry is encrypted
+              if (parsed.encrypted && parsed.data) {
+                try {
+                  const decryptedData = await this.decryptData(parsed.data);
+                  return JSON.parse(decryptedData) as AuditLogEntry;
+                } catch (decryptError) {
+                  console.warn('Failed to decrypt audit log entry:', decryptError);
+                  return null;
+                }
+              }
+              
+              return parsed as AuditLogEntry;
+            } catch {
+              return null;
+            }
+          })
+      );
+      
+      const validEntries = currentEntries.filter(entry => entry !== null) as AuditLogEntry[];
 
-      logs.push(...currentEntries);
+      logs.push(...validEntries);
 
       // Read archived logs if needed
       const archivedLogsDir = path.join(AUDIT_LOGS_DIR, 'archived');
@@ -1368,17 +1470,33 @@ export class PrivacyManager {
           if (file.endsWith('.log')) {
             const filePath = path.join(archivedLogsDir, file);
             const content = await fs.readFile(filePath, 'utf-8');
-            const entries = content.split('\n')
-              .filter(line => line.trim())
-              .map(line => {
-                try {
-                  return JSON.parse(line) as AuditLogEntry;
-                } catch {
-                  return null;
-                }
-              })
-              .filter(entry => entry !== null) as AuditLogEntry[];
-            logs.push(...entries);
+            const entries = await Promise.all(
+              content.split('\n')
+                .filter(line => line.trim())
+                .map(async line => {
+                  try {
+                    const parsed = JSON.parse(line);
+                    
+                    // Check if the entry is encrypted
+                    if (parsed.encrypted && parsed.data) {
+                      try {
+                        const decryptedData = await this.decryptData(parsed.data);
+                        return JSON.parse(decryptedData) as AuditLogEntry;
+                      } catch (decryptError) {
+                        console.warn('Failed to decrypt archived audit log entry:', decryptError);
+                        return null;
+                      }
+                    }
+                    
+                    return parsed as AuditLogEntry;
+                  } catch {
+                    return null;
+                  }
+                })
+            );
+            
+            const validArchivedEntries = entries.filter(entry => entry !== null) as AuditLogEntry[];
+            logs.push(...validArchivedEntries);
           }
         }
       } catch (error) {
