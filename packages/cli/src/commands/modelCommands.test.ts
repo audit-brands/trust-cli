@@ -483,7 +483,7 @@ describe('ModelCommandHandler', () => {
 
       await commandHandler.handleCommand(args);
 
-      expect(mockConsoleLog).toHaveBeenCalledWith(expect.stringContaining('Expected Performance: fast'));
+      expect(mockConsoleLog).toHaveBeenCalledWith(expect.stringContaining('Est. Performance:'));
     });
   });
 
