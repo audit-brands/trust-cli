@@ -68,7 +68,11 @@ describe('ModelIntegrityChecker', () => {
       const mockStats = { size: 1000 } as any;
       vi.mocked(fs.stat).mockResolvedValue(mockStats);
 
-      const mockStream = new Readable();
+      const mockStream = new Readable({
+        read() {
+          // Mock implementation - do nothing
+        }
+      });
       vi.mocked(createReadStream).mockReturnValue(mockStream as any);
 
       const progressUpdates: number[] = [];
@@ -78,10 +82,12 @@ describe('ModelIntegrityChecker', () => {
         (processed, total) => progressUpdates.push(processed)
       );
 
-      // Simulate streaming data
-      mockStream.emit('data', Buffer.from('test data chunk 1'));
-      mockStream.emit('data', Buffer.from('test data chunk 2'));
-      mockStream.emit('end');
+      // Simulate streaming data asynchronously
+      process.nextTick(() => {
+        mockStream.emit('data', Buffer.from('test data chunk 1'));
+        mockStream.emit('data', Buffer.from('test data chunk 2'));
+        mockStream.emit('end');
+      });
 
       const result = await hashPromise;
 
@@ -94,7 +100,11 @@ describe('ModelIntegrityChecker', () => {
       const mockStats = { size: 100 } as any;
       vi.mocked(fs.stat).mockResolvedValue(mockStats);
 
-      const mockStream = new Readable();
+      const mockStream = new Readable({
+        read() {
+          // Mock implementation - do nothing
+        }
+      });
       vi.mocked(createReadStream).mockReturnValue(mockStream as any);
 
       const hashPromise = checker.computeFileHashes(
@@ -102,8 +112,10 @@ describe('ModelIntegrityChecker', () => {
         ['sha256', 'md5']
       );
 
-      mockStream.emit('data', Buffer.from('test data'));
-      mockStream.emit('end');
+      process.nextTick(() => {
+        mockStream.emit('data', Buffer.from('test data'));
+        mockStream.emit('end');
+      });
 
       const result = await hashPromise;
 
@@ -120,7 +132,11 @@ describe('ModelIntegrityChecker', () => {
       } as any;
       vi.mocked(fs.stat).mockResolvedValue(mockStats);
 
-      const mockStream = new Readable();
+      const mockStream = new Readable({
+        read() {
+          // Mock implementation - do nothing
+        }
+      });
       vi.mocked(createReadStream).mockReturnValue(mockStream as any);
 
       // Initialize with trusted model
@@ -147,8 +163,10 @@ describe('ModelIntegrityChecker', () => {
       );
 
       // Simulate file content that produces the expected hash
-      mockStream.emit('data', Buffer.from('test'));
-      mockStream.emit('end');
+      process.nextTick(() => {
+        mockStream.emit('data', Buffer.from('test'));
+        mockStream.emit('end');
+      });
 
       const result = await verifyPromise;
 
@@ -163,7 +181,11 @@ describe('ModelIntegrityChecker', () => {
       } as any;
       vi.mocked(fs.stat).mockResolvedValue(mockStats);
 
-      const mockStream = new Readable();
+      const mockStream = new Readable({
+        read() {
+          // Mock implementation - do nothing
+        }
+      });
       vi.mocked(createReadStream).mockReturnValue(mockStream as any);
 
       const verifyPromise = checker.verifyModel(
@@ -172,8 +194,10 @@ describe('ModelIntegrityChecker', () => {
         'sha256:wronghash123'
       );
 
-      mockStream.emit('data', Buffer.from('test data'));
-      mockStream.emit('end');
+      process.nextTick(() => {
+        mockStream.emit('data', Buffer.from('test data'));
+        mockStream.emit('end');
+      });
 
       const result = await verifyPromise;
 
@@ -200,7 +224,11 @@ describe('ModelIntegrityChecker', () => {
       } as any;
       vi.mocked(fs.stat).mockResolvedValue(mockStats);
 
-      const mockStream = new Readable();
+      const mockStream = new Readable({
+        read() {
+          // Mock implementation - do nothing
+        }
+      });
       vi.mocked(createReadStream).mockReturnValue(mockStream as any);
 
       // Initialize with pending verification
@@ -228,8 +256,10 @@ describe('ModelIntegrityChecker', () => {
         'test-model'
       );
 
-      mockStream.emit('data', Buffer.from('test'));
-      mockStream.emit('end');
+      process.nextTick(() => {
+        mockStream.emit('data', Buffer.from('test'));
+        mockStream.emit('end');
+      });
 
       await verifyPromise;
 
@@ -245,7 +275,11 @@ describe('ModelIntegrityChecker', () => {
       const mockStats = { size: 2000 } as any;
       vi.mocked(fs.stat).mockResolvedValue(mockStats);
 
-      const mockStream = new Readable();
+      const mockStream = new Readable({
+        read() {
+          // Mock implementation - do nothing
+        }
+      });
       vi.mocked(createReadStream).mockReturnValue(mockStream as any);
 
       vi.mocked(fs.mkdir).mockResolvedValue(undefined);
@@ -259,8 +293,10 @@ describe('ModelIntegrityChecker', () => {
         'https://example.com/model'
       );
 
-      mockStream.emit('data', Buffer.from('model data'));
-      mockStream.emit('end');
+      process.nextTick(() => {
+        mockStream.emit('data', Buffer.from('model data'));
+        mockStream.emit('end');
+      });
 
       await addPromise;
 
@@ -280,7 +316,11 @@ describe('ModelIntegrityChecker', () => {
       } as any;
       vi.mocked(fs.stat).mockResolvedValue(mockStats);
 
-      const mockStream = new Readable();
+      const mockStream = new Readable({
+        read() {
+          // Mock implementation - do nothing
+        }
+      });
       vi.mocked(createReadStream).mockReturnValue(mockStream as any);
 
       // Initialize with trusted model
@@ -305,8 +345,10 @@ describe('ModelIntegrityChecker', () => {
         'test-model'
       );
 
-      mockStream.emit('data', Buffer.from('test'));
-      mockStream.emit('end');
+      process.nextTick(() => {
+        mockStream.emit('data', Buffer.from('test'));
+        mockStream.emit('end');
+      });
 
       const report = await reportPromise;
 
@@ -330,7 +372,11 @@ describe('ModelIntegrityChecker', () => {
       } as any;
       vi.mocked(fs.stat).mockResolvedValue(mockStats);
 
-      const mockStream = new Readable();
+      const mockStream = new Readable({
+        read() {
+          // Mock implementation - do nothing
+        }
+      });
       vi.mocked(createReadStream).mockReturnValue(mockStream as any);
 
       vi.mocked(fs.writeFile).mockResolvedValue();
@@ -341,8 +387,10 @@ describe('ModelIntegrityChecker', () => {
         { version: '1.0', author: 'test' }
       );
 
-      mockStream.emit('data', Buffer.from('test'));
-      mockStream.emit('end');
+      process.nextTick(() => {
+        mockStream.emit('data', Buffer.from('test'));
+        mockStream.emit('end');
+      });
 
       const manifestPath = await manifestPromise;
 
@@ -368,16 +416,25 @@ describe('ModelIntegrityChecker', () => {
       } as any;
       vi.mocked(fs.stat).mockResolvedValue(mockStats);
 
-      const mockStream = new Readable();
-      vi.mocked(createReadStream).mockReturnValue(mockStream as any);
+      // Create a new stream for each call to createReadStream
+      let callCount = 0;
+      vi.mocked(createReadStream).mockImplementation(() => {
+        const mockStream = new Readable({
+          read() {
+            // Mock implementation - do nothing
+          }
+        });
+        
+        // Emit data asynchronously for this specific stream
+        process.nextTick(() => {
+          mockStream.emit('data', Buffer.from(`test data ${callCount++}`));
+          mockStream.emit('end');
+        });
+        
+        return mockStream as any;
+      });
 
       const resultsPromise = checker.verifyAllModels('/models');
-
-      // Emit data for each verification
-      for (let i = 0; i < 2; i++) {
-        mockStream.emit('data', Buffer.from('test'));
-        mockStream.emit('end');
-      }
 
       const results = await resultsPromise;
 

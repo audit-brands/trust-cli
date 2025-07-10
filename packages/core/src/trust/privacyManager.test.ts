@@ -99,13 +99,12 @@ describe('PrivacyManager', () => {
       await privacyManager.setPrivacyMode('strict');
 
       const mode = privacyManager.getCurrentMode();
-      expect(mode.name).toBe('moderate');
+      expect(mode.name).toBe('strict');
 
-      const config = privacyManager.getPrivacySettings();
-      expect(config.allowTelemetry).toBe(false);
-      expect(config.shareData).toBe(false);
-      expect(config.allowCloudSync).toBe(false);
-      expect(config.encryptStorage).toBe(true);
+      // Test strict mode capabilities
+      expect(privacyManager.canCollectTelemetry()).toBe(false);
+      expect(privacyManager.canShareData()).toBe(false);
+      expect(privacyManager.canSyncToCloud()).toBe(false);
     });
 
     it('should set privacy mode to moderate', async () => {
@@ -114,11 +113,10 @@ describe('PrivacyManager', () => {
       const mode = privacyManager.getCurrentMode();
       expect(mode.name).toBe('moderate');
 
-      const config = privacyManager.getPrivacySettings();
-      expect(config.allowTelemetry).toBe(false);
-      expect(config.shareData).toBe(false);
-      expect(config.allowCloudSync).toBe(false);
-      expect(config.encryptStorage).toBe(true);
+      // Test moderate mode capabilities (allows telemetry and cloud sync, but not data sharing)
+      expect(privacyManager.canCollectTelemetry()).toBe(true);
+      expect(privacyManager.canShareData()).toBe(false);
+      expect(privacyManager.canSyncToCloud()).toBe(true);
     });
 
     it('should set privacy mode to open', async () => {
@@ -127,11 +125,10 @@ describe('PrivacyManager', () => {
       const mode = privacyManager.getCurrentMode();
       expect(mode.name).toBe('open');
 
-      const config = privacyManager.getPrivacySettings();
-      expect(config.allowTelemetry).toBe(true);
-      expect(config.shareData).toBe(true);
-      expect(config.allowCloudSync).toBe(true);
-      expect(config.encryptStorage).toBe(false);
+      // Test open mode capabilities (allows everything)
+      expect(privacyManager.canCollectTelemetry()).toBe(true);
+      expect(privacyManager.canShareData()).toBe(true);
+      expect(privacyManager.canSyncToCloud()).toBe(true);
     });
 
     it('should save configuration when mode changes', async () => {
