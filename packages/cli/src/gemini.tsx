@@ -172,6 +172,26 @@ export async function main() {
     }
   }
   
+  // Status command
+  if (args[0] === 'status') {
+    const { handleStatusCommand } = await import('./commands/statusCommands.js');
+    
+    // Filter out flags to find the action
+    const nonFlagArgs = args.slice(1).filter(arg => !arg.startsWith('-'));
+    const action = nonFlagArgs[0] as 'show' | 'backend' | 'model' | 'all';
+    
+    try {
+      await handleStatusCommand({
+        action: action || 'show',
+        verbose: args.includes('--verbose') || args.includes('-v'),
+      });
+      return;
+    } catch (error) {
+      console.error(`❌ Status command failed: ${error}`);
+      process.exit(1);
+    }
+  }
+  
   // Configuration management commands
   if (args[0] === 'config') {
     const { handleConfigCommand } = await import('./commands/configCommands.js');

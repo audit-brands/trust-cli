@@ -23,6 +23,7 @@ interface FooterProps {
   showErrorDetails: boolean;
   showMemoryUsage?: boolean;
   promptTokenCount: number;
+  backend?: string; // Current AI backend
 }
 
 export const Footer: React.FC<FooterProps> = ({
@@ -36,6 +37,7 @@ export const Footer: React.FC<FooterProps> = ({
   showErrorDetails,
   showMemoryUsage,
   promptTokenCount,
+  backend,
 }) => {
   const limit = tokenLimit(model);
   const percentage = promptTokenCount / limit;
@@ -77,13 +79,20 @@ export const Footer: React.FC<FooterProps> = ({
         )}
       </Box>
 
-      {/* Right Section: Gemini Label and Console Summary */}
+      {/* Right Section: Model and Backend Info */}
       <Box alignItems="center">
         <Text color={Colors.AccentBlue}>
           {' '}
           {model}{' '}
+          {backend && (
+            <Text color={Colors.Gray}>
+              via {backend === 'ollama' ? '🦙 Ollama' : 
+                   backend === 'huggingface' ? '🤗 HuggingFace' : 
+                   backend === 'cloud' ? '☁️  Cloud' : backend}
+            </Text>
+          )}
           <Text color={Colors.Gray}>
-            ({((1 - percentage) * 100).toFixed(0)}% context left)
+            {' '}({((1 - percentage) * 100).toFixed(0)}% context left)
           </Text>
         </Text>
         {corgiMode && (
