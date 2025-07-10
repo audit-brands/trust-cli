@@ -2,6 +2,8 @@
 
 **Trust: An Open System for Modern Assurance**
 
+This tool is the official command-line engine for the **[OpenAudit Initiative](https://github.com/audit-brands/trust-framework)**, a project dedicated to building a modern, open-source alternative to traditional audit frameworks. The features of `trust-cli`—its focus on privacy, local-first execution, and transparency—are direct implementations of the principles defined in the `trust-framework`. It is designed to be the practitioner's primary tool for executing high-impact, technology-native assurance work.
+
 A privacy-focused, local-first AI command-line interface that puts you in control of your AI workflows. Trust CLI enables powerful AI interactions entirely on your own hardware - no cloud dependencies, no data leaving your machine.
 
 ## 🛡️ Key Features
