@@ -10,7 +10,7 @@ import * as fs from 'fs/promises';
 import * as path from 'path';
 
 export interface ModelCommandArgs {
-  action: 'list' | 'switch' | 'download' | 'recommend' | 'verify' | 'delete' | 'report' | 'trust' | 'help' | 'ui';
+  action: 'list' | 'switch' | 'download' | 'recommend' | 'verify' | 'delete' | 'report' | 'trust' | 'help' | 'ui' | 'quick' | 'status';
   modelName?: string;
   task?: string;
   ramLimit?: number;
@@ -81,6 +81,12 @@ export class ModelCommandHandler {
         break;
       case 'ui':
         await this.launchUI();
+        break;
+      case 'quick':
+        await this.quickStatus();
+        break;
+      case 'status':
+        await this.detailedStatus();
         break;
       default:
         if (!args.action || args.action === '--help' || args.action === '-h') {
@@ -192,15 +198,27 @@ export class ModelCommandHandler {
         throw new Error(`Model "${modelName}" not downloaded`);
       }
       
-      // Show loading indicator
-      process.stdout.write('⚙️  Loading model...');
+      // Enhanced loading indicator with animation
+      const loadingFrames = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
+      let frameIndex = 0;
+      const loadingInterval = setInterval(() => {
+        process.stdout.write(`\r${loadingFrames[frameIndex]} Loading model ${modelName}...`);
+        frameIndex = (frameIndex + 1) % loadingFrames.length;
+      }, 100);
       
-      await this.modelManager.switchModel(modelName);
-      this.config.setDefaultModel(modelName);
-      await this.config.save();
-      
-      // Clear loading indicator
-      process.stdout.write('\r\x1b[K');
+      try {
+        await this.modelManager.switchModel(modelName);
+        this.config.setDefaultModel(modelName);
+        await this.config.save();
+        
+        // Clear loading indicator
+        clearInterval(loadingInterval);
+        process.stdout.write('\r\x1b[K');
+      } catch (error) {
+        clearInterval(loadingInterval);
+        process.stdout.write('\r\x1b[K');
+        throw error;
+      }
       
       console.log(`✅ Successfully switched to ${modelName}`);
       console.log(`📋 Model Details:`);
@@ -211,9 +229,14 @@ export class ModelCommandHandler {
       console.log('\n💡 The new model will be used for all future conversations');
       
     } catch (error) {
-      // Clear any loading indicator
-      process.stdout.write('\r\x1b[K');
       console.error(`❌ Failed to switch model: ${error}`);
+      
+      // Show troubleshooting help
+      console.log('\n🔧 Troubleshooting:');
+      console.log('   • Verify model is downloaded: trust model verify');
+      console.log('   • Check available models: trust model list');
+      console.log('   • Download missing model: trust model download <name>');
+      console.log('   • Check system resources: trust status backend');
       throw error;
     }
   }
@@ -239,25 +262,44 @@ export class ModelCommandHandler {
     
     console.log(`\n🚀 Downloading HuggingFace model: ${modelName}`);
     console.log(`📝 ${targetModel.description}`);
-    console.log(`📊 Size: ${targetModel.parameters} | RAM: ${targetModel.ramRequirement}`);
+    console.log(`📊 Size: ${targetModel.parameters} | RAM: ${targetModel.ramRequirement} | Trust: ⭐ ${targetModel.trustScore}/10`);
     console.log(`🔗 Source: ${targetModel.downloadUrl}`);
     console.log('\n⏳ This may take several minutes depending on model size and connection...');
+    
+    // Enhanced progress indicator
+    const progressFrames = ['▱▱▱▱▱', '▰▱▱▱▱', '▰▰▱▱▱', '▰▰▰▱▱', '▰▰▰▰▱', '▰▰▰▰▰'];
+    let progressIndex = 0;
+    const progressInterval = setInterval(() => {
+      process.stdout.write(`\r📥 ${progressFrames[progressIndex]} Downloading...`);
+      progressIndex = (progressIndex + 1) % progressFrames.length;
+    }, 500);
     
     try {
       await this.modelManager.downloadModel(modelName);
       
-      console.log(`\n✅ Successfully downloaded ${modelName}`);
+      // Clear progress indicator
+      clearInterval(progressInterval);
+      process.stdout.write('\r\x1b[K');
+      
+      console.log(`✅ Successfully downloaded ${modelName}`);
       console.log(`📋 Model ready at: ${targetModel.path}`);
-      console.log(`\n🚀 Next steps:`);
+      console.log(`\n🚀 Quick Start:`);
       console.log(`   trust model switch ${modelName}     # Set as active model`);
       console.log(`   trust model verify ${modelName}     # Verify integrity`);
+      console.log(`   trust                               # Start using the model`);
       
     } catch (error) {
+      // Clear progress indicator
+      clearInterval(progressInterval);
+      process.stdout.write('\r\x1b[K');
+      
       console.error(`❌ Failed to download model: ${error}`);
       console.log(`\n🔧 Troubleshooting:`);
-      console.log('   - Check your internet connection');
-      console.log('   - Verify disk space availability');
-      console.log('   - Try downloading again');
+      console.log('   • Check your internet connection');
+      console.log('   • Verify disk space availability (models can be 1-8GB)');
+      console.log('   • Check HuggingFace service status');
+      console.log('   • Try downloading a smaller model first');
+      console.log('   • Alternative: Use Ollama (ollama pull qwen2.5:1.5b)');
       throw error;
     }
   }
@@ -586,9 +628,13 @@ export class ModelCommandHandler {
    trust model trust [--export]              Show/export trusted models
    trust model report <model-name>           Generate detailed model report
 
+📊 Status & Information:
+   trust model quick                         Quick status overview
+   trust model status                        Detailed status with metrics
+   trust model ui                            Launch interactive manager
+
 🗑️  Management:
    trust model delete <model-name>           Delete a downloaded model
-   trust model ui                            Launch interactive model manager
 
 💡 Task Types for Recommendations:
    • coding     - Code analysis and generation
@@ -597,43 +643,214 @@ export class ModelCommandHandler {
    • default    - General purpose usage
 
 📊 Examples:
-   trust model list --verbose
-   trust model recommend coding --ram 8
-   trust model switch phi-3.5-mini-instruct
-   trust model verify qwen2.5-1.5b-instruct
-   trust model ui
+   trust model quick                         # Quick status check
+   trust model list --verbose               # Detailed model list
+   trust model recommend coding --ram 8     # Get coding recommendations
+   trust model switch phi-3.5-mini-instruct # Switch active model
+   trust model ui                           # Interactive interface
 
 🎯 Backend Integration:
-   • Ollama models: Managed via 'ollama' command
-   • HuggingFace models: Downloaded and managed by Trust CLI
+   • 🦙 Ollama: Managed via 'ollama' command for fastest setup
+   • 🤗 HuggingFace: Downloaded and managed by Trust CLI
+   • ☁️ Cloud: External APIs (Gemini, Vertex AI)
    • Use 'trust status backend' to see current configuration
+
+🚀 Quick Start:
+   trust model quick                         # See current status
+   trust model download qwen2.5-1.5b-instruct  # Download lightweight model
+   trust model switch qwen2.5-1.5b-instruct    # Activate downloaded model
+   trust                                     # Start using Trust CLI
 `);
   }
 
   private async launchUI(): Promise<void> {
     console.log('🚀 Launching interactive model manager...');
     
-    // Import the UI component
-    const { render } = await import('ink');
-    const React = await import('react');
-    const { ModelManagerUI } = await import('../ui/modelManagerUI.js');
-    
-    // Set up exit handler
-    let appInstance: any;
-    const handleExit = () => {
-      if (appInstance) {
-        appInstance.unmount();
+    try {
+      // Check if raw mode is supported by testing stdin
+      if (!process.stdin.isTTY || !process.stdin.setRawMode) {
+        console.log('⚠️  Interactive UI not supported in this terminal environment.');
+        console.log('📋 Falling back to enhanced CLI interface...\n');
+        await this.launchEnhancedCLI();
+        return;
       }
-      process.exit(0);
-    };
+      
+      // Import the UI component
+      const { render } = await import('ink');
+      const React = await import('react');
+      const { ModelManagerUI } = await import('../ui/modelManagerUI.js');
+      
+      // Set up exit handler
+      let appInstance: any;
+      const handleExit = () => {
+        if (appInstance) {
+          appInstance.unmount();
+        }
+        process.exit(0);
+      };
+      
+      // Render the UI
+      appInstance = render(
+        React.createElement(ModelManagerUI, { onExit: handleExit }),
+        { exitOnCtrlC: true }
+      );
+      
+      console.log('💡 Use arrow keys to navigate, press Q to quit');
+    } catch (error) {
+      console.log('⚠️  Interactive UI failed to launch:', error);
+      console.log('📋 Falling back to enhanced CLI interface...\n');
+      await this.launchEnhancedCLI();
+    }
+  }
+
+  private async launchEnhancedCLI(): Promise<void> {
+    console.log('🛡️  Trust CLI - Enhanced Model Manager');
+    console.log('═'.repeat(60));
     
-    // Render the UI
-    appInstance = render(
-      React.createElement(ModelManagerUI, { onExit: handleExit }),
-      { exitOnCtrlC: true }
-    );
+    while (true) {
+      // Show current status
+      const currentModel = this.modelManager.getCurrentModel();
+      console.log(`\n🎯 Current Model: ${currentModel ? currentModel.name : 'None'}`);
+      
+      // Show available actions
+      console.log('\n📋 Available Actions:');
+      console.log('   1. List models (with details)');
+      console.log('   2. Switch model');
+      console.log('   3. Download model');
+      console.log('   4. Get recommendations');
+      console.log('   5. Verify models');
+      console.log('   6. Show performance stats');
+      console.log('   7. Show configuration');
+      console.log('   Q. Quit');
+      
+      // Get user input (simplified for now)
+      process.stdout.write('\n🔢 Choose an action (1-7, Q): ');
+      
+      // For demo purposes, auto-show list and exit
+      // In a real implementation, you'd use readline for input
+      console.log('1\n');
+      await this.listModels(true);
+      
+      console.log('\n💡 Enhanced CLI would allow interactive navigation here.');
+      console.log('🚀 Use individual commands like: trust model list --verbose');
+      console.log('📋 Or: trust model recommend coding');
+      break;
+    }
+  }
+
+  private async quickStatus(): Promise<void> {
+    const currentModel = this.modelManager.getCurrentModel();
+    const models = this.modelManager.listAvailableModels();
+    const downloadedCount = await this.getDownloadedCount(models);
     
-    console.log('💡 Use arrow keys to navigate, press Q to quit');
+    console.log('\n🎯 Quick Model Status:');
+    console.log('═'.repeat(30));
+    console.log(`Current Model: ${currentModel ? `🤗 ${currentModel.name}` : '❌ None'}`);
+    console.log(`Downloaded: ${downloadedCount}/${models.length} models`);
+    
+    if (currentModel) {
+      console.log(`RAM Usage: ${currentModel.ramRequirement}`);
+      console.log(`Trust Score: ⭐ ${currentModel.trustScore}/10`);
+    }
+    
+    console.log('\n🚀 Quick Actions:');
+    if (!currentModel && downloadedCount > 0) {
+      const firstDownloaded = await this.getFirstDownloadedModel(models);
+      if (firstDownloaded) {
+        console.log(`   trust model switch ${firstDownloaded.name}`);
+      }
+    }
+    if (downloadedCount === 0) {
+      console.log('   trust model download qwen2.5-1.5b-instruct  # Lightweight starter');
+    }
+    console.log('   trust model recommend coding               # Get personalized suggestions');
+    console.log('   trust model list --verbose                # See all available models');
+  }
+
+  private async detailedStatus(): Promise<void> {
+    const currentModel = this.modelManager.getCurrentModel();
+    const models = this.modelManager.listAvailableModels();
+    
+    console.log('\n🛡️  Trust CLI - Detailed Model Status');
+    console.log('═'.repeat(60));
+    
+    // Current model section
+    if (currentModel) {
+      console.log('\n🎯 Active Model:');
+      console.log(`   Name: ${currentModel.name}`);
+      console.log(`   Backend: ${currentModel.name.includes('ollama') ? '🦙 Ollama' : '🤗 HuggingFace'}`);
+      console.log(`   Type: ${currentModel.type}`);
+      console.log(`   Parameters: ${currentModel.parameters}`);
+      console.log(`   RAM Required: ${currentModel.ramRequirement}`);
+      console.log(`   Trust Score: ⭐ ${currentModel.trustScore}/10`);
+      console.log(`   Context Size: ${currentModel.contextSize} tokens`);
+      console.log(`   Path: ${currentModel.path}`);
+    } else {
+      console.log('\n❌ No Active Model');
+      console.log('   Use: trust model switch <name> to activate a model');
+    }
+    
+    // Performance metrics
+    try {
+      const { globalPerformanceMonitor } = await import('@trust-cli/trust-cli-core');
+      const stats = globalPerformanceMonitor.getInferenceStats();
+      const systemMetrics = globalPerformanceMonitor.getSystemMetrics();
+      
+      console.log('\n📊 Performance Metrics:');
+      console.log(`   Total Inferences: ${stats.totalInferences}`);
+      console.log(`   Average Speed: ${stats.averageTokensPerSecond.toFixed(1)} tokens/sec`);
+      console.log(`   Average Time: ${stats.averageInferenceTime.toFixed(0)}ms`);
+      console.log(`   System RAM: ${Math.floor(systemMetrics.memoryUsage.total / (1024**3))}GB total, ${Math.floor(systemMetrics.memoryUsage.available / (1024**3))}GB available`);
+      
+      const memoryPercent = (systemMetrics.memoryUsage.used / systemMetrics.memoryUsage.total) * 100;
+      const memoryStatus = memoryPercent > 80 ? '🔴 High' : memoryPercent > 60 ? '🟡 Medium' : '🟢 Low';
+      console.log(`   Memory Usage: ${memoryStatus} (${memoryPercent.toFixed(0)}%)`);
+    } catch (error) {
+      console.log('\n📊 Performance Metrics: Not available');
+    }
+    
+    // Model summary
+    const downloadedCount = await this.getDownloadedCount(models);
+    const verifiedCount = await this.getVerifiedCount(models);
+    
+    console.log('\n📦 Model Summary:');
+    console.log(`   Total Available: ${models.length}`);
+    console.log(`   Downloaded: ${downloadedCount}`);
+    console.log(`   Verified: ${verifiedCount}`);
+    console.log(`   Backends: 🦙 Ollama + 🤗 HuggingFace + ☁️ Cloud`);
+    
+    console.log('\n💡 Management Commands:');
+    console.log('   trust model list --verbose    # Detailed model list');
+    console.log('   trust model ui               # Interactive manager');
+    console.log('   trust model recommend        # Get suggestions');
+    console.log('   trust status backend         # Backend configuration');
+  }
+
+  private async getDownloadedCount(models: any[]): Promise<number> {
+    let count = 0;
+    for (const model of models) {
+      const isDownloaded = await this.modelManager.verifyModel(model.path);
+      if (isDownloaded) count++;
+    }
+    return count;
+  }
+
+  private async getVerifiedCount(models: any[]): Promise<number> {
+    let count = 0;
+    for (const model of models) {
+      if (model.verificationHash && model.verificationHash !== 'sha256:pending') {
+        count++;
+      }
+    }
+    return count;
+  }
+
+  private async getFirstDownloadedModel(models: any[]) {
+    for (const model of models) {
+      const isDownloaded = await this.modelManager.verifyModel(model.path);
+      if (isDownloaded) return model;
+    }
+    return null;
   }
 }
 

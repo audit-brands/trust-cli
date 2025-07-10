@@ -40,6 +40,7 @@ export const ModelManagerUI: React.FC<ModelManagerUIProps> = ({ onExit }) => {
 
   const [config, setConfig] = useState<TrustConfiguration | null>(null);
   const [modelManager, setModelManager] = useState<TrustModelManagerImpl | null>(null);
+  const [downloadStatuses, setDownloadStatuses] = useState<Map<string, boolean>>(new Map());
 
   // Initialize components
   useEffect(() => {
@@ -54,8 +55,16 @@ export const ModelManagerUI: React.FC<ModelManagerUIProps> = ({ onExit }) => {
         const models = manager.listAvailableModels();
         const currentModel = manager.getCurrentModel();
         
+        // Check download status for all models
+        const statusMap = new Map<string, boolean>();
+        for (const model of models) {
+          const isDownloaded = await manager.verifyModel(model.path);
+          statusMap.set(model.name, isDownloaded);
+        }
+        
         setConfig(trustConfig);
         setModelManager(manager);
+        setDownloadStatuses(statusMap);
         setState(prev => ({
           ...prev,
           models,
@@ -309,7 +318,7 @@ const ModelListView: React.FC<{ state: UIState }> = ({ state }) => (
     
     {state.models.map((model, index) => (
       <ModelListItem 
-        key={model.name}
+        key={`${model.name}-${index}`}
         model={model}
         isSelected={index === state.selectedIndex}
         isCurrent={state.selectedModel?.name === model.name}
@@ -323,19 +332,41 @@ const ModelListItem: React.FC<{
   isSelected: boolean;
   isCurrent: boolean;
 }> = ({ model, isSelected, isCurrent }) => {
-  const indicator = isCurrent ? '→' : ' ';
+  const indicator = isCurrent ? '🎯' : ' ';
   const selector = isSelected ? '▶' : ' ';
-  const status = model.verificationHash ? '✓' : '✗';
   
-  // Determine backend based on model characteristics
+  // Enhanced status with more visual indicators
+  let status = '⚪';
+  let statusText = 'not downloaded';
+  if (model.verificationHash && model.verificationHash !== 'sha256:pending') {
+    status = '✅';
+    statusText = 'verified';
+  } else if (model.path) {
+    status = '📄';
+    statusText = 'downloaded';
+  }
+  
+  // Determine backend with enhanced indicators
   const backend = model.name.includes('ollama') ? '🦙' : '🤗';
+  const backendText = model.name.includes('ollama') ? 'Ollama' : 'HuggingFace';
+  
+  // RAM requirement with color coding
+  const ramColor = model.ramRequirement.includes('8GB') || model.ramRequirement.includes('16GB') ? 'yellow' : 'green';
   
   return (
-    <Box>
-      <Text color={isSelected ? 'blue' : undefined} backgroundColor={isSelected ? 'white' : undefined}>
-        {selector} {indicator} {backend} {model.name} [{status}]
-      </Text>
-      <Text color="gray"> - {model.description}</Text>
+    <Box flexDirection="column">
+      <Box>
+        <Text color={isSelected ? 'blue' : undefined} backgroundColor={isSelected ? 'white' : undefined}>
+          {selector} {indicator} {backend} {model.name} {status}
+        </Text>
+      </Box>
+      <Box marginLeft={2}>
+        <Text color="gray">
+          {model.description} | {backendText} | 
+          <Text color={ramColor}> {model.ramRequirement}</Text> | 
+          ⭐ {model.trustScore}/10 | {statusText}
+        </Text>
+      </Box>
     </Box>
   );
 };
