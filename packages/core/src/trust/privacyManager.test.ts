@@ -13,9 +13,18 @@ import * as fs from 'fs/promises';
 vi.mock('fs/promises');
 vi.mock('crypto', () => ({
   randomBytes: vi.fn(() => Buffer.from('random-data')),
+  randomUUID: vi.fn(() => 'test-uuid-1234-5678-9012-abcdef123456'),
   createHash: vi.fn(() => ({
     update: vi.fn().mockReturnThis(),
     digest: vi.fn(() => 'hashed-value')
+  })),
+  createCipher: vi.fn(() => ({
+    update: vi.fn((data: string) => Buffer.from(data).toString('base64')),
+    final: vi.fn(() => '')
+  })),
+  createDecipher: vi.fn(() => ({
+    update: vi.fn((data: string) => Buffer.from(data, 'base64').toString()),
+    final: vi.fn(() => '')
   }))
 }));
 
@@ -391,6 +400,8 @@ describe('PrivacyManager', () => {
     it('should handle invalid configuration data', async () => {
       mockFs.access.mockResolvedValue(undefined);
       mockFs.readFile.mockResolvedValue('invalid json');
+      mockFs.mkdir.mockResolvedValue(undefined); // Allow directory creation
+      mockFs.writeFile.mockResolvedValue(undefined); // Allow file writing
 
       await privacyManager.initialize();
 
@@ -400,6 +411,10 @@ describe('PrivacyManager', () => {
     });
 
     it('should handle encryption errors', async () => {
+      mockFs.mkdir.mockResolvedValue(undefined); // Allow directory creation
+      mockFs.writeFile.mockResolvedValue(undefined); // Allow file writing
+      mockFs.access.mockRejectedValue(new Error('File not found')); // Config file doesn't exist
+
       await privacyManager.initialize();
 
       // Test with invalid data types

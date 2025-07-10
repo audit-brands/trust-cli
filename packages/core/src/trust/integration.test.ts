@@ -20,6 +20,11 @@ vi.mock('fs/promises', () => ({
   readFile: vi.fn(),
   mkdir: vi.fn(),
   stat: vi.fn(),
+  chmod: vi.fn(),
+  copyFile: vi.fn(),
+  appendFile: vi.fn(),
+  rename: vi.fn(),
+  unlink: vi.fn(),
 }));
 
 vi.mock('os', () => ({
@@ -40,6 +45,23 @@ vi.mock('os', () => ({
   homedir: vi.fn(() => '/test/home'),
   uptime: vi.fn(() => 123456),
   loadavg: vi.fn(() => [1.5, 1.2, 1.0]),
+}));
+
+vi.mock('crypto', () => ({
+  randomBytes: vi.fn(() => Buffer.from('random-data')),
+  randomUUID: vi.fn(() => 'test-uuid-1234-5678-9012-abcdef123456'),
+  createHash: vi.fn(() => ({
+    update: vi.fn().mockReturnThis(),
+    digest: vi.fn(() => 'hashed-value')
+  })),
+  createCipher: vi.fn(() => ({
+    update: vi.fn((data: string) => Buffer.from(data).toString('base64')),
+    final: vi.fn(() => '')
+  })),
+  createDecipher: vi.fn(() => ({
+    update: vi.fn((data: string) => Buffer.from(data, 'base64').toString()),
+    final: vi.fn(() => '')
+  }))
 }));
 
 // Import mocked fs after mocking
@@ -469,7 +491,7 @@ describe('Trust CLI Integration Tests', () => {
       
       await newPrivacyManager.initialize();
       
-      expect(newPrivacyManager.getCurrentMode()).toBe('moderate');
+      expect(newPrivacyManager.getCurrentMode().name).toBe('moderate');
       expect(newPrivacyManager.getDataRetentionDays()).toBe(30);
     });
   });
