@@ -14,6 +14,7 @@ import {
   Content,
   Part,
   FunctionCall,
+  FinishReason,
 } from '@google/genai';
 import { ContentGenerator } from '../core/contentGenerator.js';
 import { Config } from '../config/config.js';

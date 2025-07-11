@@ -14,6 +14,7 @@ import {
   Content,
   Part,
   FunctionCall,
+  FinishReason,
 } from '@google/genai';
 import { ContentGenerator } from '../core/contentGenerator.js';
 import { TrustNodeLlamaClient } from './nodeLlamaClient.js';
@@ -38,7 +39,6 @@ export class TrustContentGenerator implements ContentGenerator {
   private backendInitHistory: { backend: string; success: boolean; error?: string }[] = [];
 
   constructor(modelsDir?: string, config?: any, toolRegistry?: any) {
-    console.error('🏗️  TrustContentGenerator constructor called with Ollama integration'); // Using console.error to ensure visibility
     this.modelClient = new TrustNodeLlamaClient();
     this.modelManager = new TrustModelManagerImpl(modelsDir);
     this.config = config;
@@ -285,7 +285,6 @@ export class TrustContentGenerator implements ContentGenerator {
         const functions = await this.createGBNFFunctions(request);
         if (functions && Object.keys(functions).length > 0) {
           options.functions = functions;
-          console.log('DEBUG: Using GBNF grammar-based function calling with', Object.keys(functions).length, 'functions');
         }
       }
 
@@ -305,7 +304,6 @@ export class TrustContentGenerator implements ContentGenerator {
   async generateContentStream(
     request: GenerateContentParameters
   ): Promise<AsyncGenerator<GenerateContentResponse>> {
-    console.log('DEBUG: TrustContentGenerator.generateContentStream called');
     await this.initialize();
 
     // Smart model-aware routing: Check if current model is a HuggingFace model
@@ -369,35 +367,11 @@ export class TrustContentGenerator implements ContentGenerator {
     prompt: string, 
     options: GenerationOptions
   ): AsyncGenerator<GenerateContentResponse> {
-    // Let's test if we can yield at all
-    try {
-      const testResponse: GenerateContentResponse = {
-        candidates: [{
-          content: { parts: [{ text: 'test' }], role: 'model' },
-          finishReason: 'STOP' as any,
-          index: 0,
-        }],
-        text: 'test',
-        functionCalls: [],
-      } as any;
-      
-      yield testResponse;
-    } catch (error) {
-      console.error('DEBUG: Basic yield failed:', error);
-      throw error;
-    }
+    const streamGenerator = this.modelClient.generateStream(prompt, options);
     
-    try {
-      const streamGenerator = this.modelClient.generateStream(prompt, options);
-      
-      for await (const chunk of streamGenerator) {
-        const geminiResponse = this.convertToGeminiResponse(chunk);
-        yield geminiResponse;
-      }
-      
-    } catch (error) {
-      console.error('DEBUG: Error in streaming loop:', error);
-      throw error;
+    for await (const chunk of streamGenerator) {
+      const geminiResponse = this.convertToGeminiResponse(chunk);
+      yield geminiResponse;
     }
   }
 
@@ -681,7 +655,7 @@ export class TrustContentGenerator implements ContentGenerator {
     if (parseResult.success && parseResult.functionCalls.length > 0) {
       // Log successful repairs for debugging
       if (parseResult.repairedJson && parseResult.errors && parseResult.errors.length > 0) {
-        console.log('DEBUG: JSON auto-repair succeeded after', parseResult.errors.length, 'attempts');
+        // JSON auto-repair succeeded
       }
       
       // Remove function calls from original text
@@ -771,7 +745,7 @@ export class TrustContentGenerator implements ContentGenerator {
             parts: [{ text: cleanedText }],
             role: 'model',
           },
-          finishReason: 'STOP' as any,
+          finishReason: FinishReason.STOP,
           index: 0,
         },
       ],
@@ -1021,25 +995,20 @@ export class TrustContentGenerator implements ContentGenerator {
 
     // Check if we have the required dependencies
     if (!this.config || !this.toolRegistry) {
-      console.log('DEBUG: Config or ToolRegistry not available, falling back to regex-based parsing');
       return null;
     }
 
     try {
-      console.log('DEBUG: Creating GBNF functions from', request.config.tools.length, 'tool groups');
-      
       // Create GBNF function registry
       const gbnfRegistry = new GBNFunctionRegistry(this.config, this.toolRegistry);
       
       // Convert our tools to native node-llama-cpp functions
       const functions = await gbnfRegistry.createNativeFunctions();
       
-      console.log('DEBUG: Successfully created', Object.keys(functions).length, 'GBNF functions');
       return functions;
       
     } catch (error) {
       console.error('Error creating GBNF functions:', error);
-      console.log('DEBUG: Falling back to regex-based function parsing');
       return null;
     }
   }
