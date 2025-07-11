@@ -123,6 +123,9 @@ export interface ConfigParameters {
     respectGitIgnore?: boolean;
     enableRecursiveFileSearch?: boolean;
   };
+  contextCompression?: {
+    preserveRecentTurns?: number;
+  };
   checkpointing?: boolean;
   proxy?: string;
   cwd: string;
@@ -159,6 +162,9 @@ export class Config {
   private readonly fileFiltering: {
     respectGitIgnore: boolean;
     enableRecursiveFileSearch: boolean;
+  };
+  private readonly contextCompression: {
+    preserveRecentTurns: number;
   };
   private fileDiscoveryService: FileDiscoveryService | null = null;
   private gitService: GitService | undefined = undefined;
@@ -203,6 +209,9 @@ export class Config {
       respectGitIgnore: params.fileFiltering?.respectGitIgnore ?? true,
       enableRecursiveFileSearch:
         params.fileFiltering?.enableRecursiveFileSearch ?? true,
+    };
+    this.contextCompression = {
+      preserveRecentTurns: params.contextCompression?.preserveRecentTurns ?? 6,
     };
     this.checkpointing = params.checkpointing ?? false;
     this.proxy = params.proxy;
@@ -376,6 +385,10 @@ export class Config {
 
   getAccessibility(): AccessibilitySettings {
     return this.accessibility;
+  }
+
+  getContextCompressionConfig(): { preserveRecentTurns: number } {
+    return this.contextCompression;
   }
 
   getTelemetryEnabled(): boolean {

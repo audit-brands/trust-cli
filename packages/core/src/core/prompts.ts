@@ -313,7 +313,7 @@ export function getCompressionPrompt(): string {
   return `
 You are the component that summarizes internal chat history into a given structure.
 
-When the conversation history grows too large, you will be invoked to distill the entire history into a concise, structured XML snapshot. This snapshot is CRITICAL, as it will become the agent's *only* memory of the past. The agent will resume its work based solely on this snapshot. All crucial details, plans, errors, and user directives MUST be preserved.
+When the conversation history grows too large, you will be invoked to distill the OLDER portion of the history into a concise, structured XML snapshot. NOTE: The most recent exchanges will be preserved separately to maintain conversational flow. This snapshot covers the earlier conversation history that will be compressed. All crucial details, plans, errors, and user directives from the older history MUST be preserved.
 
 First, you will think through the entire history in a private <scratchpad>. Review the user's overall goal, the agent's actions, tool outputs, file modifications, and any unresolved questions. Identify every piece of information that is essential for future actions.
 

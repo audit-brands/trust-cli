@@ -57,6 +57,11 @@ export interface Settings {
   
   // CLI Title customization
   customCliTitle?: string;
+  
+  // Context compression settings
+  contextCompression?: {
+    preserveRecentTurns?: number; // Number of recent turns to preserve (default: 6)
+  };
 
   // Git-aware file filtering settings
   fileFiltering?: {

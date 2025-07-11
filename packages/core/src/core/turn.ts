@@ -120,6 +120,8 @@ export type ServerGeminiErrorEvent = {
 export interface ChatCompressionInfo {
   originalTokenCount: number;
   newTokenCount: number;
+  recentHistoryPreserved?: boolean;
+  recentTurnsCount?: number;
 }
 
 export type ServerGeminiChatCompressedEvent = {

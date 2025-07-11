@@ -412,18 +412,24 @@ export const useGeminiStream = (
   );
 
   const handleChatCompressionEvent = useCallback(
-    (eventValue: ServerGeminiChatCompressedEvent['value']) =>
+    (eventValue: ServerGeminiChatCompressedEvent['value']) => {
+      let text = `IMPORTANT: This conversation approached the input token limit for ${config.getModel()}. ` +
+        `A compressed context will be sent for future messages (compressed from: ` +
+        `${eventValue?.originalTokenCount ?? 'unknown'} to ` +
+        `${eventValue?.newTokenCount ?? 'unknown'} tokens).`;
+      
+      if (eventValue?.recentHistoryPreserved && eventValue?.recentTurnsCount) {
+        text += ` The last ${eventValue.recentTurnsCount} conversation turns were preserved to maintain context flow.`;
+      }
+      
       addItem(
         {
           type: 'info',
-          text:
-            `IMPORTANT: This conversation approached the input token limit for ${config.getModel()}. ` +
-            `A compressed context will be sent for future messages (compressed from: ` +
-            `${eventValue?.originalTokenCount ?? 'unknown'} to ` +
-            `${eventValue?.newTokenCount ?? 'unknown'} tokens).`,
+          text,
         },
         Date.now(),
-      ),
+      );
+    },
     [addItem, config],
   );
 

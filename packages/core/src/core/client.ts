@@ -448,7 +448,27 @@ export class GeminiClient {
       return null;
     }
 
-    const { text: summary } = await this.getChat().sendMessage({
+    // Determine how many recent turns to preserve (configurable)
+    const RECENT_TURNS_TO_PRESERVE = this.config.getContextCompressionConfig().preserveRecentTurns;
+    const recentHistory = curatedHistory.slice(-RECENT_TURNS_TO_PRESERVE);
+    const oldHistory = curatedHistory.slice(0, -RECENT_TURNS_TO_PRESERVE);
+
+    // If there's no old history to compress, just preserve everything
+    if (oldHistory.length === 0) {
+      return null;
+    }
+
+    // Get token count for recent history to ensure we have room for it
+    const { totalTokens: recentTokens } = await this.getContentGenerator().countTokens({
+      model,
+      contents: recentHistory,
+    });
+
+    // Create temporary chat with only old history for compression
+    const tempChat = await this.startChat(oldHistory);
+    
+    // Compress only the old history
+    const { text: summary } = await tempChat.sendMessage({
       message: {
         text: 'First, reason in your scratchpad. Then, generate the <state_snapshot>.',
       },
@@ -456,16 +476,21 @@ export class GeminiClient {
         systemInstruction: { text: getCompressionPrompt() },
       },
     });
-    this.chat = await this.startChat([
+
+    // Create new chat with compressed summary + preserved recent history
+    const newHistory = [
       {
-        role: 'user',
+        role: 'user' as const,
         parts: [{ text: summary }],
       },
       {
-        role: 'model',
+        role: 'model' as const,
         parts: [{ text: 'Got it. Thanks for the additional context!' }],
       },
-    ]);
+      ...recentHistory,
+    ];
+
+    this.chat = await this.startChat(newHistory);
 
     const { totalTokens: newTokenCount } =
       await this.getContentGenerator().countTokens({
@@ -481,6 +506,8 @@ export class GeminiClient {
     return {
       originalTokenCount,
       newTokenCount,
+      recentHistoryPreserved: true,
+      recentTurnsCount: recentHistory.length,
     };
   }
 

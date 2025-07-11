@@ -247,6 +247,10 @@ export async function loadCliConfig(
       enableRecursiveFileSearch:
         settings.fileFiltering?.enableRecursiveFileSearch,
     },
+    // Context compression settings
+    contextCompression: {
+      preserveRecentTurns: settings.contextCompression?.preserveRecentTurns,
+    },
     checkpointing: argv.checkpointing || settings.checkpointing?.enabled,
     proxy:
       process.env.HTTPS_PROXY ||
