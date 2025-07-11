@@ -11,6 +11,7 @@ export * from './unifiedModelManager.js';
 export * from './intelligentModelRouter.js';
 export * from './smartRoutingService.js';
 export * from './resourceMonitor.js';
+export * from './enhancedErrorHandler.js';
 export * from './trustContentGenerator.js';
 export * from './performanceMonitor.js';
 export * from './privacyManager.js';
