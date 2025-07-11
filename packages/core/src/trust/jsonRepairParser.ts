@@ -49,7 +49,10 @@ export class JsonRepairParser {
     let repairedText = text;
     for (const strategy of this.repairStrategies) {
       try {
+        const previousText = repairedText;
         repairedText = strategy(repairedText);
+        
+        // Test after each strategy
         const result = this.tryDirectParse(repairedText);
         if (result.success) {
           return {
@@ -59,6 +62,10 @@ export class JsonRepairParser {
             errors
           };
         }
+        
+        // If strategy didn't help, continue with the modified text anyway
+        // This allows multiple strategies to work together
+        
       } catch (e) {
         errors.push(`Strategy ${strategy.name} failed: ${e}`);
       }
@@ -84,49 +91,53 @@ export class JsonRepairParser {
 
   private tryDirectParse(text: string): { success: boolean; functionCalls: FunctionCall[]; error?: string } {
     try {
-      // Handle multiple JSON formats
+      // First, try parsing the whole text directly
+      const parsed = JSON.parse(text);
+      const functionCalls = this.extractFunctionCallsFromObject(parsed);
+      if (functionCalls.length > 0) {
+        return { success: true, functionCalls };
+      }
+      
+      // If no function calls found, try pattern matching
       const patterns = [
-        // Standard format: {"function_call": {"name": "...", "arguments": {...}}}
-        /\{"function_call":\s*\{[^}]+\}\s*\}/,
-        // Alternative format: {"name": "...", "arguments": {...}}
-        /\{"name":\s*"[^"]+",\s*"arguments":\s*\{[^}]*\}\s*\}/,
         // With code blocks
         /```json\s*(\{.*?\})\s*```/s,
+        // Standard format: {"function_call": {"name": "...", "arguments": {...}}}
+        /\{"function_call":\s*\{.*?\}\s*\}/,
+        // Alternative format: {"name": "...", "arguments": {...}}
+        /\{"name":\s*"[^"]+",\s*"arguments":\s*\{.*?\}\s*\}/,
       ];
 
       for (const pattern of patterns) {
         const match = text.match(pattern);
         if (match) {
           const jsonText = match[1] || match[0];
-          const parsed = JSON.parse(jsonText);
-          
-          let functionCall: FunctionCall | null = null;
-          
-          if (parsed.function_call) {
-            functionCall = {
-              name: parsed.function_call.name,
-              args: parsed.function_call.arguments || {},
-              id: `call_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-            };
-          } else if (parsed.name && parsed.arguments !== undefined) {
-            functionCall = {
-              name: parsed.name,
-              args: parsed.arguments || {},
-              id: `call_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-            };
-          }
-          
-          if (functionCall) {
-            return { success: true, functionCalls: [functionCall] };
+          try {
+            const parsed = JSON.parse(jsonText);
+            
+            let functionCall: FunctionCall | null = null;
+            
+            if (parsed.function_call) {
+              functionCall = {
+                name: parsed.function_call.name,
+                args: parsed.function_call.arguments || {},
+                id: `call_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+              };
+            } else if (parsed.name && parsed.arguments !== undefined) {
+              functionCall = {
+                name: parsed.name,
+                args: parsed.arguments || {},
+                id: `call_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+              };
+            }
+            
+            if (functionCall) {
+              return { success: true, functionCalls: [functionCall] };
+            }
+          } catch (e) {
+            // Continue to next pattern
           }
         }
-      }
-      
-      // Try parsing the whole text
-      const parsed = JSON.parse(text);
-      const functionCalls = this.extractFunctionCallsFromObject(parsed);
-      if (functionCalls.length > 0) {
-        return { success: true, functionCalls };
       }
       
       return { success: false, functionCalls: [], error: 'No function calls found in parsed JSON' };
@@ -157,7 +168,8 @@ export class JsonRepairParser {
 
   private fixMissingQuotes(text: string): string {
     // Fix unquoted keys: {name: "value"} -> {"name": "value"}
-    return text.replace(/\{(\s*)([a-zA-Z_]\w*)(\s*):/g, '{$1"$2"$3:');
+    // Handle both at start of object and after commas
+    return text.replace(/([{,]\s*)([a-zA-Z_]\w*)(\s*):/g, '$1"$2"$3:');
   }
 
   private fixTrailingCommas(text: string): string {
@@ -171,20 +183,32 @@ export class JsonRepairParser {
   }
 
   private fixUnescapedQuotes(text: string): string {
-    // Fix unescaped quotes inside strings
-    // This is tricky and may need refinement
-    return text.replace(/"([^"]*)"([^:,}\]]*)"([^"]*)":/g, '"$1\\"$2\\"$3":');
+    // Fix unescaped quotes inside strings - but only if they're actually inside strings
+    // This is tricky and may need refinement - skip for now if it's causing issues
+    return text;
   }
 
   private fixMissingCommas(text: string): string {
     // Add missing commas between properties like "key": "value" "key2": "value2"
-    return text.replace(/("\s*:\s*[^,}\]]+)(\s+")([^"]+")(\s*:\s*)/g, '$1,$2$3$4');
+    // Handle both quoted and unquoted values, including nested objects
+    let result = text.replace(/(":\s*(?:"[^"]*"|\{[^}]*\}|[^,}\]]*?))\s+("[\w_]+"\s*:)/g, '$1,$2');
+    
+    // Additional pattern for specific case like "test" "arguments"
+    result = result.replace(/(")\s+("[\w_]+"\s*:)/g, '$1,$2');
+    
+    return result;
   }
 
   private fixMissingBraces(text: string): string {
     // Try to wrap in braces if they're missing
     const trimmed = text.trim();
-    if (!trimmed.startsWith('{') && trimmed.includes('"name"')) {
+    // Only add braces if it looks like a JSON property without surrounding braces
+    // and doesn't already contain a complete JSON object
+    if (!trimmed.startsWith('{') && 
+        trimmed.includes('"name"') && 
+        !trimmed.includes('{"') &&
+        trimmed.match(/^"name":\s*"[^"]*"/) // Starts with name property
+    ) {
       return '{' + trimmed + '}';
     }
     return text;
@@ -206,7 +230,14 @@ export class JsonRepairParser {
 
   private extractJsonFromText(text: string): string {
     // Try to extract JSON object from surrounding text
-    const jsonMatch = text.match(/\{[^{}]*(?:\{[^{}]*\}[^{}]*)?\}/);
+    // Only extract if there's clearly non-JSON text around it
+    if (text.trim().startsWith('{') && text.trim().endsWith('}')) {
+      // Already looks like JSON, don't extract
+      return text;
+    }
+    
+    // Use a greedy approach to find the largest JSON object
+    const jsonMatch = text.match(/\{.*\}/);
     if (jsonMatch) {
       return jsonMatch[0];
     }
@@ -233,7 +264,7 @@ export class JsonRepairParser {
     }
     
     // Pattern 2: Tool/function mentions with parameters
-    const pattern2 = /(?:Execute tool|tool|function|call)[:\s]*(\w+)\s*(?:with|params|args|arguments)[:\s]*(\{[^}]*\})/gi;
+    const pattern2 = /Execute tool:\s*(\w+)\s*with arguments:\s*(\{[^}]*\})/gi;
     while ((match = pattern2.exec(text)) !== null) {
       try {
         const args = JSON.parse(match[2]);

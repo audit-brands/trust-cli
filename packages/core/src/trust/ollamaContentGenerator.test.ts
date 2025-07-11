@@ -282,8 +282,14 @@ describe('OllamaContentGenerator', () => {
         chunks.push(chunk);
       }
 
-      expect(chunks).toHaveLength(1);
-      expect(chunks[0].text).toBe('Once upon a time...');
+      expect(chunks.length).toBeGreaterThan(0);
+      
+      // First chunk should be the "thinking" response
+      expect(chunks[0].text).toBe('🤔 Thinking...');
+      
+      // Final chunk should contain the actual content
+      const finalChunk = chunks[chunks.length - 1];
+      expect(finalChunk.text).toBe('Once upon a time...');
     });
   });
 

@@ -1378,8 +1378,8 @@ export class PrivacyManager {
       };
       totalEntries: number;
     };
-    summary: ReturnType<typeof this.analyzeAuditLogs>;
-    compliance: ReturnType<typeof this.checkDataRetentionCompliance>;
+    summary: any; // ReturnType<typeof this.analyzeAuditLogs>;
+    compliance: any; // ReturnType<typeof this.checkDataRetentionCompliance>;
     security: {
       sensitiviDataExposures: AuditLogEntry[];
       encryptionEvents: AuditLogEntry[];

@@ -60,7 +60,9 @@ describe('OllamaClient', () => {
       const isConnected = await client.checkConnection();
 
       expect(isConnected).toBe(true);
-      expect(global.fetch).toHaveBeenCalledWith('http://localhost:11434/api/tags');
+      expect(global.fetch).toHaveBeenCalledWith('http://localhost:11434/api/tags', expect.objectContaining({
+        signal: expect.any(AbortSignal)
+      }));
     });
 
     it('should return false when Ollama is not running', async () => {
@@ -267,6 +269,13 @@ describe('OllamaClient', () => {
         model: 'qwen2.5:1.5b',
         availableModels: ['qwen2.5:1.5b'],
         modelLoaded: true,
+        performance: expect.objectContaining({
+          requestCount: expect.any(Number),
+          averageLatency: expect.any(Number),
+          lastRequestTime: expect.any(Number),
+          activeRequests: expect.any(Number),
+          queuedRequests: expect.any(Number),
+        }),
       });
     });
 
