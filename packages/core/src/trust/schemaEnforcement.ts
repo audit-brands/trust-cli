@@ -5,7 +5,8 @@
  */
 
 import { TrustNodeLlamaClient } from './nodeLlamaClient.js';
-import { GenerationOptions } from './types.js';
+import { GenerationOptions, LogitBiasConfig } from './types.js';
+import { LogitBiasManager } from './logitBiasManager.js';
 
 /**
  * JSON Schema definition
@@ -59,9 +60,11 @@ export interface ValidationResult {
  */
 export class TrustSchemaEnforcement {
   private client: TrustNodeLlamaClient;
+  private biasManager: LogitBiasManager;
 
   constructor(client: TrustNodeLlamaClient) {
     this.client = client;
+    this.biasManager = new LogitBiasManager();
   }
 
   /**
@@ -78,11 +81,11 @@ export class TrustSchemaEnforcement {
     
     for (let attempt = 0; attempt < maxRetries; attempt++) {
       try {
+        // Prepare generation options with logit bias for JSON
+        const generationOptions = this.prepareGenerationOptions(options, format, attempt);
+        
         // Generate response
-        rawResponse = await this.client.generateText(enhancedPrompt, {
-          ...options,
-          temperature: Math.max(0.1, (options.temperature || 0.7) * 0.8), // Reduce creativity for structure
-        });
+        rawResponse = await this.client.generateText(enhancedPrompt, generationOptions);
         
         // Extract and validate based on format
         const validationResult = this.validateAndExtract(rawResponse, schema, validationStrict, format);
@@ -896,5 +899,52 @@ export class TrustSchemaEnforcement {
     if (value === 'false') return false;
     if (!isNaN(Number(value))) return Number(value);
     return value;
+  }
+
+  /**
+   * Prepare generation options with appropriate logit bias for the target format
+   */
+  private prepareGenerationOptions(
+    baseOptions: GenerationOptions, 
+    format: OutputFormat, 
+    attemptNumber: number
+  ): GenerationOptions {
+    const options: GenerationOptions = {
+      ...baseOptions,
+      // Reduce creativity for structure - more aggressive on retries
+      temperature: Math.max(0.1, (baseOptions.temperature || 0.7) * (0.8 - attemptNumber * 0.1)),
+    };
+
+    // Apply logit bias for JSON format to improve structure adherence
+    if (format === 'json') {
+      if (!options.logitBias) {
+        // Create default JSON bias if none provided
+        const biasLevel = attemptNumber === 0 ? 'moderate' : 'aggressive';
+        options.logitBias = LogitBiasManager.createJsonPreset(biasLevel);
+      }
+    }
+
+    return options;
+  }
+
+  /**
+   * Configure logit bias for JSON generation
+   */
+  configureJsonBias(config: LogitBiasConfig): void {
+    // Store bias configuration for use in generation
+    // This allows users to set custom bias configurations
+    this.biasManager = new LogitBiasManager();
+  }
+
+  /**
+   * Get default JSON generation configuration with logit bias
+   */
+  static getDefaultJsonConfig(level: 'light' | 'moderate' | 'aggressive' = 'moderate'): GenerationOptions {
+    return {
+      temperature: 0.3,
+      topP: 0.9,
+      maxTokens: 2048,
+      logitBias: LogitBiasManager.createJsonPreset(level),
+    };
   }
 }

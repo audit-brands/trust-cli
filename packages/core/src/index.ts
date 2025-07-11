@@ -65,9 +65,5 @@ export { sessionId } from './utils/session.js';
 // Export Trust CLI components
 export * from './trust/ollamaApiServer.js';
 export { TrustConfiguration } from './config/trustConfig.js';
-export * from './trust/modelManager.js';
-export * from './trust/performanceMonitor.js';
-export * from './trust/hardwareOptimizer.js';
-export * from './trust/performanceBenchmark.js';
-export { globalPerformanceMonitor } from './trust/performanceMonitor.js';
-export * from './trust/privacyManager.js';
+// Export all Trust components
+export * from './trust/index.js';

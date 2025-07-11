@@ -128,11 +128,18 @@ export async function main() {
   if (args[0] === 'performance' || args[0] === 'perf') {
     const { handlePerformanceCommand } = await import('./commands/performanceCommands.js');
     try {
+      const action = args[1] as 'status' | 'report' | 'watch' | 'optimize' | 'profile' | 'recommend' | 'regression';
+      const allFlags = args.slice(2);
+      
       await handlePerformanceCommand({
-        action: (args[1] as 'status' | 'report' | 'watch' | 'optimize') || 'status',
-        verbose: args.includes('--verbose') || args.includes('-v'),
-        watch: args.includes('--watch') || args.includes('-w'),
-        interval: args.includes('--interval') ? parseInt(args[args.indexOf('--interval') + 1]) : 1000
+        action: action || 'status',
+        verbose: allFlags.includes('--verbose') || allFlags.includes('-v'),
+        watch: allFlags.includes('--watch') || allFlags.includes('-w'),
+        interval: allFlags.includes('--interval') ? parseInt(allFlags[allFlags.indexOf('--interval') + 1]) : 1000,
+        model: allFlags.includes('--model') ? allFlags[allFlags.indexOf('--model') + 1] : undefined,
+        workload: allFlags.includes('--workload') ? allFlags[allFlags.indexOf('--workload') + 1] : undefined,
+        format: allFlags.includes('--format') ? allFlags[allFlags.indexOf('--format') + 1] as 'json' | 'csv' | 'text' : undefined,
+        output: allFlags.includes('--output') ? allFlags[allFlags.indexOf('--output') + 1] : undefined,
       });
       return;
     } catch (error) {

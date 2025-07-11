@@ -27,12 +27,12 @@ export interface ModelRecommendation {
     ramUsageGB: number;
     cpuUtilization: number;
   };
-  warnings?: string[];
+  warnings: string[];
 }
 
 export interface OptimizationRecommendation {
   category: 'model' | 'performance' | 'resource' | 'configuration';
-  priority: 'high' | 'medium' | 'low';
+  priority: 'critical' | 'high' | 'medium' | 'low';
   title: string;
   description: string;
   implementation: string;
@@ -173,7 +173,7 @@ export class HardwareOptimizer {
     }
 
     return recommendations.sort((a, b) => {
-      const priorityOrder = { high: 3, medium: 2, low: 1 };
+      const priorityOrder = { critical: 4, high: 3, medium: 2, low: 1 };
       return priorityOrder[b.priority] - priorityOrder[a.priority];
     });
   }

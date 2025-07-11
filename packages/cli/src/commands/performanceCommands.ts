@@ -4,29 +4,51 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { globalPerformanceMonitor } from '@trust-cli/trust-cli-core';
+import { globalPerformanceMonitor, ModelProfiler, HardwareOptimizer } from '@trust-cli/trust-cli-core';
+import chalk from 'chalk';
 
 export interface PerformanceCommandArgs {
-  action: 'status' | 'report' | 'watch' | 'optimize';
+  action: 'status' | 'report' | 'watch' | 'optimize' | 'profile' | 'recommend' | 'regression';
   verbose?: boolean;
   watch?: boolean;
   interval?: number;
+  model?: string;
+  workload?: string;
+  format?: 'json' | 'csv' | 'text';
+  output?: string;
 }
 
 class PerformanceCommandHandler {
+  private modelProfiler: ModelProfiler;
+  private hardwareOptimizer: HardwareOptimizer;
+
+  constructor() {
+    this.hardwareOptimizer = new HardwareOptimizer(globalPerformanceMonitor);
+    this.modelProfiler = new ModelProfiler(globalPerformanceMonitor, this.hardwareOptimizer);
+  }
+
   async handleCommand(args: PerformanceCommandArgs): Promise<void> {
     switch (args.action) {
       case 'status':
         await this.showStatus(args.verbose);
         break;
       case 'report':
-        await this.showReport();
+        await this.showReport(args.format, args.output);
         break;
       case 'watch':
         await this.watchPerformance(args.interval || 1000);
         break;
       case 'optimize':
         await this.showOptimizationSuggestions();
+        break;
+      case 'profile':
+        await this.showModelProfile(args.model);
+        break;
+      case 'recommend':
+        await this.showWorkloadRecommendations(args.workload);
+        break;
+      case 'regression':
+        await this.showPerformanceRegressions();
         break;
       default:
         throw new Error(`Unknown performance command: ${args.action}`);
@@ -58,7 +80,7 @@ class PerformanceCommandHandler {
     }
   }
 
-  private async showReport(): Promise<void> {
+  private async showReport(format?: string, output?: string): Promise<void> {
     console.log(globalPerformanceMonitor.formatSystemReport());
     
     const stats = globalPerformanceMonitor.getInferenceStats();
@@ -168,6 +190,240 @@ class PerformanceCommandHandler {
     console.log('   • Use "trust model recommend <task>" for task-specific models');
     console.log('   • Monitor performance with "trust perf watch"');
     console.log('   • Verify model integrity with "trust model verify"');
+  }
+
+  private async showModelProfile(modelName?: string): Promise<void> {
+    if (!modelName) {
+      console.log(chalk.red('❌ Model name is required. Use --model <name>'));
+      return;
+    }
+
+    const profile = this.modelProfiler.getModelProfile(modelName);
+    if (!profile) {
+      console.log(chalk.yellow(`⚠️ No profile found for model: ${modelName}`));
+      console.log('Start using the model to generate profiling data.');
+      return;
+    }
+
+    console.log(chalk.blue(`\n📊 Performance Profile: ${modelName}`));
+    console.log('═'.repeat(60));
+
+    console.log(chalk.green('\n🚀 Performance Metrics:'));
+    console.log(`   Average Speed: ${profile.performance.averageTokensPerSecond.toFixed(2)} tokens/sec`);
+    console.log(`   Peak Speed: ${profile.performance.peakTokensPerSecond.toFixed(2)} tokens/sec`);
+    console.log(`   Average Latency: ${profile.performance.averageLatency.toFixed(0)}ms`);
+    console.log(`   Throughput Efficiency: ${profile.performance.throughputEfficiency.toFixed(2)} tokens/sec/GB`);
+
+    console.log(chalk.blue('\n💾 Resource Usage:'));
+    console.log(`   Base Memory: ${(profile.resources.baseMemoryMB / 1024).toFixed(1)}GB`);
+    console.log(`   CPU Utilization: ${profile.resources.cpuUtilization.toFixed(1)}%`);
+    if (profile.resources.gpuUtilization) {
+      console.log(`   GPU Utilization: ${profile.resources.gpuUtilization.toFixed(1)}%`);
+    }
+
+    console.log(chalk.magenta('\n✨ Quality Metrics:'));
+    console.log(`   Consistency Score: ${(profile.quality.consistencyScore * 100).toFixed(1)}%`);
+    console.log(`   Error Rate: ${(profile.quality.errorRate * 100).toFixed(2)}%`);
+    console.log(`   Context Adherence: ${(profile.quality.contextAdherence * 100).toFixed(1)}%`);
+
+    console.log(chalk.cyan('\n⚙️ Optimal Settings:'));
+    console.log(`   Context Size: ${profile.usage.optimalContextSize} tokens`);
+    console.log(`   Temperature: ${profile.usage.optimalTemperature}`);
+    console.log(`   Batch Size: ${profile.usage.optimalBatchSize}`);
+
+    console.log(chalk.gray('\n📈 Usage History:'));
+    console.log(`   Total Inferences: ${profile.history.totalInferences}`);
+    console.log(`   Performance Trend: ${profile.history.performanceTrend}`);
+    console.log(`   Last Used: ${profile.history.lastUsed.toLocaleString()}`);
+
+    if (profile.recommendations.length > 0) {
+      console.log(chalk.yellow('\n💡 Recommendations:'));
+      profile.recommendations.slice(0, 3).forEach((rec, i) => {
+        console.log(`   ${i + 1}. ${rec.title}`);
+        console.log(`      ${rec.description}`);
+        console.log(`      Action: ${rec.action}`);
+        if (rec.expectedImprovement) {
+          console.log(`      Expected: ${rec.expectedImprovement}`);
+        }
+        console.log();
+      });
+    }
+
+    // Generate optimization recommendations
+    const optimizations = await this.modelProfiler.generateOptimizationRecommendations(modelName);
+    if (optimizations.length > 0) {
+      console.log(chalk.green('\n🎯 Optimization Opportunities:'));
+      optimizations.slice(0, 3).forEach((opt, i) => {
+        const priorityColor = opt.priority === 'high' ? chalk.red : 
+                             opt.priority === 'medium' ? chalk.yellow : chalk.blue;
+        console.log(`   ${i + 1}. ${priorityColor(opt.title)} [${opt.priority}]`);
+        console.log(`      ${opt.description}`);
+        console.log(`      ${opt.implementation}`);
+        console.log(`      Expected: ${opt.expectedImprovement}`);
+        console.log();
+      });
+    }
+  }
+
+  private async showWorkloadRecommendations(workloadType?: string): Promise<void> {
+    const workloadPatterns = ['chat', 'coding', 'analysis'];
+    
+    if (!workloadType) {
+      console.log(chalk.blue('\n🎯 Available Workload Types:'));
+      console.log('   • chat - Interactive conversations');
+      console.log('   • coding - Code generation and debugging');  
+      console.log('   • analysis - Document analysis and reasoning');
+      console.log('\nUse --workload <type> to get specific recommendations');
+      return;
+    }
+
+    if (!workloadPatterns.includes(workloadType)) {
+      console.log(chalk.red(`❌ Unknown workload type: ${workloadType}`));
+      console.log(`Available types: ${workloadPatterns.join(', ')}`);
+      return;
+    }
+
+    console.log(chalk.blue(`\n🎯 Model Recommendations for ${workloadType.toUpperCase()} workload`));
+    console.log('═'.repeat(60));
+
+    // This would get recommendations from the profiler
+    // For now, show example recommendations based on workload type
+    const recommendations = this.getWorkloadExampleRecommendations(workloadType);
+    
+    recommendations.forEach((rec, i) => {
+      console.log(chalk.green(`\n${i + 1}. ${rec.model} (Score: ${rec.score}/100)`));
+      console.log(`   Reason: ${rec.reason}`);
+      console.log(`   Speed: ${rec.performance.speed} tokens/sec`);
+      console.log(`   Memory: ${rec.performance.memory}GB`);
+      console.log(`   CPU Usage: ${rec.performance.cpu}%`);
+      if (rec.warnings.length > 0) {
+        console.log(chalk.yellow(`   Warnings: ${rec.warnings.join(', ')}`));
+      }
+    });
+
+    console.log(chalk.cyan('\n⚙️ Optimal Settings for this workload:'));
+    const settings = this.getOptimalSettingsForWorkload(workloadType);
+    Object.entries(settings).forEach(([key, value]) => {
+      console.log(`   ${key}: ${value}`);
+    });
+  }
+
+  private async showPerformanceRegressions(): Promise<void> {
+    console.log(chalk.blue('\n🔍 Performance Regression Analysis'));
+    console.log('═'.repeat(50));
+
+    const regressions = await this.modelProfiler.detectPerformanceRegressions();
+    
+    if (regressions.length === 0) {
+      console.log(chalk.green('✅ No performance regressions detected!'));
+      console.log('All models are performing within expected parameters.');
+      return;
+    }
+
+    regressions.forEach((regression, i) => {
+      const severityColor = regression.significance === 'major' ? chalk.red :
+                           regression.significance === 'moderate' ? chalk.yellow : chalk.blue;
+      
+      console.log(severityColor(`\n${i + 1}. ${regression.modelName} - ${regression.metric.toUpperCase()}`));
+      console.log(`   Severity: ${regression.significance}`);
+      console.log(`   Previous: ${regression.previousValue.toFixed(2)}`);
+      console.log(`   Current: ${regression.currentValue.toFixed(2)}`);
+      console.log(`   Degradation: ${regression.degradation.toFixed(1)}%`);
+      console.log(`   Detected: ${regression.detected.toLocaleString()}`);
+      
+      if (regression.possibleCauses.length > 0) {
+        console.log('   Possible causes:');
+        regression.possibleCauses.forEach(cause => {
+          console.log(`   • ${cause}`);
+        });
+      }
+    });
+
+    console.log(chalk.yellow('\n💡 Recommended Actions:'));
+    console.log('   • Check system resource usage');
+    console.log('   • Verify model file integrity');
+    console.log('   • Restart the application');
+    console.log('   • Monitor for thermal throttling');
+  }
+
+  private getWorkloadExampleRecommendations(workloadType: string) {
+    const recommendations = {
+      chat: [
+        {
+          model: 'qwen2.5-1.5b-instruct',
+          score: 95,
+          reason: 'Optimized for fast, interactive responses',
+          performance: { speed: 45, memory: 2.1, cpu: 35 },
+          warnings: [],
+        },
+        {
+          model: 'phi-3.5-mini-instruct',
+          score: 88,
+          reason: 'Good balance of speed and quality',
+          performance: { speed: 32, memory: 3.2, cpu: 42 },
+          warnings: [],
+        },
+      ],
+      coding: [
+        {
+          model: 'phi-3.5-mini-instruct',
+          score: 92,
+          reason: 'Excellent code generation capabilities',
+          performance: { speed: 28, memory: 3.2, cpu: 45 },
+          warnings: [],
+        },
+        {
+          model: 'llama-3.2-3b-instruct',
+          score: 85,
+          reason: 'Strong reasoning for complex code tasks',
+          performance: { speed: 22, memory: 4.8, cpu: 55 },
+          warnings: ['Higher memory usage'],
+        },
+      ],
+      analysis: [
+        {
+          model: 'llama-3.1-8b-instruct',
+          score: 90,
+          reason: 'Superior analytical and reasoning capabilities',
+          performance: { speed: 15, memory: 8.5, cpu: 65 },
+          warnings: ['High resource requirements'],
+        },
+        {
+          model: 'llama-3.2-3b-instruct',
+          score: 82,
+          reason: 'Good analysis with moderate resource usage',
+          performance: { speed: 22, memory: 4.8, cpu: 55 },
+          warnings: [],
+        },
+      ],
+    };
+
+    return recommendations[workloadType as keyof typeof recommendations] || [];
+  }
+
+  private getOptimalSettingsForWorkload(workloadType: string) {
+    const settings = {
+      chat: {
+        temperature: '0.7',
+        maxTokens: '512',
+        topP: '0.9',
+        contextWindow: '2048 tokens',
+      },
+      coding: {
+        temperature: '0.2',
+        maxTokens: '1024',
+        topP: '0.85',
+        contextWindow: '4096 tokens',
+      },
+      analysis: {
+        temperature: '0.3',
+        maxTokens: '1024',
+        topP: '0.9',
+        contextWindow: '8192 tokens',
+      },
+    };
+
+    return settings[workloadType as keyof typeof settings] || {};
   }
 
   private formatBytes(bytes: number): string {

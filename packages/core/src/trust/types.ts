@@ -34,6 +34,33 @@ export interface TrustModelConfig {
 }
 
 /**
+ * Logit bias configuration for token probability adjustment
+ */
+export interface LogitBiasConfig {
+  // Token ID to bias value mapping (-100 to 100)
+  tokenBias?: Record<number, number>;
+  // String token to bias value mapping (-100 to 100)
+  stringBias?: Record<string, number>;
+  // JSON structure enforcement biases
+  jsonBias?: {
+    // Boost JSON structural tokens: {, }, [, ], ", :, ,
+    boostStructural?: boolean;
+    // Suppress likely broken tokens that break JSON
+    suppressInvalid?: boolean;
+    // Boost/suppress specific values
+    valueBias?: Record<string, number>;
+  };
+  // Custom bias rules based on context
+  contextualBias?: {
+    // Apply different biases in different JSON contexts
+    inObject?: Record<string, number>;
+    inArray?: Record<string, number>;
+    inString?: Record<string, number>;
+    inValue?: Record<string, number>;
+  };
+}
+
+/**
  * Model inference options
  */
 export interface GenerationOptions {
@@ -45,6 +72,8 @@ export interface GenerationOptions {
   stream?: boolean;
   functions?: Record<string, any>; // Function definitions for GBNF grammar-based calling
   grammar?: any; // JSON schema grammar for structured output
+  // Logit bias configuration for precise token control
+  logitBias?: LogitBiasConfig;
 }
 
 /**
