@@ -258,13 +258,6 @@ export const useSlashCommandProcessor = (
         },
       },
       {
-        name: 'privacy',
-        description: 'display the privacy notice',
-        action: (_mainCommand, _subCommand, _args) => {
-          openPrivacyNotice();
-        },
-      },
-      {
         name: 'stats',
         altName: 'usage',
         description: 'check session stats. Usage: /stats [model|tools]',
@@ -831,6 +824,314 @@ export const useSlashCommandProcessor = (
         },
         completion: async () =>
           (await savedChatTags()).map((tag) => 'resume ' + tag),
+      },
+      {
+        name: 'status',
+        description: 'show AI backend status and configuration',
+        action: async (_mainCommand, subCommand, _args) => {
+          const handler = await import('../../commands/statusCommands.js');
+          const statusHandler = new handler.StatusCommandHandler();
+          
+          // Capture console output
+          const originalLog = console.log;
+          let output = '';
+          console.log = (...args) => {
+            output += args.join(' ') + '\n';
+          };
+          
+          try {
+            await statusHandler.handleCommand({
+              action: subCommand as 'show' | 'backend' | 'model' | 'all' || 'all',
+              verbose: _args === 'verbose' || _args === '--verbose'
+            });
+          } finally {
+            console.log = originalLog;
+          }
+          
+          addMessage({
+            type: MessageType.INFO,
+            content: output.trim(),
+            timestamp: new Date(),
+          });
+        },
+      },
+      {
+        name: 'backend',
+        description: 'manage AI backend configuration. Usage: /backend <list|switch|test>',
+        action: async (_mainCommand, subCommand, args) => {
+          const handler = await import('../../commands/configCommands.js');
+          const configHandler = new handler.ConfigCommandHandler();
+          
+          // Capture console output
+          const originalLog = console.log;
+          const originalError = console.error;
+          let output = '';
+          console.log = (...args) => {
+            output += args.join(' ') + '\n';
+          };
+          console.error = (...args) => {
+            output += args.join(' ') + '\n';
+          };
+          
+          try {
+            let commandArgs: any;
+            
+            if (!subCommand || subCommand === 'show' || subCommand === 'list') {
+              // Show backend status - use status command for this
+              const statusHandler = await import('../../commands/statusCommands.js');
+              const statusCmd = new statusHandler.StatusCommandHandler();
+              await statusCmd.handleCommand({ action: 'backend', verbose: false });
+            } else if (subCommand === 'switch' && args) {
+              // Switch to specified backend
+              const backend = args.trim();
+              if (!['ollama', 'huggingface', 'cloud'].includes(backend)) {
+                throw new Error(`Invalid backend: ${backend}. Valid options: ollama, huggingface, cloud`);
+              }
+              commandArgs = {
+                action: 'backend',
+                backend: backend as 'ollama' | 'huggingface' | 'cloud'
+              };
+              await configHandler.handleCommand(commandArgs);
+            } else {
+              throw new Error('Usage: /backend [show|switch] [backend-name]');
+            }
+          } catch (error) {
+            output += `Error: ${error instanceof Error ? error.message : String(error)}\n`;
+          } finally {
+            console.log = originalLog;
+            console.error = originalError;
+          }
+          
+          addMessage({
+            type: output.includes('Error:') ? MessageType.ERROR : MessageType.INFO,
+            content: output.trim(),
+            timestamp: new Date(),
+          });
+        },
+      },
+      {
+        name: 'openaudit',
+        description: 'open audit management. Usage: /openaudit <new|list|report> [options]',
+        action: async (_mainCommand, subCommand, args) => {
+          if (!subCommand) {
+            addMessage({
+              type: MessageType.ERROR,
+              content: 'Missing command\nUsage: /openaudit <new|list|report> [options]',
+              timestamp: new Date(),
+            });
+            return;
+          }
+          
+          try {
+            const handler = await import('../../commands/openauditCommands.js');
+            const openAuditHandler = new handler.OpenAuditCommandHandler();
+            
+            // Capture console output
+            const originalLog = console.log;
+            const originalError = console.error;
+            let output = '';
+            console.log = (...args) => {
+              output += args.join(' ') + '\n';
+            };
+            console.error = (...args) => {
+              output += args.join(' ') + '\n';
+            };
+            
+            const commandArgs: any = {
+              action: subCommand
+            };
+            
+            // Parse arguments for different subcommands
+            if (subCommand === 'new' && args) {
+              // Parse args like "name:TestAudit type:soc2"
+              const argPairs = args.split(/\s+/);
+              argPairs.forEach(pair => {
+                const [key, value] = pair.split(':');
+                if (key && value) {
+                  commandArgs[key] = value;
+                }
+              });
+            } else if (subCommand === 'report' && args) {
+              const argParts = args.split(/\s+/);
+              commandArgs.id = argParts[0];
+              if (argParts[1] === '--output' && argParts[2]) {
+                commandArgs.output = argParts[2];
+              }
+            }
+            
+            await openAuditHandler.handleCommand(commandArgs);
+          } catch (error) {
+            output += `Error: ${error instanceof Error ? error.message : String(error)}\n`;
+          } finally {
+            console.log = originalLog;
+            console.error = originalError;
+          }
+          
+          addMessage({
+            type: output.includes('Error:') ? MessageType.ERROR : MessageType.INFO,
+            content: output.trim(),
+            timestamp: new Date(),
+          });
+        },
+      },
+      {
+        name: 'privacy',
+        description: 'manage privacy settings. Usage: /privacy <status|switch|list|info> [mode]',
+        action: async (_mainCommand, subCommand, args) => {
+          if (subCommand === undefined) {
+            // If no subcommand, show the privacy notice dialog
+            openPrivacyNotice();
+            return;
+          }
+          
+          const handler = await import('../../commands/privacyCommands.js');
+          const privacyHandler = new handler.PrivacyCommandHandler();
+          
+          // Capture console output
+          const originalLog = console.log;
+          const originalError = console.error;
+          let output = '';
+          console.log = (...args) => {
+            output += args.join(' ') + '\n';
+          };
+          console.error = (...args) => {
+            output += args.join(' ') + '\n';
+          };
+          
+          try {
+            const commandArgs: any = {
+              action: subCommand,
+              verbose: args === '--verbose' || args === 'verbose'
+            };
+            
+            if (subCommand === 'switch' && args && !args.startsWith('--')) {
+              commandArgs.mode = args.split(/\s+/)[0] as 'strict' | 'moderate' | 'open';
+            } else if (subCommand === 'info' && args && !args.startsWith('--')) {
+              commandArgs.mode = args.split(/\s+/)[0] as 'strict' | 'moderate' | 'open';
+            }
+            
+            await privacyHandler.handleCommand(commandArgs);
+          } catch (error) {
+            output += `Error: ${error instanceof Error ? error.message : String(error)}\n`;
+          } finally {
+            console.log = originalLog;
+            console.error = originalError;
+          }
+          
+          addMessage({
+            type: output.includes('Error:') ? MessageType.ERROR : MessageType.INFO,
+            content: output.trim(),
+            timestamp: new Date(),
+          });
+        },
+      },
+      {
+        name: 'model',
+        description: 'manage AI models. Usage: /model <list|download|verify|info> [model-name]',
+        action: async (_mainCommand, subCommand, args) => {
+          try {
+            const handler = await import('../../commands/modelCommands.js');
+            const modelHandler = new handler.ModelCommandHandler();
+            
+            // Capture console output
+            const originalLog = console.log;
+            const originalError = console.error;
+            let output = '';
+            console.log = (...args) => {
+              output += args.join(' ') + '\n';
+            };
+            console.error = (...args) => {
+              output += args.join(' ') + '\n';
+            };
+            
+            try {
+              const commandArgs: any = {
+                action: subCommand || 'list'
+              };
+              
+              if ((subCommand === 'download' || subCommand === 'verify' || subCommand === 'info') && args) {
+                commandArgs.model = args.trim();
+              } else if (subCommand === 'list' && args === '--verbose') {
+                commandArgs.verbose = true;
+              }
+              
+              await modelHandler.handleCommand(commandArgs);
+            } catch (error) {
+              output += `Error: ${error instanceof Error ? error.message : String(error)}\n`;
+            } finally {
+              console.log = originalLog;
+              console.error = originalError;
+            }
+            
+            addMessage({
+              type: output.includes('Error:') ? MessageType.ERROR : MessageType.INFO,
+              content: output.trim(),
+              timestamp: new Date(),
+            });
+          } catch (importError) {
+            addMessage({
+              type: MessageType.ERROR,
+              content: `Model commands not available: ${importError instanceof Error ? importError.message : String(importError)}`,
+              timestamp: new Date(),
+            });
+          }
+        },
+      },
+      {
+        name: 'config',
+        description: 'manage configuration. Usage: /config <show|get|set> [key] [value]',
+        action: async (_mainCommand, subCommand, args) => {
+          try {
+            const handler = await import('../../commands/configCommands.js');
+            const configHandler = new handler.ConfigCommandHandler();
+            
+            // Capture console output
+            const originalLog = console.log;
+            const originalError = console.error;
+            let output = '';
+            console.log = (...args) => {
+              output += args.join(' ') + '\n';
+            };
+            console.error = (...args) => {
+              output += args.join(' ') + '\n';
+            };
+            
+            try {
+              const commandArgs: any = {
+                action: subCommand || 'show'
+              };
+              
+              if (subCommand === 'get' && args) {
+                commandArgs.key = args.trim();
+              } else if (subCommand === 'set' && args) {
+                const argParts = args.split(/\s+/);
+                commandArgs.key = argParts[0];
+                commandArgs.value = argParts.slice(1).join(' ');
+              } else if (subCommand === 'show' && args === '--verbose') {
+                commandArgs.verbose = true;
+              }
+              
+              await configHandler.handleCommand(commandArgs);
+            } catch (error) {
+              output += `Error: ${error instanceof Error ? error.message : String(error)}\n`;
+            } finally {
+              console.log = originalLog;
+              console.error = originalError;
+            }
+            
+            addMessage({
+              type: output.includes('Error:') ? MessageType.ERROR : MessageType.INFO,
+              content: output.trim(),
+              timestamp: new Date(),
+            });
+          } catch (importError) {
+            addMessage({
+              type: MessageType.ERROR,
+              content: `Config commands not available: ${importError instanceof Error ? importError.message : String(importError)}`,
+              timestamp: new Date(),
+            });
+          }
+        },
       },
       {
         name: 'quit',
