@@ -170,7 +170,7 @@ export async function loadCliConfig(
   loadEnvironment();
 
   const argv = await parseArguments();
-  const debugMode = argv.debug || false;
+  const debugMode = argv.debug || process.env.DEBUG === '1' || process.env.DEBUG === 'true' || process.env.DEBUG === 'verbose' || false;
 
   // Set the context filename in the server's memoryTool module BEFORE loading memory
   // TODO(b/343434939): This is a bit of a hack. The contextFileName should ideally be passed

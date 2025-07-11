@@ -54,6 +54,9 @@ export interface Settings {
   bugCommand?: BugCommandSettings;
   checkpointing?: CheckpointingSettings;
   autoConfigureMaxOldSpaceSize?: boolean;
+  
+  // CLI Title customization
+  customCliTitle?: string;
 
   // Git-aware file filtering settings
   fileFiltering?: {

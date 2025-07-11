@@ -23,7 +23,12 @@ export const Header: React.FC<HeaderProps> = ({
   let displayTitle;
   const widthOfLongLogo = getAsciiArtWidth(longAsciiLogo);
 
-  if (customAsciiArt) {
+  // Check for CLI_TITLE environment variable first
+  const cliTitleEnv = process.env.CLI_TITLE;
+  
+  if (cliTitleEnv) {
+    displayTitle = cliTitleEnv;
+  } else if (customAsciiArt) {
     displayTitle = customAsciiArt;
   } else {
     displayTitle =
