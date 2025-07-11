@@ -1134,6 +1134,60 @@ export const useSlashCommandProcessor = (
         },
       },
       {
+        name: 'model-enhanced',
+        description: 'unified model management across all backends. Usage: /model-enhanced <list-all|discover|filter|recommend|backends> [options]',
+        action: async (_mainCommand, subCommand, args) => {
+          try {
+            const handler = await import('../../commands/enhancedModelCommands.js');
+            
+            // Capture console output
+            const originalLog = console.log;
+            const originalError = console.error;
+            let output = '';
+            console.log = (...args) => {
+              output += args.join(' ') + '\n';
+            };
+            console.error = (...args) => {
+              output += args.join(' ') + '\n';
+            };
+            
+            const commandArgs: any = {
+              action: subCommand || 'list-all'
+            };
+            
+            // Parse arguments based on subcommand
+            if (args) {
+              const argParts = args.split(/\s+/);
+              argParts.forEach((arg, index) => {
+                if (arg === '--task' && argParts[index + 1]) {
+                  commandArgs.task = argParts[index + 1];
+                } else if (arg === '--ram-limit' && argParts[index + 1]) {
+                  commandArgs.ramLimit = parseInt(argParts[index + 1]);
+                } else if (arg === '--backend' && argParts[index + 1]) {
+                  commandArgs.backend = argParts[index + 1];
+                } else if (arg === '--verbose') {
+                  commandArgs.verbose = true;
+                }
+              });
+            }
+            
+            await handler.handleEnhancedModelCommand(commandArgs);
+            
+            addMessage({
+              type: MessageType.INFO,
+              content: output.trim(),
+              timestamp: new Date(),
+            });
+          } catch (error) {
+            addMessage({
+              type: MessageType.ERROR,
+              content: `Enhanced model commands failed: ${error instanceof Error ? error.message : String(error)}`,
+              timestamp: new Date(),
+            });
+          }
+        },
+      },
+      {
         name: 'quit',
         altName: 'exit',
         description: 'exit the cli',
