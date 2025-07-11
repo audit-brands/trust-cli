@@ -1135,7 +1135,7 @@ export const useSlashCommandProcessor = (
       },
       {
         name: 'model-enhanced',
-        description: 'unified model management across all backends. Usage: /model-enhanced <list-all|discover|filter|recommend|backends> [options]',
+        description: 'unified model management across all backends. Usage: /model-enhanced <list-all|discover|filter|recommend|backends|smart-default|smart-recommend|routing-info|transparency|auto-select|resource-check|optimize|system-report|error-help> [options]',
         action: async (_mainCommand, subCommand, args) => {
           try {
             const handler = await import('../../commands/enhancedModelCommands.js');
