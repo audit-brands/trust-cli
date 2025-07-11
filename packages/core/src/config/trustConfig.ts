@@ -228,4 +228,120 @@ export class TrustConfiguration {
         break;
     }
   }
+
+  /**
+   * Enhanced auth validation methods based on upstream Gemini CLI improvements
+   */
+  validateAuthConfiguration(): { isValid: boolean; errors: string[]; warnings: string[] } {
+    const errors: string[] = [];
+    const warnings: string[] = [];
+
+    // Check for conflicting environment variables
+    const geminiApiKey = process.env.GEMINI_API_KEY;
+    const googleApiKey = process.env.GOOGLE_API_KEY;
+    const googleCloudProject = process.env.GOOGLE_CLOUD_PROJECT;
+    const googleCloudLocation = process.env.GOOGLE_CLOUD_LOCATION;
+    const googleApplicationCredentials = process.env.GOOGLE_APPLICATION_CREDENTIALS;
+
+    // Detect potentially confusing configurations
+    if (geminiApiKey && googleApiKey) {
+      warnings.push('Both GEMINI_API_KEY and GOOGLE_API_KEY are set. GEMINI_API_KEY takes precedence for Gemini API access.');
+    }
+
+    if (geminiApiKey && (googleCloudProject || googleCloudLocation)) {
+      warnings.push('GEMINI_API_KEY is set along with Google Cloud settings. This may cause authentication confusion.');
+    }
+
+    if (googleApiKey && !googleCloudProject) {
+      warnings.push('GOOGLE_API_KEY is set but GOOGLE_CLOUD_PROJECT is missing. Vertex AI may not work properly.');
+    }
+
+    if (googleCloudProject && !googleCloudLocation) {
+      errors.push('GOOGLE_CLOUD_PROJECT is set but GOOGLE_CLOUD_LOCATION is missing. Both are required for Vertex AI.');
+    }
+
+    // Check for valid backend configurations
+    if (this.isBackendEnabled('huggingface') && !geminiApiKey && !googleApiKey) {
+      warnings.push('HuggingFace backend is enabled but no API key is configured.');
+    }
+
+    if (this.isBackendEnabled('cloud') && !googleCloudProject) {
+      errors.push('Cloud backend is enabled but Google Cloud configuration is incomplete.');
+    }
+
+    return {
+      isValid: errors.length === 0,
+      errors,
+      warnings,
+    };
+  }
+
+  /**
+   * Get auth type based on current environment and configuration
+   */
+  getAuthType(): 'gemini-api-key' | 'vertex-ai' | 'oauth-personal' | 'cloud-shell' | 'none' {
+    const geminiApiKey = process.env.GEMINI_API_KEY;
+    const googleApiKey = process.env.GOOGLE_API_KEY;
+    const googleCloudProject = process.env.GOOGLE_CLOUD_PROJECT;
+    const googleCloudLocation = process.env.GOOGLE_CLOUD_LOCATION;
+    const isCloudShell = process.env.GOOGLE_CLOUD_SHELL === 'true';
+
+    if (isCloudShell) {
+      return 'cloud-shell';
+    }
+
+    if (geminiApiKey) {
+      return 'gemini-api-key';
+    }
+
+    if (googleApiKey || (googleCloudProject && googleCloudLocation)) {
+      return 'vertex-ai';
+    }
+
+    // Check if OAuth tokens might be available (simplified check)
+    if (process.env.HOME) {
+      return 'oauth-personal';
+    }
+
+    return 'none';
+  }
+
+  /**
+   * Validate and suggest fixes for auth issues
+   */
+  getAuthValidationSuggestions(): string[] {
+    const suggestions: string[] = [];
+    const authValidation = this.validateAuthConfiguration();
+    const authType = this.getAuthType();
+
+    if (authType === 'none') {
+      suggestions.push('No authentication configured. Set GEMINI_API_KEY for Gemini API or configure Google Cloud credentials for Vertex AI.');
+    }
+
+    if (authValidation.errors.length > 0) {
+      suggestions.push('Fix configuration errors: ' + authValidation.errors.join(', '));
+    }
+
+    if (authValidation.warnings.length > 0) {
+      suggestions.push('Consider resolving warnings: ' + authValidation.warnings.join(', '));
+    }
+
+    // Specific suggestions based on auth type
+    switch (authType) {
+      case 'gemini-api-key':
+        suggestions.push('Using Gemini API Key authentication. Ensure the key has proper permissions.');
+        break;
+      case 'vertex-ai':
+        suggestions.push('Using Vertex AI authentication. Verify project and location settings.');
+        break;
+      case 'oauth-personal':
+        suggestions.push('Using OAuth authentication. Run `trust auth setup` if having issues.');
+        break;
+      case 'cloud-shell':
+        suggestions.push('Using Cloud Shell authentication. Should work automatically.');
+        break;
+    }
+
+    return suggestions;
+  }
 }

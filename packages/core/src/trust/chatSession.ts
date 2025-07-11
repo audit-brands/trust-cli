@@ -22,6 +22,18 @@ export interface ChatMessage {
   modelUsed?: string;
   tokensUsed?: number;
   responseTime?: number;
+  isCompressed?: boolean; // Indicates if this message was part of compression
+}
+
+/**
+ * Compression information for tracking context reduction
+ */
+export interface ChatCompressionInfo {
+  originalMessageCount: number;
+  compressedMessageCount: number;
+  compressionRatio: number;
+  timestamp: Date;
+  preservedRecentCount: number;
 }
 
 /**
@@ -34,6 +46,8 @@ export interface ChatSessionConfig {
   persistHistory?: boolean;
   modelConfig?: TrustModelConfig;
   generationOptions?: GenerationOptions;
+  compressionThreshold?: number; // Number of messages before compression
+  recentHistorySize?: number; // Number of recent messages to preserve during compression
 }
 
 /**
@@ -52,6 +66,8 @@ export class TrustChatSession {
     this.config = {
       maxHistory: 50,
       persistHistory: true,
+      compressionThreshold: 30, // Compress when more than 30 messages
+      recentHistorySize: 10, // Preserve last 10 messages during compression
       ...config,
     };
     this.sessionId = config.sessionId || this.generateSessionId();
@@ -137,6 +153,11 @@ export class TrustChatSession {
         timestamp: new Date(),
       });
       
+      // Check if compression is needed
+      if (this.shouldCompress()) {
+        await this.compressHistory();
+      }
+
       // Save history
       await this.saveHistory();
       
@@ -259,6 +280,82 @@ export class TrustChatSession {
     return markdown;
   }
 
+  /**
+   * Compress conversation history to preserve recent context while reducing size
+   * Based on upstream Gemini CLI context compression implementation
+   */
+  async compressHistory(): Promise<ChatCompressionInfo | null> {
+    const nonSystemMessages = this.messages.filter(m => m.role !== 'system');
+    
+    if (!this.config.compressionThreshold || nonSystemMessages.length <= this.config.compressionThreshold) {
+      return null; // No compression needed
+    }
+
+    const systemMessages = this.messages.filter(m => m.role === 'system');
+    const recentHistorySize = this.config.recentHistorySize || 10;
+    
+    // Preserve recent messages
+    const recentMessages = nonSystemMessages.slice(-recentHistorySize);
+    const olderMessages = nonSystemMessages.slice(0, -recentHistorySize);
+    
+    if (olderMessages.length === 0) {
+      return null; // Nothing to compress
+    }
+
+    try {
+      // Create a summary of older messages
+      const compressionContext = this.buildCompressionContext(olderMessages);
+      const compressionPrompt = this.getCompressionPrompt(compressionContext);
+      
+      // Generate compressed summary using the client
+      const compressedSummary = await this.generateCompression(compressionPrompt);
+      
+      // Create compressed message
+      const compressedMessage: ChatMessage = {
+        id: this.generateMessageId(),
+        role: 'system',
+        content: `[COMPRESSED HISTORY] ${compressedSummary}`,
+        timestamp: new Date(),
+        isCompressed: true,
+      };
+
+      // Replace old messages with compressed summary
+      this.messages = [
+        ...systemMessages,
+        compressedMessage,
+        ...recentMessages,
+      ];
+
+      const compressionInfo: ChatCompressionInfo = {
+        originalMessageCount: systemMessages.length + nonSystemMessages.length,
+        compressedMessageCount: this.messages.length,
+        compressionRatio: olderMessages.length / this.messages.length,
+        timestamp: new Date(),
+        preservedRecentCount: recentMessages.length,
+      };
+
+      // Save updated history
+      await this.saveHistory();
+
+      return compressionInfo;
+    } catch (error) {
+      console.warn('Failed to compress chat history:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Check if compression should be triggered
+   */
+  shouldCompress(): boolean {
+    if (!this.config.compressionThreshold) {
+      return false;
+    }
+    
+    const nonSystemMessages = this.messages.filter(m => m.role !== 'system');
+    return nonSystemMessages.length > this.config.compressionThreshold;
+  }
+
   private addMessage(
     role: 'user' | 'assistant' | 'system', 
     content: string, 
@@ -331,5 +428,45 @@ export class TrustChatSession {
 
   private generateMessageId(): string {
     return `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  }
+
+  private buildCompressionContext(messages: ChatMessage[]): string {
+    let context = '';
+    
+    for (const message of messages) {
+      if (message.role === 'user') {
+        context += `User: ${message.content}\n\n`;
+      } else if (message.role === 'assistant') {
+        context += `Assistant: ${message.content}\n\n`;
+      }
+    }
+    
+    return context.trim();
+  }
+
+  private getCompressionPrompt(context: string): string {
+    return `Please provide a concise summary of this conversation history, preserving key context and important details:
+
+${context}
+
+Summary:`;
+  }
+
+  private async generateCompression(prompt: string): Promise<string> {
+    try {
+      // Use the client to generate a compression summary
+      let summary = '';
+      for await (const chunk of this.client.generateStream(prompt, {
+        maxTokens: 500, // Limit summary length
+        temperature: 0.3, // Lower temperature for more consistent summaries
+      })) {
+        summary += chunk;
+      }
+      return summary.trim();
+    } catch (error) {
+      // Fallback to simple truncation if AI compression fails
+      const lines = prompt.split('\n').slice(0, 10);
+      return `Previous conversation context: ${lines.join(' ')}...`;
+    }
   }
 }
