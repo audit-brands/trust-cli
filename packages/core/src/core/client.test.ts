@@ -58,6 +58,7 @@ vi.mock('../utils/generateContentResponseUtilities', () => ({
   getResponseText: (result: GenerateContentResponse) =>
     result.candidates?.[0]?.content?.parts?.map((part) => part.text).join('') ||
     undefined,
+  getStructuredResponse: vi.fn().mockReturnValue(null),
 }));
 vi.mock('../telemetry/index.js', () => ({
   logApiRequest: vi.fn(),
@@ -129,6 +130,8 @@ describe('Gemini Client (client.ts)', () => {
         getProxy: vi.fn().mockReturnValue(undefined),
         getWorkingDir: vi.fn().mockReturnValue('/test/dir'),
         getFileService: vi.fn().mockReturnValue(fileService),
+        getContextCompressionConfig: vi.fn().mockReturnValue({ preserveRecentTurns: 1 }),
+        getUsageStatisticsEnabled: vi.fn().mockReturnValue(false),
       };
       return mock as unknown as Config;
     });
@@ -373,6 +376,9 @@ describe('Gemini Client (client.ts)', () => {
 
       const mockGenerator: Partial<ContentGenerator> = {
         countTokens: mockCountTokens,
+        generateContent: vi.fn().mockResolvedValue({
+          candidates: [{ content: { parts: [{ text: 'Summary' }] } }],
+        }),
       };
       client['contentGenerator'] = mockGenerator as ContentGenerator;
 
@@ -381,7 +387,9 @@ describe('Gemini Client (client.ts)', () => {
         getHistory: vi
           .fn()
           .mockReturnValue([
-            { role: 'user', parts: [{ text: '...history...' }] },
+            { role: 'user', parts: [{ text: 'Old conversation 1' }] },
+            { role: 'model', parts: [{ text: 'Response 1' }] },
+            { role: 'user', parts: [{ text: 'Recent conversation' }] },
           ]),
         addHistory: vi.fn(),
         sendMessage: mockSendMessage,
@@ -434,6 +442,8 @@ describe('Gemini Client (client.ts)', () => {
       expect(result).toEqual({
         originalTokenCount,
         newTokenCount,
+        recentHistoryPreserved: true,
+        recentTurnsCount: 1,
       });
 
       // Assert that the chat was reset
@@ -463,6 +473,8 @@ describe('Gemini Client (client.ts)', () => {
       expect(result).toEqual({
         originalTokenCount,
         newTokenCount,
+        recentHistoryPreserved: true,
+        recentTurnsCount: 1,
       });
 
       // Assert that the chat was reset
@@ -724,7 +736,8 @@ describe('Gemini Client (client.ts)', () => {
       const mockCountTokens = vi
         .fn()
         .mockResolvedValueOnce({ totalTokens: 100000 })
-        .mockResolvedValueOnce({ totalTokens: 5000 });
+        .mockResolvedValueOnce({ totalTokens: 1000 }) // for recent history
+        .mockResolvedValueOnce({ totalTokens: 5000 }); // for final compressed history
 
       const mockSendMessage = vi.fn().mockResolvedValue({ text: 'Summary' });
 
@@ -740,6 +753,9 @@ describe('Gemini Client (client.ts)', () => {
 
       const mockGenerator: Partial<ContentGenerator> = {
         countTokens: mockCountTokens,
+        generateContent: vi.fn().mockResolvedValue({
+          candidates: [{ content: { parts: [{ text: 'Summary' }] } }],
+        }),
       };
 
       // mock the model has been changed between calls of `countTokens`
@@ -755,19 +771,25 @@ describe('Gemini Client (client.ts)', () => {
 
       const result = await client.tryCompressChat(true);
 
-      expect(mockCountTokens).toHaveBeenCalledTimes(2);
+      expect(mockCountTokens).toHaveBeenCalledTimes(3);
       expect(mockCountTokens).toHaveBeenNthCalledWith(1, {
         model: firstCurrentModel,
         contents: mockChatHistory,
       });
       expect(mockCountTokens).toHaveBeenNthCalledWith(2, {
+        model: firstCurrentModel,
+        contents: expect.any(Array), // recent history
+      });
+      expect(mockCountTokens).toHaveBeenNthCalledWith(3, {
         model: secondCurrentModel,
-        contents: expect.any(Array),
+        contents: expect.any(Array), // final compressed history
       });
 
       expect(result).toEqual({
         originalTokenCount: 100000,
         newTokenCount: 5000,
+        recentHistoryPreserved: true,
+        recentTurnsCount: 1,
       });
     });
   });

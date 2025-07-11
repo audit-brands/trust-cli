@@ -275,7 +275,7 @@ describe('TrustContentGenerator', () => {
       expect(callArgs[1]).toMatchObject({
         temperature: 0.8,
         topP: 0.95,
-        maxTokens: 512
+        // maxTokens is now optimized based on model and task type
       });
     });
   });

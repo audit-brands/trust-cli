@@ -120,6 +120,7 @@ const App = ({ config, settings, startupWarnings = [] }: AppProps) => {
   const [footerHeight, setFooterHeight] = useState<number>(0);
   const [corgiMode, setCorgiMode] = useState(false);
   const [currentModel, setCurrentModel] = useState(config.getModel());
+  const [currentBackend, setCurrentBackend] = useState<string>('cloud');
   const [shellModeActive, setShellModeActive] = useState(false);
   const [showErrorDetails, setShowErrorDetails] = useState<boolean>(false);
   const [showToolDescriptions, setShowToolDescriptions] =
@@ -238,6 +239,32 @@ const App = ({ config, settings, startupWarnings = [] }: AppProps) => {
 
     return () => clearInterval(interval);
   }, [config, currentModel]);
+
+  // Watch for backend changes
+  useEffect(() => {
+    const checkBackendChange = () => {
+      try {
+        const geminiClient = config.getGeminiClient();
+        const contentGenerator = geminiClient.getContentGenerator();
+        
+        // Check if this is a TrustContentGenerator (has getCurrentBackend method)
+        if (contentGenerator && typeof (contentGenerator as any).getCurrentBackend === 'function') {
+          const backend = (contentGenerator as any).getCurrentBackend();
+          if (backend !== currentBackend) {
+            setCurrentBackend(backend);
+          }
+        }
+      } catch (error) {
+        // Silently handle initialization errors - backend will default to 'cloud'
+      }
+    };
+
+    // Check immediately and then periodically
+    checkBackendChange();
+    const interval = setInterval(checkBackendChange, 2000); // Check every 2 seconds
+
+    return () => clearInterval(interval);
+  }, [config, currentBackend]);
 
   // Set up Flash fallback handler
   useEffect(() => {
@@ -838,6 +865,7 @@ const App = ({ config, settings, startupWarnings = [] }: AppProps) => {
               config.getDebugMode() || config.getShowMemoryUsage()
             }
             promptTokenCount={sessionStats.lastPromptTokenCount}
+            backend={currentBackend}
           />
         </Box>
       </Box>

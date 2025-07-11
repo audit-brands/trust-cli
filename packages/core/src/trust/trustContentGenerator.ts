@@ -277,13 +277,8 @@ export class TrustContentGenerator implements ContentGenerator {
       // Convert Gemini request format to simple text prompt
       const prompt = this.convertRequestToPrompt(request);
       
-      // Get generation options from request config
-      const options: GenerationOptions = {
-        temperature: request.config?.temperature || 0.1, // Lower temperature for more deterministic function calls
-        topP: request.config?.topP || 0.9,
-        maxTokens: 512, // Reduced maxTokens for faster responses
-        stopTokens: ['<end_of_json>', '\n\n', 'User:', 'Human:'], // Stop after function call completion
-      };
+      // Get optimized generation options based on model and request type
+      const options: GenerationOptions = this.getOptimizedGenerationOptions(request, currentModel);
 
       // Add GBNF function calling if tools are available
       if (this.gbnfEnabled && this.shouldUseGBNFunctions(request)) {
@@ -365,12 +360,7 @@ export class TrustContentGenerator implements ContentGenerator {
     console.log('🤗 Using HuggingFace models for streaming content generation');
 
     const prompt = this.convertRequestToPrompt(request);
-    const options: GenerationOptions = {
-      temperature: request.config?.temperature || 0.1, // Lower temperature for more deterministic function calls
-      topP: request.config?.topP || 0.9,
-      maxTokens: 512, // Reduced maxTokens for faster responses
-      stopTokens: ['<end_of_json>', '\n\n', 'User:', 'Human:'], // Stop after function call completion
-    };
+    const options: GenerationOptions = this.getOptimizedGenerationOptions(request, currentModel);
 
     return this.generateStreamingResponse(prompt, options);
   }
@@ -441,71 +431,224 @@ export class TrustContentGenerator implements ContentGenerator {
       return '';
     }
 
-    let prompt = '';
+    const currentModel = this.modelManager.getCurrentModel();
+    const hasTools = 'config' in request && request.config?.tools && request.config.tools.length > 0;
     
-    // Add system instruction if present
+    const rawPrompt = this.buildOptimizedPrompt(request, contentsArray, currentModel, hasTools);
+    
+    // Apply context window optimization
+    return this.optimizeForContextWindow(rawPrompt, currentModel);
+  }
+
+  /**
+   * Build an optimized prompt based on model type and context
+   */
+  private buildOptimizedPrompt(
+    request: GenerateContentParameters | CountTokensParameters,
+    contentsArray: any[],
+    currentModel: TrustModelConfig | null,
+    hasTools: boolean
+  ): string {
+    const modelName = currentModel?.name || 'unknown';
+    let prompt = '';
+
+    // Add system instruction with model-specific formatting
     if ('config' in request && request.config?.systemInstruction) {
       if (typeof request.config.systemInstruction === 'object' && 'parts' in request.config.systemInstruction) {
         const systemText = this.extractTextFromParts(request.config.systemInstruction.parts);
         if (systemText) {
-          prompt += `${systemText}\n\n`;
+          prompt += this.formatSystemInstruction(systemText, modelName);
         }
       }
     }
 
-    // Add available tools information if tools are present
-    if ('config' in request && request.config?.tools && request.config.tools.length > 0) {
-      prompt += `\nTOOLS: You have access to function calling. You MUST respond with valid JSON when you need to use tools.
+    // Add optimized tools information if tools are present
+    if (hasTools) {
+      prompt += this.buildOptimizedToolsSection(request, modelName);
+    }
 
-You MUST respond with:
-\`\`\`json
-{"function_call": {"name": "TOOL_NAME", "arguments": {...}}}
-\`\`\`<end_of_json>
+    // Convert conversation history with model-specific formatting
+    prompt += this.formatConversationHistory(contentsArray, modelName);
 
-CRITICAL RULES:
-- Use tools to accomplish tasks, don't refuse to use them
-- Use EXACT parameter names from the schemas below
-- Wait for the function response, then provide a complete answer using that data
-- Never simulate or fake function results
+    return prompt.trim();
+  }
 
-Available functions:
-`;
-      
-      for (const tool of request.config.tools) {
-        if (tool && typeof tool === 'object' && 'functionDeclarations' in tool && tool.functionDeclarations) {
-          for (const func of tool.functionDeclarations) {
-            if (func.name) {
-              prompt += `
-${func.name}: ${func.description || 'No description'}
-Required parameters: ${JSON.stringify(func.parameters, null, 2)}
-`;
-            }
+  /**
+   * Format system instruction based on model preferences
+   */
+  private formatSystemInstruction(systemText: string, modelName: string): string {
+    if (modelName.includes('phi')) {
+      // Phi models prefer clear instruction formatting
+      return `<|system|>\n${systemText}<|end|>\n\n`;
+    } else if (modelName.includes('qwen')) {
+      // Qwen models work well with simple system format
+      return `System: ${systemText}\n\n`;
+    } else if (modelName.includes('llama')) {
+      // Llama models prefer this format
+      return `<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n${systemText}<|eot_id|>\n\n`;
+    }
+    
+    // Default format for unknown models
+    return `${systemText}\n\n`;
+  }
+
+  /**
+   * Build optimized tools section based on model capabilities
+   */
+  private buildOptimizedToolsSection(request: GenerateContentParameters | CountTokensParameters, modelName: string): string {
+    if (!('config' in request) || !request.config?.tools) {
+      return '';
+    }
+
+    let toolsPrompt = '';
+    
+    // Model-specific tool calling instructions
+    if (modelName.includes('phi')) {
+      toolsPrompt += `\n<|user|>\nYou have access to the following tools. When you need to use a tool, respond with a JSON function call in this exact format:\n\`\`\`json\n{"function_call": {"name": "TOOL_NAME", "arguments": {...}}}\n\`\`\`<end_of_json>\n\n`;
+    } else {
+      toolsPrompt += `\nTOOLS: You have access to function calling. When you need to use tools, respond with valid JSON.\n\nFormat: \`\`\`json\n{"function_call": {"name": "TOOL_NAME", "arguments": {...}}}\n\`\`\`<end_of_json>\n\n`;
+    }
+
+    // Add function definitions in compact format
+    toolsPrompt += `Available functions:\n`;
+    
+    for (const tool of request.config.tools) {
+      if (tool && typeof tool === 'object' && 'functionDeclarations' in tool && tool.functionDeclarations) {
+        for (const func of tool.functionDeclarations) {
+          if (func.name) {
+            // More compact function description
+            const params = func.parameters?.properties ? Object.keys(func.parameters.properties).join(', ') : 'none';
+            toolsPrompt += `• ${func.name}(${params}): ${func.description || 'No description'}\n`;
           }
         }
       }
-      
-      prompt += `
-EXAMPLE:
-User: List files in current directory
-Assistant: \`\`\`json
-{"function_call": {"name": "list_directory", "arguments": {"path": "/current/directory"}}}
-\`\`\`<end_of_json>
-
-`;
     }
 
-    // Convert conversation history
+    // Add a practical example
+    toolsPrompt += `\nExample:\nUser: List files here\nAssistant: \`\`\`json\n{"function_call": {"name": "list_directory", "arguments": {"path": "."}}}\n\`\`\`<end_of_json>\n\n`;
+    
+    return toolsPrompt;
+  }
+
+  /**
+   * Format conversation history based on model preferences
+   */
+  private formatConversationHistory(contentsArray: any[], modelName: string): string {
+    let historyPrompt = '';
+    
     for (const content of contentsArray) {
       if (typeof content === 'object' && content !== null && 'parts' in content) {
         const text = this.extractTextFromParts(content.parts);
         if (text) {
-          const role = content.role === 'model' ? 'Assistant' : 'User';
-          prompt += `${role}: ${text}\n\n`;
+          if (modelName.includes('phi')) {
+            // Phi models prefer explicit role markers
+            const role = content.role === 'model' ? '<|assistant|>' : '<|user|>';
+            historyPrompt += `${role}\n${text}<|end|>\n\n`;
+          } else if (modelName.includes('llama')) {
+            // Llama models prefer header format
+            const role = content.role === 'model' ? 'assistant' : 'user';
+            historyPrompt += `<|start_header_id|>${role}<|end_header_id|>\n${text}<|eot_id|>\n\n`;
+          } else {
+            // Default format for other models
+            const role = content.role === 'model' ? 'Assistant' : 'User';
+            historyPrompt += `${role}: ${text}\n\n`;
+          }
         }
       }
     }
+    
+    return historyPrompt;
+  }
 
-    return prompt.trim();
+  /**
+   * Optimize prompt for model's context window limitations
+   */
+  private optimizeForContextWindow(prompt: string, currentModel: TrustModelConfig | null): string {
+    const modelName = currentModel?.name || 'unknown';
+    const maxContextLength = this.getModelContextLimit(modelName);
+    
+    // Rough token estimation (4 chars per token on average)
+    const estimatedTokens = Math.ceil(prompt.length / 4);
+    
+    if (estimatedTokens <= maxContextLength * 0.7) {
+      // We're well within limits, return as-is
+      return prompt;
+    }
+    
+    // Need to truncate - preserve system instruction and recent context
+    const lines = prompt.split('\n');
+    const systemEndIndex = this.findSystemSectionEnd(lines);
+    const toolsEndIndex = this.findToolsSectionEnd(lines, systemEndIndex);
+    
+    // Keep system instruction and tools section intact
+    const preservedStart = lines.slice(0, Math.max(systemEndIndex, toolsEndIndex)).join('\n');
+    const conversationPart = lines.slice(Math.max(systemEndIndex, toolsEndIndex)).join('\n');
+    
+    // Calculate how much conversation we can keep
+    const preservedTokens = Math.ceil(preservedStart.length / 4);
+    const availableTokens = Math.floor(maxContextLength * 0.7) - preservedTokens;
+    const maxConversationChars = availableTokens * 4;
+    
+    if (conversationPart.length <= maxConversationChars) {
+      return prompt; // Still fits
+    }
+    
+    // Truncate conversation history, keeping most recent
+    const truncatedConversation = conversationPart.slice(-maxConversationChars);
+    
+    // Add truncation indicator
+    const truncationNotice = '\n[... earlier conversation truncated for context window ...]\n';
+    
+    return preservedStart + truncationNotice + truncatedConversation;
+  }
+
+  /**
+   * Get context limit for different model types
+   */
+  private getModelContextLimit(modelName: string): number {
+    if (modelName.includes('7b') || modelName.includes('large')) {
+      return 8192; // Larger models typically have more context
+    } else if (modelName.includes('3b') || modelName.includes('small')) {
+      return 4096; // Medium models
+    } else if (modelName.includes('1.5b') || modelName.includes('mini')) {
+      return 2048; // Smaller models have limited context
+    } else if (modelName.includes('qwen')) {
+      return 8192; // Qwen models typically have good context length
+    } else if (modelName.includes('phi')) {
+      return 4096; // Phi models moderate context
+    }
+    
+    return 4096; // Conservative default
+  }
+
+  /**
+   * Find where system section ends in prompt lines
+   */
+  private findSystemSectionEnd(lines: string[]): number {
+    for (let i = 0; i < lines.length; i++) {
+      if (lines[i].includes('<|end|>') || lines[i].includes('<|eot_id|>') || 
+          (lines[i].trim() === '' && i > 0 && !lines[i-1].includes('System:'))) {
+        return i + 1;
+      }
+    }
+    return Math.min(10, lines.length); // Fallback to first 10 lines
+  }
+
+  /**
+   * Find where tools section ends in prompt lines
+   */
+  private findToolsSectionEnd(lines: string[], startIndex: number): number {
+    for (let i = startIndex; i < lines.length; i++) {
+      if (lines[i].includes('Example:') && i + 5 < lines.length) {
+        // Look for end of example section
+        for (let j = i; j < Math.min(i + 10, lines.length); j++) {
+          if (lines[j].includes('<end_of_json>')) {
+            return j + 2; // Include some buffer after example
+          }
+        }
+      }
+    }
+    return startIndex; // No tools section found
   }
 
   private extractTextFromParts(parts: Part[] | Part | undefined): string {
@@ -785,6 +928,75 @@ Assistant: \`\`\`json
       'huggingface': this.modelClient.isModelLoaded(),
       cloud: this.trustConfig.getCloudConfig().enabled,
     };
+  }
+
+  /**
+   * Get optimized generation options based on model type and request context
+   */
+  private getOptimizedGenerationOptions(request: GenerateContentParameters, currentModel: TrustModelConfig | null): GenerationOptions {
+    const hasTools = 'config' in request && request.config?.tools && request.config.tools.length > 0;
+    const modelName = currentModel?.name || 'unknown';
+    
+    // Base options with smart defaults
+    const options: GenerationOptions = {
+      temperature: request.config?.temperature || (hasTools ? 0.1 : 0.7), // Lower temp for function calls, higher for creative tasks
+      topP: request.config?.topP || 0.9,
+      maxTokens: this.getOptimalMaxTokens(modelName, hasTools),
+      stopTokens: this.getOptimalStopTokens(modelName, hasTools),
+    };
+
+    // Model-specific optimizations
+    if (modelName.includes('phi')) {
+      // Phi models prefer slightly higher temperature and different stop tokens
+      options.temperature = Math.min(options.temperature * 1.2, 0.9);
+      options.topP = 0.95;
+    } else if (modelName.includes('qwen')) {
+      // Qwen models work well with more diverse outputs
+      options.topP = 0.85;
+    } else if (modelName.includes('llama')) {
+      // Llama models benefit from specific stop patterns
+      if (hasTools) {
+        options.stopTokens = [...(options.stopTokens || []), '</function_call>', '```\n\n'];
+      }
+    }
+
+    return options;
+  }
+
+  /**
+   * Get optimal max tokens based on model and task type
+   */
+  private getOptimalMaxTokens(modelName: string, hasTools: boolean): number {
+    // Function calling typically needs fewer tokens
+    if (hasTools) {
+      return 1024; // Increased from 512 to allow for complete function calls and explanations
+    }
+
+    // For general chat, allow more tokens for detailed responses
+    if (modelName.includes('7b') || modelName.includes('large')) {
+      return 2048; // Larger models can handle more context
+    } else if (modelName.includes('3b') || modelName.includes('small')) {
+      return 1536; // Smaller models get moderate limit
+    } else if (modelName.includes('1.5b') || modelName.includes('mini')) {
+      return 1024; // Very small models get conservative limit
+    }
+
+    return 1536; // Default for unknown models
+  }
+
+  /**
+   * Get optimal stop tokens based on model and task type
+   */
+  private getOptimalStopTokens(modelName: string, hasTools: boolean): string[] {
+    const baseStopTokens = ['<|im_end|>', '<|endoftext|>', 'User:', 'Human:'];
+    
+    if (hasTools) {
+      // For function calling, we want to stop after JSON completion
+      return [...baseStopTokens, '<end_of_json>', '```\n\nUser:', '```\n\nHuman:'];
+    }
+
+    // For general chat, use broader stop patterns
+    return [...baseStopTokens, '\n\nUser:', '\n\nHuman:'];
   }
 
   /**
