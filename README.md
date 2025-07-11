@@ -2,7 +2,7 @@
 
 **The official local-first AI command-line engine for The Open Assurance Collective.**
 
-The Trust CLI is the flagship tool in the **Trust Tool Suite**, published by **[The Open Assurance Collective](https://github.com/jamieontiveros/trust-framework)**. It is a privacy-first AI assistant that runs entirely on your local machine, giving you complete control over your data and AI workflows.
+The Trust CLI is the flagship tool in the **Trust Tool Suite**, published by **[The Open Assurance Collective](https://github.com/audit-brands/trust-framework)**. It is a privacy-first AI assistant that runs entirely on your local machine, giving you complete control over your data and AI workflows.
 
 This tool is the "how" of the Collective's mission—it takes the principles, modules, and patterns from the `trust-framework` and makes them actionable, automating workflows and bringing modern assurance practices to the command line. It is designed for auditors, GRC professionals, security engineers, and any practitioner who needs to build trust in complex systems.
 
@@ -19,6 +19,14 @@ This tool is the "how" of the Collective's mission—it takes the principles, mo
 - **Transparent** - Open source with full audit trail
 
 ## 🚀 Quick Start
+
+### Prerequisites: Ollama (Recommended)
+
+For the best experience, we strongly recommend installing **Ollama**, which provides the fastest and easiest way to run local AI models.
+
+**[Download Ollama for macOS, Windows, and Linux](https://ollama.com/download)**
+
+After installing, you can pull models directly from the command line (e.g., `ollama pull qwen2.5:1.5b`), and the Trust CLI will automatically detect and use them when available.
 
 ### Installation
 
@@ -942,6 +950,15 @@ Trust CLI is built on modern, secure foundations:
 - **SHA256 Verification** - Cryptographic integrity checking
 - **TypeScript** - Type-safe, maintainable codebase
 - **React + Ink** - Beautiful terminal UI components
+
+### Guiding Principles
+
+The development of the Trust CLI is guided by the core principles and philosophies of **The Open Assurance Collective**. Key architectural and user experience (UX) decisions are formally documented in the `trust-framework` repository.
+
+Before making a significant change, all contributors should review our core architectural philosophies:
+
+*   **[Core Governance Model](https://github.com/jamieontiveros/trust-framework/blob/main/core/GOVERNANCE.md)**
+*   **[CLI User Experience Philosophy](https://github.com/jamieontiveros/trust-framework/blob/main/core/cli-ux-philosophy.md)**
 
 ## 🔒 Privacy & Security
 

@@ -8,6 +8,7 @@ export * from './types.js';
 export * from './nodeLlamaClient.js';
 export * from './modelManager.js';
 export * from './unifiedModelManager.js';
+export * from './intelligentModelRouter.js';
 export * from './trustContentGenerator.js';
 export * from './performanceMonitor.js';
 export * from './privacyManager.js';
