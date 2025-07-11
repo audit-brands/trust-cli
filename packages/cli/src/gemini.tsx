@@ -269,6 +269,28 @@ export async function main() {
     }
   }
 
+  // Structured output command
+  if (args[0] === 'structured') {
+    const { Command } = await import('commander');
+    const { addStructuredCommands } = await import('./commands/structuredCommands.js');
+    
+    // Create a commander program for structured commands
+    const program = new Command();
+    program.name('trust structured');
+    
+    // Add structured commands
+    addStructuredCommands(program);
+    
+    try {
+      // Parse the remaining arguments starting from 'structured'
+      await program.parseAsync(process.argv.slice(process.argv.indexOf('structured')));
+      return;
+    } catch (error) {
+      console.error(`❌ Structured command failed: ${error}`);
+      process.exit(1);
+    }
+  }
+
   const workspaceRoot = process.cwd();
   const settings = loadSettings(workspaceRoot);
   
