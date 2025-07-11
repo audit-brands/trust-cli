@@ -205,15 +205,33 @@ export class TrustContentGenerator implements ContentGenerator {
   async generateContent(request: GenerateContentParameters): Promise<GenerateContentResponse> {
     await this.initialize();
 
-    // Route to appropriate backend based on what's available
-    if (this.useOllama && this.ollamaGenerator) {
-      console.log('🚀 Using Ollama for content generation');
-      return this.ollamaGenerator.generateContent(request);
-    }
+    // Smart model-aware routing: Check if current model is a HuggingFace model
+    const currentModel = this.modelManager.getCurrentModel();
+    const isHuggingFaceModel = currentModel && this.modelManager.isHuggingFaceModel(currentModel.name);
 
-    // Fallback to HuggingFace models
-    if (!this.modelClient.isModelLoaded()) {
-      throw new Error('No AI backend available. Please install Ollama or download HuggingFace models.');
+    if (isHuggingFaceModel) {
+      console.log(`🤗 Model ${currentModel?.name} is a HuggingFace model - using HuggingFace backend`);
+      
+      // Ensure the HuggingFace model is loaded
+      if (!this.modelClient.isModelLoaded()) {
+        try {
+          console.log(`📥 Loading HuggingFace model: ${currentModel.name}`);
+          await this.modelClient.loadModel(currentModel.path, currentModel);
+        } catch (error) {
+          throw new Error(`Failed to load HuggingFace model ${currentModel.name}: ${error}`);
+        }
+      }
+    } else {
+      // For non-HuggingFace models, use the original routing logic
+      if (this.useOllama && this.ollamaGenerator) {
+        console.log('🚀 Using Ollama for content generation');
+        return this.ollamaGenerator.generateContent(request);
+      }
+
+      // Fallback to HuggingFace models if no Ollama
+      if (!this.modelClient.isModelLoaded()) {
+        throw new Error('No AI backend available. Please install Ollama or download HuggingFace models.');
+      }
     }
     
     console.log('🤗 Using HuggingFace models for content generation');
@@ -258,15 +276,33 @@ export class TrustContentGenerator implements ContentGenerator {
     console.log('DEBUG: TrustContentGenerator.generateContentStream called');
     await this.initialize();
 
-    // Route to appropriate backend based on what's available
-    if (this.useOllama && this.ollamaGenerator) {
-      console.log('🚀 Using Ollama for streaming content generation');
-      return this.ollamaGenerator.generateContentStream(request);
-    }
+    // Smart model-aware routing: Check if current model is a HuggingFace model
+    const currentModel = this.modelManager.getCurrentModel();
+    const isHuggingFaceModel = currentModel && this.modelManager.isHuggingFaceModel(currentModel.name);
 
-    // Fallback to HuggingFace models
-    if (!this.modelClient.isModelLoaded()) {
-      throw new Error('No AI backend available. Please install Ollama or download HuggingFace models.');
+    if (isHuggingFaceModel) {
+      console.log(`🤗 Model ${currentModel?.name} is a HuggingFace model - using HuggingFace backend for streaming`);
+      
+      // Ensure the HuggingFace model is loaded
+      if (!this.modelClient.isModelLoaded()) {
+        try {
+          console.log(`📥 Loading HuggingFace model: ${currentModel.name}`);
+          await this.modelClient.loadModel(currentModel.path, currentModel);
+        } catch (error) {
+          throw new Error(`Failed to load HuggingFace model ${currentModel.name}: ${error}`);
+        }
+      }
+    } else {
+      // For non-HuggingFace models, use the original routing logic
+      if (this.useOllama && this.ollamaGenerator) {
+        console.log('🚀 Using Ollama for streaming content generation');
+        return this.ollamaGenerator.generateContentStream(request);
+      }
+
+      // Fallback to HuggingFace models if no Ollama
+      if (!this.modelClient.isModelLoaded()) {
+        throw new Error('No AI backend available. Please install Ollama or download HuggingFace models.');
+      }
     }
     
     console.log('🤗 Using HuggingFace models for streaming content generation');

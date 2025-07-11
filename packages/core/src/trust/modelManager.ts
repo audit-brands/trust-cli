@@ -316,6 +316,14 @@ export class TrustModelManagerImpl implements TrustModelManager {
       stream.on('error', reject);
     });
   }
+
+  /**
+   * Check if a model is a HuggingFace model based on its definition
+   */
+  isHuggingFaceModel(modelName: string): boolean {
+    const model = this.availableModels.find(m => m.name === modelName);
+    return model?.downloadUrl?.includes('huggingface.co') ?? false;
+  }
   
   async verifyModelIntegrity(modelName: string, showProgress: boolean = true): Promise<{ valid: boolean; message: string }> {
     const model = this.availableModels.find(m => m.name === modelName);
