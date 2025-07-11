@@ -395,6 +395,15 @@ describe('Gemini Client (client.ts)', () => {
         sendMessage: mockSendMessage,
       };
       client['chat'] = mockChat as GeminiChat;
+      
+      // Mock startChat to return different chat instances but with same sendMessage mock
+      const mockStartChat = vi.spyOn(client as any, 'startChat').mockImplementation(async () => {
+        return {
+          ...mockChat,
+          getHistory: vi.fn().mockReturnValue([]),
+          sendMessage: mockSendMessage,
+        } as GeminiChat;
+      });
     });
 
     it('should not trigger summarization if token count is below threshold', async () => {
@@ -423,7 +432,8 @@ describe('Gemini Client (client.ts)', () => {
 
       mockCountTokens
         .mockResolvedValueOnce({ totalTokens: originalTokenCount }) // First call for the check
-        .mockResolvedValueOnce({ totalTokens: newTokenCount }); // Second call for the new history
+        .mockResolvedValueOnce({ totalTokens: 100 }) // Second call for recent history
+        .mockResolvedValueOnce({ totalTokens: newTokenCount }); // Third call for final compressed history
 
       // Mock the summary response from the chat
       mockSendMessage.mockResolvedValue({
@@ -456,6 +466,7 @@ describe('Gemini Client (client.ts)', () => {
 
       mockCountTokens
         .mockResolvedValueOnce({ totalTokens: originalTokenCount })
+        .mockResolvedValueOnce({ totalTokens: 2 }) // Second call for recent history
         .mockResolvedValueOnce({ totalTokens: newTokenCount });
 
       // Mock the summary response from the chat
