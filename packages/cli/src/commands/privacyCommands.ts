@@ -69,12 +69,12 @@ export class PrivacyCommandHandler {
 
     if (verbose) {
       console.log('\\n🔒 Privacy Restrictions:');
-      modeInfo.restrictions.forEach(restriction => {
+      modeInfo.restrictions.forEach((restriction: string) => {
         console.log(`   • ${restriction}`);
       });
 
       console.log('\\n✨ Available Features:');
-      modeInfo.features.forEach(feature => {
+      modeInfo.features.forEach((feature: string) => {
         console.log(`   • ${feature}`);
       });
     }
@@ -136,7 +136,7 @@ export class PrivacyCommandHandler {
     console.log('\\n🛡️  Trust CLI - Available Privacy Modes');
     console.log('═'.repeat(60));
     
-    Object.values(PRIVACY_MODES).forEach(mode => {
+    Object.values(PRIVACY_MODES).forEach((mode: any) => {
       const isCurrent = currentMode.name === mode.name;
       const indicator = isCurrent ? '→' : ' ';
       const status = isCurrent ? ' (current)' : '';
@@ -146,7 +146,7 @@ export class PrivacyCommandHandler {
       
       // Show key features
       console.log('   Key Features:');
-      mode.features.slice(0, 3).forEach(feature => {
+      mode.features.slice(0, 3).forEach((feature: string) => {
         console.log(`     • ${feature}`);
       });
       
@@ -161,7 +161,7 @@ export class PrivacyCommandHandler {
 
   private async showModeInfo(mode?: 'strict' | 'moderate' | 'open'): Promise<void> {
     const targetMode = mode || this.privacyManager.getCurrentMode().name;
-    const modeConfig = PRIVACY_MODES[targetMode];
+    const modeConfig = PRIVACY_MODES[targetMode as keyof typeof PRIVACY_MODES];
     
     if (!modeConfig) {
       console.error(`❌ Invalid privacy mode: ${targetMode}`);
@@ -176,12 +176,12 @@ export class PrivacyCommandHandler {
     console.log(`${modeConfig.description}`);
     
     console.log('\\n🔒 Privacy Restrictions:');
-    modeConfig.restrictions.forEach(restriction => {
+    modeConfig.restrictions.forEach((restriction: string) => {
       console.log(`   • ${restriction}`);
     });
     
     console.log('\\n✨ Available Features:');
-    modeConfig.features.forEach(feature => {
+    modeConfig.features.forEach((feature: string) => {
       console.log(`   • ${feature}`);
     });
     

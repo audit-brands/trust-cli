@@ -70,3 +70,4 @@ export * from './trust/performanceMonitor.js';
 export * from './trust/hardwareOptimizer.js';
 export * from './trust/performanceBenchmark.js';
 export { globalPerformanceMonitor } from './trust/performanceMonitor.js';
+export * from './trust/privacyManager.js';
