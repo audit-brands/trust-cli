@@ -35,6 +35,7 @@ export class TrustContentGenerator implements ContentGenerator {
   private jsonRepairParser: JsonRepairParser;
   private useOllama = false; // Flag to track if Ollama is available and preferred
   private trustConfig: TrustConfiguration;
+  private backendInitHistory: { backend: string; success: boolean; error?: string }[] = [];
 
   constructor(modelsDir?: string, config?: any, toolRegistry?: any) {
     console.error('🏗️  TrustContentGenerator constructor called with Ollama integration'); // Using console.error to ensure visibility
@@ -63,10 +64,14 @@ export class TrustContentGenerator implements ContentGenerator {
     console.log(`🔧 AI Backend Configuration: ${fallbackOrder.join(' → ')} (fallback: ${isFallbackEnabled ? 'enabled' : 'disabled'})`);
 
     // Try each backend in order
+    let successfulBackend: string | null = null;
+    
     for (const backend of fallbackOrder) {
       if (this.trustConfig.isBackendEnabled(backend as AIBackend)) {
         if (await this.tryInitializeBackend(backend as AIBackend)) {
           console.log(`✅ Successfully initialized ${backend} backend`);
+          this.backendInitHistory.push({ backend, success: true });
+          successfulBackend = backend;
           break;
         } else if (!isFallbackEnabled) {
           console.log(`❌ Failed to initialize ${backend} backend (fallback disabled)`);
@@ -74,6 +79,7 @@ export class TrustContentGenerator implements ContentGenerator {
         }
       } else {
         console.log(`⚠️  Backend ${backend} is disabled in configuration`);
+        this.backendInitHistory.push({ backend, success: false, error: 'Disabled in configuration' });
       }
     }
 
@@ -95,10 +101,13 @@ export class TrustContentGenerator implements ContentGenerator {
           return await this.tryInitializeCloud();
         default:
           console.log(`⚠️  Unknown backend: ${backend}`);
+          this.backendInitHistory.push({ backend, success: false, error: 'Unknown backend type' });
           return false;
       }
     } catch (error) {
-      console.log(`❌ Failed to initialize ${backend} backend:`, error instanceof Error ? error.message : String(error));
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      console.log(`❌ Failed to initialize ${backend} backend:`, errorMsg);
+      this.backendInitHistory.push({ backend, success: false, error: errorMsg });
       return false;
     }
   }
@@ -168,14 +177,22 @@ export class TrustContentGenerator implements ContentGenerator {
             console.log(`✅ Loaded recommended model: ${recommended.name}`);
             return true;
           } catch (error2) {
-            console.error('❌ Failed to load any model:', error2);
+            console.error('❌ Failed to load any HuggingFace model');
+            console.log('💡 Troubleshooting steps:');
+            console.log('   1. Check model files: trust model list --verbose');
+            console.log('   2. Verify model integrity: trust model verify <model-name>');
+            console.log('   3. Try downloading a fresh model: trust model download phi-3.5-mini-instruct');
+            console.log(`   4. Error details: ${error2 instanceof Error ? error2.message : String(error2)}`);
             return false;
           }
         }
       }
     } else {
       console.log('⚠️  No HuggingFace models available');
-      console.log('   Consider downloading models or using Ollama for local AI');
+      console.log('💡 To use HuggingFace models:');
+      console.log('   1. Download a model: trust model download phi-3.5-mini-instruct');
+      console.log('   2. See available models: trust model list');
+      console.log('   3. Or use Ollama: ollama serve && ollama pull qwen2.5:1.5b');
       return false;
     }
     
@@ -218,7 +235,27 @@ export class TrustContentGenerator implements ContentGenerator {
           console.log(`📥 Loading HuggingFace model: ${currentModel.name}`);
           await this.modelClient.loadModel(currentModel.path, currentModel);
         } catch (error) {
-          throw new Error(`Failed to load HuggingFace model ${currentModel.name}: ${error}`);
+          const errorMsg = error instanceof Error ? error.message : String(error);
+          let helpfulError = `Failed to load HuggingFace model ${currentModel.name}.\n\n`;
+          helpfulError += `❌ Error: ${errorMsg}\n\n`;
+          
+          // Add helpful suggestions based on common errors
+          if (errorMsg.includes('not found') || errorMsg.includes('does not exist')) {
+            helpfulError += '💡 Model file not found. Try:\n';
+            helpfulError += `   1. Download the model: trust model download ${currentModel.name}\n`;
+            helpfulError += '   2. Check model status: trust model list\n';
+          } else if (errorMsg.includes('permission') || errorMsg.includes('access')) {
+            helpfulError += '💡 Permission issue. Try:\n';
+            helpfulError += '   1. Check file permissions in ~/.trustcli/models/\n';
+            helpfulError += '   2. Run with appropriate permissions\n';
+          } else if (errorMsg.includes('memory') || errorMsg.includes('RAM')) {
+            helpfulError += '💡 Insufficient memory. Try:\n';
+            helpfulError += '   1. Use a smaller model: trust model recommend lightweight\n';
+            helpfulError += '   2. Close other applications to free up RAM\n';
+            helpfulError += `   3. Current model requires: ${currentModel.ramRequirement}\n`;
+          }
+          
+          throw new Error(helpfulError);
         }
       }
     } else {
@@ -230,7 +267,7 @@ export class TrustContentGenerator implements ContentGenerator {
 
       // Fallback to HuggingFace models if no Ollama
       if (!this.modelClient.isModelLoaded()) {
-        throw new Error('No AI backend available. Please install Ollama or download HuggingFace models.');
+        throw new Error(this.generateBackendErrorMessage());
       }
     }
     
@@ -289,7 +326,27 @@ export class TrustContentGenerator implements ContentGenerator {
           console.log(`📥 Loading HuggingFace model: ${currentModel.name}`);
           await this.modelClient.loadModel(currentModel.path, currentModel);
         } catch (error) {
-          throw new Error(`Failed to load HuggingFace model ${currentModel.name}: ${error}`);
+          const errorMsg = error instanceof Error ? error.message : String(error);
+          let helpfulError = `Failed to load HuggingFace model ${currentModel.name}.\n\n`;
+          helpfulError += `❌ Error: ${errorMsg}\n\n`;
+          
+          // Add helpful suggestions based on common errors
+          if (errorMsg.includes('not found') || errorMsg.includes('does not exist')) {
+            helpfulError += '💡 Model file not found. Try:\n';
+            helpfulError += `   1. Download the model: trust model download ${currentModel.name}\n`;
+            helpfulError += '   2. Check model status: trust model list\n';
+          } else if (errorMsg.includes('permission') || errorMsg.includes('access')) {
+            helpfulError += '💡 Permission issue. Try:\n';
+            helpfulError += '   1. Check file permissions in ~/.trustcli/models/\n';
+            helpfulError += '   2. Run with appropriate permissions\n';
+          } else if (errorMsg.includes('memory') || errorMsg.includes('RAM')) {
+            helpfulError += '💡 Insufficient memory. Try:\n';
+            helpfulError += '   1. Use a smaller model: trust model recommend lightweight\n';
+            helpfulError += '   2. Close other applications to free up RAM\n';
+            helpfulError += `   3. Current model requires: ${currentModel.ramRequirement}\n`;
+          }
+          
+          throw new Error(helpfulError);
         }
       }
     } else {
@@ -301,7 +358,7 @@ export class TrustContentGenerator implements ContentGenerator {
 
       // Fallback to HuggingFace models if no Ollama
       if (!this.modelClient.isModelLoaded()) {
-        throw new Error('No AI backend available. Please install Ollama or download HuggingFace models.');
+        throw new Error(this.generateBackendErrorMessage());
       }
     }
     
@@ -675,6 +732,51 @@ Assistant: \`\`\`json
     } else {
       return 'cloud';
     }
+  }
+
+  private generateBackendErrorMessage(): string {
+    let message = 'No AI backend available.\n\n';
+    
+    // Show what was tried
+    if (this.backendInitHistory.length > 0) {
+      message += '📊 Backend initialization attempts:\n';
+      for (const attempt of this.backendInitHistory) {
+        const icon = attempt.success ? '✅' : '❌';
+        message += `   ${icon} ${attempt.backend}`;
+        if (attempt.error) {
+          message += ` - ${attempt.error}`;
+        }
+        message += '\n';
+      }
+      message += '\n';
+    }
+    
+    // Add specific suggestions based on what failed
+    const failedBackends = this.backendInitHistory.filter(h => !h.success);
+    
+    if (failedBackends.some(b => b.backend === 'ollama' && b.error?.includes('not running'))) {
+      message += '💡 To use Ollama (recommended for best performance):\n';
+      message += '   1. Install Ollama from https://ollama.ai\n';
+      message += '   2. Start Ollama with: ollama serve\n';
+      message += '   3. Pull a model: ollama pull qwen2.5:1.5b\n\n';
+    }
+    
+    if (failedBackends.some(b => b.backend === 'huggingface')) {
+      message += '💡 To use HuggingFace models:\n';
+      message += '   1. Download a model: trust model download phi-3.5-mini-instruct\n';
+      message += '   2. Switch to it: trust model switch phi-3.5-mini-instruct\n';
+      message += '   3. Try again\n\n';
+    }
+    
+    if (failedBackends.some(b => b.backend === 'cloud' && b.error?.includes('Disabled'))) {
+      message += '💡 To enable cloud backend:\n';
+      message += '   1. Run: trust config set ai.cloud.enabled true\n';
+      message += '   2. Configure cloud provider settings\n\n';
+    }
+    
+    message += '📖 For more help: trust status backend --verbose';
+    
+    return message;
   }
 
   getBackendStatus(): { [key: string]: boolean } {

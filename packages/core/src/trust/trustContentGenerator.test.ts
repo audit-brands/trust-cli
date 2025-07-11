@@ -250,7 +250,7 @@ describe('TrustContentGenerator', () => {
       };
 
       await expect(contentGenerator.generateContent(request)).rejects.toThrow(
-        'No AI backend available. Please install Ollama or download HuggingFace models.'
+        /No AI backend available/
       );
     });
 
