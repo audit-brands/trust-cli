@@ -238,7 +238,9 @@ export class ModelIntegrityChecker {
       onProgress?.('Verifying hash...', 85);
 
       // Check against provided hash
-      if (expectedHash && expectedHash !== 'pending_verification') {
+      // Handle both 'pending_verification' and 'sha256:pending' formats
+      const isPending = expectedHash === 'pending_verification' || expectedHash === 'sha256:pending';
+      if (expectedHash && !isPending) {
         const hashMatch = computedHash === expectedHash.replace('sha256:', '');
         if (!hashMatch) {
           return {
@@ -254,7 +256,7 @@ export class ModelIntegrityChecker {
       }
 
       // Update trusted registry if this is first verification
-      if (trustedInfo && trustedInfo.sha256 === 'pending_verification') {
+      if (trustedInfo && (trustedInfo.sha256 === 'pending_verification' || trustedInfo.sha256 === 'sha256:pending')) {
         trustedInfo.sha256 = computedHash;
         trustedInfo.lastUpdated = new Date().toISOString();
         await this.saveTrustedRegistry();
