@@ -7,6 +7,7 @@
 import { FunctionCall } from '@google/genai';
 import { JsonRepairParser } from './jsonRepairParser.js';
 import { TrustContentGenerator } from './trustContentGenerator.js';
+import { ErrorCollector } from './errorCollector.js';
 
 export interface EvaluationPrompt {
   id: string;
@@ -58,11 +59,13 @@ export class FunctionCallEvaluator {
   private contentGenerator: TrustContentGenerator;
   private jsonParser: JsonRepairParser;
   private evaluationPrompts: EvaluationPrompt[];
+  private errorCollector: ErrorCollector;
 
-  constructor(contentGenerator: TrustContentGenerator) {
+  constructor(contentGenerator: TrustContentGenerator, errorCollector?: ErrorCollector) {
     this.contentGenerator = contentGenerator;
     this.jsonParser = new JsonRepairParser();
     this.evaluationPrompts = this.createEvaluationPrompts();
+    this.errorCollector = errorCollector || new ErrorCollector();
   }
 
   /**
@@ -123,7 +126,7 @@ export class FunctionCallEvaluator {
       
       const success = validJson && correctTool && correctArgs;
       
-      return {
+      const result = {
         promptId: prompt.id,
         success,
         validJson,
@@ -136,10 +139,26 @@ export class FunctionCallEvaluator {
         repairAttempts: parseResult.errors?.length || 0
       };
       
+      // Record failure if evaluation was unsuccessful
+      if (!success) {
+        this.errorCollector.recordFailure(
+          prompt.prompt,
+          prompt.expectedTool,
+          prompt.expectedArgs,
+          result,
+          prompt.category,
+          prompt.difficulty,
+          this.contentGenerator.getCurrentModel()?.name,
+          // Temperature would need to be tracked in content generator
+        );
+      }
+      
+      return result;
+      
     } catch (error) {
       const responseTime = Date.now() - startTime;
       
-      return {
+      const result = {
         promptId: prompt.id,
         success: false,
         validJson: false,
@@ -150,6 +169,19 @@ export class FunctionCallEvaluator {
         parsedCalls: [],
         errors: [String(error)]
       };
+      
+      // Record error failure
+      this.errorCollector.recordFailure(
+        prompt.prompt,
+        prompt.expectedTool,
+        prompt.expectedArgs,
+        result,
+        prompt.category,
+        prompt.difficulty,
+        this.contentGenerator.getCurrentModel()?.name,
+      );
+      
+      return result;
     }
   }
 
@@ -736,5 +768,29 @@ export class FunctionCallEvaluator {
     }
     
     console.log('\n=== END REPORT ===\n');
+    
+    // Print error analytics
+    this.errorCollector.printSummary();
+  }
+
+  /**
+   * Get access to error collector for external analysis
+   */
+  getErrorCollector(): ErrorCollector {
+    return this.errorCollector;
+  }
+
+  /**
+   * Export error data for analysis
+   */
+  exportErrorData(filepath: string): void {
+    this.errorCollector.exportErrors(filepath);
+  }
+
+  /**
+   * Clear collected error data
+   */
+  clearErrorData(): void {
+    this.errorCollector.clearErrors();
   }
 }
