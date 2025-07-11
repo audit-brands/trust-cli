@@ -67,3 +67,7 @@ export * from './trust/ollamaApiServer.js';
 export { TrustConfiguration } from './config/trustConfig.js';
 // Export all Trust components
 export * from './trust/index.js';
+
+// Export Privacy and Security components
+export * from './privacy/privacyAuditEngine.js';
+export * from './security/securityRecommendationEngine.js';

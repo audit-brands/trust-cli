@@ -298,6 +298,29 @@ export async function main() {
     }
   }
 
+  // Privacy audit command
+  if (args[0] === 'privacy-audit') {
+    const { handlePrivacyAuditCommand } = await import('./commands/privacyAuditCommands.js');
+    
+    try {
+      const action = args[1] as 'audit' | 'security' | 'compliance' | 'report' | 'history';
+      const allFlags = args.slice(2);
+      
+      await handlePrivacyAuditCommand({
+        action: action || 'audit',
+        framework: allFlags.includes('--framework') ? allFlags[allFlags.indexOf('--framework') + 1] : undefined,
+        depth: allFlags.includes('--depth') ? allFlags[allFlags.indexOf('--depth') + 1] as 'basic' | 'standard' | 'comprehensive' : undefined,
+        format: allFlags.includes('--format') ? allFlags[allFlags.indexOf('--format') + 1] as 'text' | 'json' | 'csv' : undefined,
+        output: allFlags.includes('--output') ? allFlags[allFlags.indexOf('--output') + 1] : undefined,
+        verbose: allFlags.includes('--verbose') || allFlags.includes('-v')
+      });
+      return;
+    } catch (error) {
+      console.error(`❌ Privacy audit command failed: ${error}`);
+      process.exit(1);
+    }
+  }
+
   const workspaceRoot = process.cwd();
   const settings = loadSettings(workspaceRoot);
   
