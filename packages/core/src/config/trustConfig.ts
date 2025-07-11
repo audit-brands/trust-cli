@@ -169,7 +169,7 @@ export class TrustConfiguration {
     return [...this.config.ai.fallbackOrder];
   }
 
-  setFallbackOrder(order: ('ollama' | 'huggingface' | 'cloud')[]): void {
+  setFallbackOrder(order: Array<'ollama' | 'huggingface' | 'cloud'>): void {
     this.config.ai.fallbackOrder = order;
   }
 

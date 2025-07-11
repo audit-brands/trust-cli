@@ -1,3 +1,9 @@
+/**
+ * @license
+ * Copyright 2025 Audit Risk Media LLC
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { openauditNew, openauditAdd } from './openauditCommands.js';
 

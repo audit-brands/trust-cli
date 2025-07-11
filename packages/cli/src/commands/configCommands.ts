@@ -264,9 +264,7 @@ export class ConfigCommandHandler {
   }
 
   private getNestedValue(obj: any, path: string): any {
-    return path.split('.').reduce((current, key) => {
-      return current && current[key] !== undefined ? current[key] : undefined;
-    }, obj);
+    return path.split('.').reduce((current, key) => current && current[key] !== undefined ? current[key] : undefined, obj);
   }
 
   private setNestedValue(obj: any, path: string, value: any): void {

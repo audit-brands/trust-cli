@@ -131,9 +131,9 @@ describe('TrustContentGenerator with Ollama', () => {
     });
 
     it('should respect disabled backends', async () => {
-      mockTrustConfig.isBackendEnabled.mockImplementation((backend: string) => {
-        return backend !== 'ollama'; // Ollama disabled
-      });
+      mockTrustConfig.isBackendEnabled.mockImplementation((backend: string) => 
+         backend !== 'ollama' // Ollama disabled
+      );
       mockModelManager.getCurrentModel.mockReturnValue(null);
 
       await contentGenerator.initialize();

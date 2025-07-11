@@ -4,10 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { OllamaApiServer, ApiServerConfig } from '@trust-cli/trust-cli-core';
-import { TrustConfiguration } from '@trust-cli/trust-cli-core';
-import { ToolRegistry } from '@trust-cli/trust-cli-core';
-import { Config, sessionId, AuthType } from '@trust-cli/trust-cli-core';
+import { OllamaApiServer, ApiServerConfig , TrustConfiguration , ToolRegistry , Config, sessionId, AuthType } from '@trust-cli/trust-cli-core';
 
 export interface ServeCommandArgs {
   port?: number;

@@ -541,7 +541,7 @@ Assistant: \`\`\`json
       ],
       text: cleanedText,
       data: undefined,
-      functionCalls: functionCalls,
+      functionCalls,
       executableCode: undefined,
       codeExecutionResult: undefined,
     } as unknown as GenerateContentResponse;

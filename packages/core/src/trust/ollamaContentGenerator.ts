@@ -147,7 +147,7 @@ export class OllamaContentGenerator implements ContentGenerator {
   }> {
     let toolCallCount = 0;
     let finalContent = '';
-    let allToolCalls: FunctionCall[] = [];
+    const allToolCalls: FunctionCall[] = [];
 
     while (toolCallCount < this.maxToolCalls) {
       // Get tools for this request
@@ -446,7 +446,7 @@ export class OllamaContentGenerator implements ContentGenerator {
   private async* executeStreamingToolCallingLoop(): AsyncGenerator<GenerateContentResponse> {
     let toolCallCount = 0;
     let finalContent = '';
-    let allToolCalls: FunctionCall[] = [];
+    const allToolCalls: FunctionCall[] = [];
 
     while (toolCallCount < this.maxToolCalls) {
       // Show current step

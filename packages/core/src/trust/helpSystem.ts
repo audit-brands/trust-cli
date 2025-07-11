@@ -61,7 +61,7 @@ export class TrustHelpSystem {
    */
   search(query: string): HelpTopic[] {
     const queryLower = query.toLowerCase();
-    const results: { topic: HelpTopic; score: number }[] = [];
+    const results: Array<{ topic: HelpTopic; score: number }> = [];
 
     for (const topic of this.topics.values()) {
       let score = 0;

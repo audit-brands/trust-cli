@@ -95,7 +95,7 @@ export class ModelDownloader {
     return new Promise((resolve, reject) => {
       const file = createWriteStream(tempPath);
       const startTime = Date.now();
-      let downloaded = 0;
+      const downloaded = 0;
 
       const headers: any = {
         'User-Agent': 'TrustCLI/0.1.0 (https://github.com/audit-brands/trust-cli)',

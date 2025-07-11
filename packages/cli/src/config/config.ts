@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright 2025 Google LLC
+ * Copyright 2025 Audit Risk Media LLC
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -19,8 +19,7 @@ import {
   FileDiscoveryService,
   TelemetryTarget,
   AuthType,
-} from '@trust-cli/trust-cli-core';
-import { DEFAULT_TRUST_MODEL } from '@trust-cli/trust-cli-core';
+ DEFAULT_TRUST_MODEL } from '@trust-cli/trust-cli-core';
 import { Settings } from './settings.js';
 
 import { Extension } from './extension.js';
