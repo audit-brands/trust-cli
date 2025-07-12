@@ -15,7 +15,9 @@ export interface ToolExecutionResult {
   metadata?: Record<string, any>;
 }
 
-export type ToolExecutor = (args: Record<string, any>) => Promise<ToolExecutionResult>;
+export type ToolExecutor = (
+  args: Record<string, any>,
+) => Promise<ToolExecutionResult>;
 
 /**
  * Registry for Ollama-compatible tools using OpenAI function calling spec
@@ -38,217 +40,265 @@ export class OllamaToolRegistry {
    */
   private initializeTools(): void {
     // File operations
-    this.registerTool('read_file', {
-      type: 'function',
-      function: {
-        name: 'read_file',
-        description: 'Read the contents of a file',
-        parameters: {
-          type: 'object',
-          properties: {
-            path: {
-              type: 'string',
-              description: 'Path to the file to read (relative or absolute)',
+    this.registerTool(
+      'read_file',
+      {
+        type: 'function',
+        function: {
+          name: 'read_file',
+          description: 'Read the contents of a file',
+          parameters: {
+            type: 'object',
+            properties: {
+              path: {
+                type: 'string',
+                description: 'Path to the file to read (relative or absolute)',
+              },
             },
+            required: ['path'],
           },
-          required: ['path'],
         },
       },
-    }, this.createReadFileExecutor());
+      this.createReadFileExecutor(),
+    );
 
-    this.registerTool('write_file', {
-      type: 'function',
-      function: {
-        name: 'write_file',
-        description: 'Write content to a file (creates or overwrites)',
-        parameters: {
-          type: 'object',
-          properties: {
-            path: {
-              type: 'string',
-              description: 'Path to the file to write',
+    this.registerTool(
+      'write_file',
+      {
+        type: 'function',
+        function: {
+          name: 'write_file',
+          description: 'Write content to a file (creates or overwrites)',
+          parameters: {
+            type: 'object',
+            properties: {
+              path: {
+                type: 'string',
+                description: 'Path to the file to write',
+              },
+              content: {
+                type: 'string',
+                description: 'Content to write to the file',
+              },
             },
-            content: {
-              type: 'string',
-              description: 'Content to write to the file',
-            },
+            required: ['path', 'content'],
           },
-          required: ['path', 'content'],
         },
       },
-    }, this.createWriteFileExecutor());
+      this.createWriteFileExecutor(),
+    );
 
-    this.registerTool('list_directory', {
-      type: 'function',
-      function: {
-        name: 'list_directory',
-        description: 'List files and directories in a given path',
-        parameters: {
-          type: 'object',
-          properties: {
-            path: {
-              type: 'string',
-              description: 'Directory path to list (defaults to current directory)',
+    this.registerTool(
+      'list_directory',
+      {
+        type: 'function',
+        function: {
+          name: 'list_directory',
+          description: 'List files and directories in a given path',
+          parameters: {
+            type: 'object',
+            properties: {
+              path: {
+                type: 'string',
+                description:
+                  'Directory path to list (defaults to current directory)',
+              },
             },
+            required: [],
           },
-          required: [],
         },
       },
-    }, this.createListDirectoryExecutor());
+      this.createListDirectoryExecutor(),
+    );
 
-    this.registerTool('find_files', {
-      type: 'function',
-      function: {
-        name: 'find_files',
-        description: 'Find files matching a pattern (glob search)',
-        parameters: {
-          type: 'object',
-          properties: {
-            pattern: {
-              type: 'string',
-              description: 'Glob pattern to match files (e.g., "*.js", "**/*.ts")',
+    this.registerTool(
+      'find_files',
+      {
+        type: 'function',
+        function: {
+          name: 'find_files',
+          description: 'Find files matching a pattern (glob search)',
+          parameters: {
+            type: 'object',
+            properties: {
+              pattern: {
+                type: 'string',
+                description:
+                  'Glob pattern to match files (e.g., "*.js", "**/*.ts")',
+              },
+              path: {
+                type: 'string',
+                description:
+                  'Base directory to search (defaults to current directory)',
+              },
             },
-            path: {
-              type: 'string',
-              description: 'Base directory to search (defaults to current directory)',
-            },
+            required: ['pattern'],
           },
-          required: ['pattern'],
         },
       },
-    }, this.createFindFilesExecutor());
+      this.createFindFilesExecutor(),
+    );
 
-    this.registerTool('search_files', {
-      type: 'function',
-      function: {
-        name: 'search_files',
-        description: 'Search for text content within files using regex',
-        parameters: {
-          type: 'object',
-          properties: {
-            pattern: {
-              type: 'string',
-              description: 'Regular expression pattern to search for',
+    this.registerTool(
+      'search_files',
+      {
+        type: 'function',
+        function: {
+          name: 'search_files',
+          description: 'Search for text content within files using regex',
+          parameters: {
+            type: 'object',
+            properties: {
+              pattern: {
+                type: 'string',
+                description: 'Regular expression pattern to search for',
+              },
+              include: {
+                type: 'string',
+                description: 'File pattern to include in search (e.g., "*.js")',
+              },
+              path: {
+                type: 'string',
+                description:
+                  'Directory to search in (defaults to current directory)',
+              },
             },
-            include: {
-              type: 'string',
-              description: 'File pattern to include in search (e.g., "*.js")',
-            },
-            path: {
-              type: 'string',
-              description: 'Directory to search in (defaults to current directory)',
-            },
+            required: ['pattern'],
           },
-          required: ['pattern'],
         },
       },
-    }, this.createSearchFilesExecutor());
+      this.createSearchFilesExecutor(),
+    );
 
-    this.registerTool('shell_command', {
-      type: 'function',
-      function: {
-        name: 'shell_command',
-        description: 'Execute a shell command (use with caution)',
-        parameters: {
-          type: 'object',
-          properties: {
-            command: {
-              type: 'string',
-              description: 'Shell command to execute',
+    this.registerTool(
+      'shell_command',
+      {
+        type: 'function',
+        function: {
+          name: 'shell_command',
+          description: 'Execute a shell command (use with caution)',
+          parameters: {
+            type: 'object',
+            properties: {
+              command: {
+                type: 'string',
+                description: 'Shell command to execute',
+              },
+              timeout: {
+                type: 'number',
+                description: 'Timeout in milliseconds (default: 30000)',
+              },
             },
-            timeout: {
-              type: 'number',
-              description: 'Timeout in milliseconds (default: 30000)',
-            },
+            required: ['command'],
           },
-          required: ['command'],
         },
       },
-    }, this.createShellCommandExecutor());
+      this.createShellCommandExecutor(),
+    );
 
     // Memory operations
-    this.registerTool('save_memory', {
-      type: 'function',
-      function: {
-        name: 'save_memory',
-        description: 'Save information to memory for later retrieval',
-        parameters: {
-          type: 'object',
-          properties: {
-            content: {
-              type: 'string',
-              description: 'Content to save to memory',
+    this.registerTool(
+      'save_memory',
+      {
+        type: 'function',
+        function: {
+          name: 'save_memory',
+          description: 'Save information to memory for later retrieval',
+          parameters: {
+            type: 'object',
+            properties: {
+              content: {
+                type: 'string',
+                description: 'Content to save to memory',
+              },
+              tags: {
+                type: 'string',
+                description: 'Optional tags for categorization',
+              },
             },
-            tags: {
-              type: 'string',
-              description: 'Optional tags for categorization',
-            },
+            required: ['content'],
           },
-          required: ['content'],
         },
       },
-    }, this.createSaveMemoryExecutor());
+      this.createSaveMemoryExecutor(),
+    );
 
-    this.registerTool('search_memory', {
-      type: 'function',
-      function: {
-        name: 'search_memory',
-        description: 'Search previously saved memory content',
-        parameters: {
-          type: 'object',
-          properties: {
-            query: {
-              type: 'string',
-              description: 'Search query for memory content',
+    this.registerTool(
+      'search_memory',
+      {
+        type: 'function',
+        function: {
+          name: 'search_memory',
+          description: 'Search previously saved memory content',
+          parameters: {
+            type: 'object',
+            properties: {
+              query: {
+                type: 'string',
+                description: 'Search query for memory content',
+              },
             },
+            required: ['query'],
           },
-          required: ['query'],
         },
       },
-    }, this.createSearchMemoryExecutor());
+      this.createSearchMemoryExecutor(),
+    );
 
     // Web operations (if available)
-    this.registerTool('web_search', {
-      type: 'function',
-      function: {
-        name: 'web_search',
-        description: 'Search the web for current information',
-        parameters: {
-          type: 'object',
-          properties: {
-            query: {
-              type: 'string',
-              description: 'Search query',
+    this.registerTool(
+      'web_search',
+      {
+        type: 'function',
+        function: {
+          name: 'web_search',
+          description: 'Search the web for current information',
+          parameters: {
+            type: 'object',
+            properties: {
+              query: {
+                type: 'string',
+                description: 'Search query',
+              },
             },
+            required: ['query'],
           },
-          required: ['query'],
         },
       },
-    }, this.createWebSearchExecutor());
+      this.createWebSearchExecutor(),
+    );
 
-    this.registerTool('web_fetch', {
-      type: 'function',
-      function: {
-        name: 'web_fetch',
-        description: 'Fetch content from a URL',
-        parameters: {
-          type: 'object',
-          properties: {
-            url: {
-              type: 'string',
-              description: 'URL to fetch content from',
+    this.registerTool(
+      'web_fetch',
+      {
+        type: 'function',
+        function: {
+          name: 'web_fetch',
+          description: 'Fetch content from a URL',
+          parameters: {
+            type: 'object',
+            properties: {
+              url: {
+                type: 'string',
+                description: 'URL to fetch content from',
+              },
             },
+            required: ['url'],
           },
-          required: ['url'],
         },
       },
-    }, this.createWebFetchExecutor());
+      this.createWebFetchExecutor(),
+    );
   }
 
   /**
    * Register a new tool
    */
-  registerTool(name: string, definition: ToolDefinition, executor: ToolExecutor): void {
+  registerTool(
+    name: string,
+    definition: ToolDefinition,
+    executor: ToolExecutor,
+  ): void {
     this.tools.set(name, executor);
     this.definitions.push(definition);
   }
@@ -263,7 +313,10 @@ export class OllamaToolRegistry {
   /**
    * Execute a tool call
    */
-  async executeTool(name: string, args: Record<string, any>): Promise<ToolExecutionResult> {
+  async executeTool(
+    name: string,
+    args: Record<string, any>,
+  ): Promise<ToolExecutionResult> {
     const executor = this.tools.get(name);
     if (!executor) {
       return {
@@ -303,10 +356,14 @@ export class OllamaToolRegistry {
    */
   private extractResultText(result: any): string {
     if (result.llmContent) {
-      return typeof result.llmContent === 'string' ? result.llmContent : JSON.stringify(result.llmContent);
+      return typeof result.llmContent === 'string'
+        ? result.llmContent
+        : JSON.stringify(result.llmContent);
     }
     if (result.returnDisplay) {
-      return typeof result.returnDisplay === 'string' ? result.returnDisplay : JSON.stringify(result.returnDisplay);
+      return typeof result.returnDisplay === 'string'
+        ? result.returnDisplay
+        : JSON.stringify(result.returnDisplay);
     }
     return JSON.stringify(result);
   }
@@ -320,9 +377,12 @@ export class OllamaToolRegistry {
           throw new Error('Read file tool not available');
         }
 
-        const result = await tool.execute({
-          path: args.path,
-        }, new AbortController().signal);
+        const result = await tool.execute(
+          {
+            path: args.path,
+          },
+          new AbortController().signal,
+        );
 
         return {
           success: true,
@@ -346,14 +406,19 @@ export class OllamaToolRegistry {
           throw new Error('Write file tool not available');
         }
 
-        const result = await tool.execute({
-          path: args.path,
-          content: args.content,
-        }, new AbortController().signal);
+        const result = await tool.execute(
+          {
+            path: args.path,
+            content: args.content,
+          },
+          new AbortController().signal,
+        );
 
         return {
           success: true,
-          result: this.extractResultText(result) || `File written successfully to ${args.path}`,
+          result:
+            this.extractResultText(result) ||
+            `File written successfully to ${args.path}`,
         };
       } catch (error) {
         return {
@@ -373,13 +438,17 @@ export class OllamaToolRegistry {
           throw new Error('List directory tool not available');
         }
 
-        const result = await tool.execute({
-          path: args.path || '.',
-        }, new AbortController().signal);
+        const result = await tool.execute(
+          {
+            path: args.path || '.',
+          },
+          new AbortController().signal,
+        );
 
         return {
           success: true,
-          result: this.extractResultText(result) || 'Directory listed successfully',
+          result:
+            this.extractResultText(result) || 'Directory listed successfully',
         };
       } catch (error) {
         return {
@@ -399,10 +468,13 @@ export class OllamaToolRegistry {
           throw new Error('Find files tool not available');
         }
 
-        const result = await tool.execute({
-          pattern: args.pattern,
-          path: args.path,
-        }, new AbortController().signal);
+        const result = await tool.execute(
+          {
+            pattern: args.pattern,
+            path: args.path,
+          },
+          new AbortController().signal,
+        );
 
         return {
           success: true,
@@ -426,15 +498,19 @@ export class OllamaToolRegistry {
           throw new Error('Search files tool not available');
         }
 
-        const result = await tool.execute({
-          pattern: args.pattern,
-          include: args.include,
-          path: args.path,
-        }, new AbortController().signal);
+        const result = await tool.execute(
+          {
+            pattern: args.pattern,
+            include: args.include,
+            path: args.path,
+          },
+          new AbortController().signal,
+        );
 
         return {
           success: true,
-          result: this.extractResultText(result) || 'Search completed successfully',
+          result:
+            this.extractResultText(result) || 'Search completed successfully',
         };
       } catch (error) {
         return {
@@ -454,14 +530,18 @@ export class OllamaToolRegistry {
           throw new Error('Shell command tool not available');
         }
 
-        const result = await tool.execute({
-          command: args.command,
-          timeout: args.timeout || 30000,
-        }, new AbortController().signal);
+        const result = await tool.execute(
+          {
+            command: args.command,
+            timeout: args.timeout || 30000,
+          },
+          new AbortController().signal,
+        );
 
         return {
           success: true,
-          result: this.extractResultText(result) || 'Command executed successfully',
+          result:
+            this.extractResultText(result) || 'Command executed successfully',
         };
       } catch (error) {
         return {
@@ -481,10 +561,13 @@ export class OllamaToolRegistry {
           throw new Error('Save memory tool not available');
         }
 
-        const result = await tool.execute({
-          content: args.content,
-          tags: args.tags,
-        }, new AbortController().signal);
+        const result = await tool.execute(
+          {
+            content: args.content,
+            tags: args.tags,
+          },
+          new AbortController().signal,
+        );
 
         return {
           success: true,
@@ -508,9 +591,12 @@ export class OllamaToolRegistry {
           throw new Error('Search memory tool not available');
         }
 
-        const result = await tool.execute({
-          query: args.query,
-        }, new AbortController().signal);
+        const result = await tool.execute(
+          {
+            query: args.query,
+          },
+          new AbortController().signal,
+        );
 
         return {
           success: true,
@@ -534,9 +620,12 @@ export class OllamaToolRegistry {
           throw new Error('Web search tool not available');
         }
 
-        const result = await tool.execute({
-          query: args.query,
-        }, new AbortController().signal);
+        const result = await tool.execute(
+          {
+            query: args.query,
+          },
+          new AbortController().signal,
+        );
 
         return {
           success: true,
@@ -560,13 +649,18 @@ export class OllamaToolRegistry {
           throw new Error('Web fetch tool not available');
         }
 
-        const result = await tool.execute({
-          url: args.url,
-        }, new AbortController().signal);
+        const result = await tool.execute(
+          {
+            url: args.url,
+          },
+          new AbortController().signal,
+        );
 
         return {
           success: true,
-          result: this.extractResultText(result) || 'Web content fetched successfully',
+          result:
+            this.extractResultText(result) ||
+            'Web content fetched successfully',
         };
       } catch (error) {
         return {

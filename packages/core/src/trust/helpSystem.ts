@@ -50,9 +50,9 @@ export class TrustHelpSystem {
   getCategory(categoryId: string): HelpTopic[] {
     const category = this.categories.get(categoryId);
     if (!category) return [];
-    
+
     return category.topics
-      .map(topicId => this.topics.get(topicId))
+      .map((topicId) => this.topics.get(topicId))
       .filter(Boolean) as HelpTopic[];
   }
 
@@ -65,37 +65,37 @@ export class TrustHelpSystem {
 
     for (const topic of this.topics.values()) {
       let score = 0;
-      
+
       // Title match (highest priority)
       if (topic.title.toLowerCase().includes(queryLower)) {
         score += 10;
       }
-      
+
       // Tag match
       for (const tag of topic.tags) {
         if (tag.toLowerCase().includes(queryLower)) {
           score += 5;
         }
       }
-      
+
       // Content match
       if (topic.content.toLowerCase().includes(queryLower)) {
         score += 1;
       }
-      
+
       // Description match
       if (topic.description.toLowerCase().includes(queryLower)) {
         score += 3;
       }
-      
+
       if (score > 0) {
         results.push({ topic, score });
       }
     }
-    
+
     return results
       .sort((a, b) => b.score - a.score)
-      .map(result => result.topic);
+      .map((result) => result.topic);
   }
 
   /**
@@ -111,9 +111,9 @@ export class TrustHelpSystem {
   getRelatedTopics(topicId: string): HelpTopic[] {
     const topic = this.topics.get(topicId);
     if (!topic || !topic.seeAlso) return [];
-    
+
     return topic.seeAlso
-      .map(id => this.topics.get(id))
+      .map((id) => this.topics.get(id))
       .filter(Boolean) as HelpTopic[];
   }
 
@@ -124,14 +124,14 @@ export class TrustHelpSystem {
     let output = `# ${topic.title}\\n\\n`;
     output += `${topic.description}\\n\\n`;
     output += `${topic.content}\\n\\n`;
-    
+
     if (topic.examples && topic.examples.length > 0) {
       output += `## Examples\\n\\n`;
       for (const example of topic.examples) {
         output += `\`\`\`bash\\n${example}\\n\`\`\`\\n\\n`;
       }
     }
-    
+
     if (topic.seeAlso && topic.seeAlso.length > 0) {
       output += `## See Also\\n\\n`;
       for (const relatedId of topic.seeAlso) {
@@ -142,7 +142,7 @@ export class TrustHelpSystem {
       }
       output += '\\n';
     }
-    
+
     return output;
   }
 
@@ -159,28 +159,49 @@ export class TrustHelpSystem {
       id: 'models',
       name: 'Model Management',
       description: 'Managing AI models and configurations',
-      topics: ['model-list', 'model-download', 'model-switch', 'model-verify', 'model-recommend'],
+      topics: [
+        'model-list',
+        'model-download',
+        'model-switch',
+        'model-verify',
+        'model-recommend',
+      ],
     });
 
     this.categories.set('performance', {
       id: 'performance',
       name: 'Performance',
       description: 'Monitoring and optimizing performance',
-      topics: ['perf-status', 'perf-monitor', 'perf-optimize', 'hardware-detection'],
+      topics: [
+        'perf-status',
+        'perf-monitor',
+        'perf-optimize',
+        'hardware-detection',
+      ],
     });
 
     this.categories.set('privacy', {
       id: 'privacy',
       name: 'Privacy & Security',
       description: 'Privacy modes and security features',
-      topics: ['privacy-modes', 'privacy-strict', 'privacy-moderate', 'privacy-open'],
+      topics: [
+        'privacy-modes',
+        'privacy-strict',
+        'privacy-moderate',
+        'privacy-open',
+      ],
     });
 
     this.categories.set('advanced', {
       id: 'advanced',
       name: 'Advanced Features',
       description: 'Advanced usage and configuration',
-      topics: ['streaming', 'context-management', 'git-integration', 'benchmarking'],
+      topics: [
+        'streaming',
+        'context-management',
+        'git-integration',
+        'benchmarking',
+      ],
     });
 
     // Initialize help topics
@@ -215,7 +236,7 @@ export class TrustHelpSystem {
         'npm install',
         'npm run build',
         'npm run bundle',
-        'node bundle/trust.js'
+        'node bundle/trust.js',
       ],
       seeAlso: ['quick-start', 'first-model'],
     });
@@ -238,7 +259,7 @@ Trust CLI operates completely offline and protects your privacy.`,
         'trust model list',
         'trust model download qwen2.5-1.5b-instruct',
         'trust model switch qwen2.5-1.5b-instruct',
-        'trust'
+        'trust',
       ],
       seeAlso: ['installation', 'first-model', 'model-download'],
     });
@@ -266,7 +287,7 @@ Choose based on your available RAM:
         'trust model recommend quick',
         'trust model download qwen2.5-1.5b-instruct',
         'trust model verify qwen2.5-1.5b-instruct',
-        'trust model switch qwen2.5-1.5b-instruct'
+        'trust model switch qwen2.5-1.5b-instruct',
       ],
       seeAlso: ['model-download', 'model-recommend', 'quick-start'],
     });
@@ -290,10 +311,7 @@ Choose based on your available RAM:
 - Verified: SHA256 hash confirmed
 - Current: Currently loaded for inference`,
       tags: ['model', 'list', 'status', 'available'],
-      examples: [
-        'trust model list',
-        'trust model list --verbose'
-      ],
+      examples: ['trust model list', 'trust model list --verbose'],
       seeAlso: ['model-download', 'model-switch', 'model-verify'],
     });
 
@@ -317,7 +335,7 @@ Choose based on your available RAM:
       tags: ['model', 'download', 'huggingface', 'progress'],
       examples: [
         'trust model download qwen2.5-1.5b-instruct',
-        'trust model download phi-3.5-mini-instruct'
+        'trust model download phi-3.5-mini-instruct',
       ],
       seeAlso: ['model-list', 'model-verify', 'model-switch'],
     });
@@ -343,7 +361,7 @@ The system will:
       tags: ['model', 'switch', 'active', 'change'],
       examples: [
         'trust model switch qwen2.5-1.5b-instruct',
-        'trust model switch phi-3.5-mini-instruct'
+        'trust model switch phi-3.5-mini-instruct',
       ],
       seeAlso: ['model-list', 'model-recommend', 'model-verify'],
     });
@@ -374,7 +392,7 @@ The system will:
       examples: [
         'trust model verify qwen2.5-1.5b-instruct',
         'trust model verify',
-        'trust model verify --all'
+        'trust model verify --all',
       ],
       seeAlso: ['model-download', 'privacy-strict', 'model-list'],
     });
@@ -408,7 +426,7 @@ The system automatically detects:
       examples: [
         'trust model recommend coding',
         'trust model recommend quick',
-        'trust model recommend complex --ram-limit 8'
+        'trust model recommend complex --ram-limit 8',
       ],
       seeAlso: ['model-list', 'model-switch', 'hardware-detection'],
     });
@@ -438,10 +456,7 @@ The system automatically detects:
 - To monitor resource usage
 - For system health checks`,
       tags: ['performance', 'status', 'metrics', 'system'],
-      examples: [
-        'trust perf status',
-        'trust perf status --verbose'
-      ],
+      examples: ['trust perf status', 'trust perf status --verbose'],
       seeAlso: ['perf-monitor', 'perf-optimize', 'hardware-detection'],
     });
 
@@ -470,10 +485,7 @@ The system automatically detects:
 - Optimizing system settings
 - Capacity planning`,
       tags: ['performance', 'monitor', 'real-time', 'live'],
-      examples: [
-        'trust perf watch',
-        'trust perf report'
-      ],
+      examples: ['trust perf watch', 'trust perf report'],
       seeAlso: ['perf-status', 'perf-optimize', 'benchmarking'],
     });
 
@@ -503,10 +515,7 @@ Trust CLI automatically:
 - Provides specific recommendations
 - Explains the reasoning behind suggestions`,
       tags: ['performance', 'optimize', 'recommendations', 'tuning'],
-      examples: [
-        'trust perf optimize',
-        'trust perf optimize --detailed'
-      ],
+      examples: ['trust perf optimize', 'trust perf optimize --detailed'],
       seeAlso: ['perf-status', 'hardware-detection', 'model-recommend'],
     });
 
@@ -543,7 +552,7 @@ The system provides:
       examples: [
         'trust perf status',
         'trust model recommend default',
-        'trust perf optimize'
+        'trust perf optimize',
       ],
       seeAlso: ['perf-optimize', 'model-recommend', 'perf-status'],
     });
@@ -578,7 +587,7 @@ Each mode has different capabilities:
       examples: [
         'trust privacy list',
         'trust privacy status',
-        'trust privacy info strict'
+        'trust privacy info strict',
       ],
       seeAlso: ['privacy-strict', 'privacy-moderate', 'privacy-open'],
     });
@@ -615,10 +624,7 @@ When switching to strict mode:
 - Review audit logs
 - Confirm all required models are available`,
       tags: ['privacy', 'strict', 'security', 'offline'],
-      examples: [
-        'trust privacy switch strict',
-        'trust privacy info strict'
-      ],
+      examples: ['trust privacy switch strict', 'trust privacy info strict'],
       seeAlso: ['privacy-modes', 'privacy-moderate', 'model-verify'],
     });
 
@@ -653,10 +659,7 @@ When switching to strict mode:
 - Team environments
 - General purpose usage`,
       tags: ['privacy', 'moderate', 'balanced', 'recommended'],
-      examples: [
-        'trust privacy switch moderate',
-        'trust privacy status'
-      ],
+      examples: ['trust privacy switch moderate', 'trust privacy status'],
       seeAlso: ['privacy-modes', 'privacy-strict', 'privacy-open'],
     });
 
@@ -691,10 +694,7 @@ When switching to strict mode:
 - Switch to strict/moderate for production
 - Regular security reviews`,
       tags: ['privacy', 'open', 'development', 'testing'],
-      examples: [
-        'trust privacy switch open',
-        'trust privacy info open'
-      ],
+      examples: ['trust privacy switch open', 'trust privacy info open'],
       seeAlso: ['privacy-modes', 'privacy-moderate', 'privacy-strict'],
     });
   }
@@ -731,10 +731,7 @@ Streaming can be:
 - Controlled per conversation
 - Optimized for your system`,
       tags: ['streaming', 'real-time', 'responses', 'performance'],
-      examples: [
-        'trust --stream',
-        'trust privacy switch moderate'
-      ],
+      examples: ['trust --stream', 'trust privacy switch moderate'],
       seeAlso: ['privacy-modes', 'perf-optimize', 'context-management'],
     });
 
@@ -768,10 +765,7 @@ Streaming can be:
 - Context window optimization
 - Memory-efficient processing`,
       tags: ['context', 'management', 'codebase', 'memory'],
-      examples: [
-        'trust analyze ./src',
-        'trust --context-size 8192'
-      ],
+      examples: ['trust analyze ./src', 'trust --context-size 8192'],
       seeAlso: ['git-integration', 'streaming', 'perf-optimize'],
     });
 
@@ -808,7 +802,7 @@ Streaming can be:
       examples: [
         'trust git status',
         'trust git review',
-        'trust git suggest-commit'
+        'trust git suggest-commit',
       ],
       seeAlso: ['context-management', 'advanced', 'streaming'],
     });
@@ -846,7 +840,7 @@ Streaming can be:
       examples: [
         'trust benchmark run',
         'trust benchmark compare',
-        'trust perf report --detailed'
+        'trust perf report --detailed',
       ],
       seeAlso: ['perf-monitor', 'perf-optimize', 'hardware-detection'],
     });

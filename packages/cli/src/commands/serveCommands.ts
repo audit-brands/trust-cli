@@ -4,7 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { OllamaApiServer, ApiServerConfig , TrustConfiguration , ToolRegistry , Config, sessionId, AuthType } from '@trust-cli/trust-cli-core';
+import {
+  OllamaApiServer,
+  ApiServerConfig,
+  TrustConfiguration,
+  ToolRegistry,
+  Config,
+  sessionId,
+  AuthType,
+} from '@trust-cli/trust-cli-core';
 
 export interface ServeCommandArgs {
   port?: number;
@@ -29,7 +37,7 @@ export class ServeCommandHandler {
       targetDir: process.cwd(),
       debugMode: false,
       cwd: process.cwd(),
-      model: 'qwen2.5:1.5b'
+      model: 'qwen2.5:1.5b',
     });
     this.toolRegistry = new ToolRegistry(this.coreConfig);
   }
@@ -64,9 +72,13 @@ export class ServeCommandHandler {
 
     console.log('🛡️  Trust CLI - OpenAI-compatible API Server');
     console.log('═'.repeat(60));
-    console.log(`🌐 Starting server on ${serverConfig.host}:${serverConfig.port}`);
+    console.log(
+      `🌐 Starting server on ${serverConfig.host}:${serverConfig.port}`,
+    );
     console.log(`🦙 Ollama backend: ${ollamaConfig.baseUrl}`);
-    console.log(`🔑 API Key: ${serverConfig.apiKey ? '✅ Required' : '❌ Optional'}`);
+    console.log(
+      `🔑 API Key: ${serverConfig.apiKey ? '✅ Required' : '❌ Optional'}`,
+    );
     console.log(`🌐 CORS: ${serverConfig.cors ? '✅ Enabled' : '❌ Disabled'}`);
 
     try {
@@ -75,7 +87,7 @@ export class ServeCommandHandler {
         this.coreConfig,
         this.toolRegistry,
         ollamaConfig,
-        serverConfig
+        serverConfig,
       );
 
       // Set up graceful shutdown
@@ -85,39 +97,57 @@ export class ServeCommandHandler {
       await currentServer.start(serverConfig);
 
       console.log('\n🚀 Server is running! Try these endpoints:');
-      console.log(`   POST http://${serverConfig.host}:${serverConfig.port}/v1/chat/completions`);
-      console.log(`   GET  http://${serverConfig.host}:${serverConfig.port}/v1/models`);
-      console.log(`   GET  http://${serverConfig.host}:${serverConfig.port}/health`);
-      console.log(`   GET  http://${serverConfig.host}:${serverConfig.port}/status`);
+      console.log(
+        `   POST http://${serverConfig.host}:${serverConfig.port}/v1/chat/completions`,
+      );
+      console.log(
+        `   GET  http://${serverConfig.host}:${serverConfig.port}/v1/models`,
+      );
+      console.log(
+        `   GET  http://${serverConfig.host}:${serverConfig.port}/health`,
+      );
+      console.log(
+        `   GET  http://${serverConfig.host}:${serverConfig.port}/status`,
+      );
 
       if (args.verbose) {
         console.log('\n📊 Server Configuration:');
-        console.log(`   Rate Limit: ${serverConfig.rateLimit?.requests} req/min`);
+        console.log(
+          `   Rate Limit: ${serverConfig.rateLimit?.requests} req/min`,
+        );
         console.log(`   Ollama Model: ${ollamaConfig.defaultModel}`);
         console.log(`   Tools Available: ${await this.getToolCount()}`);
       }
 
       console.log('\n💡 Usage Examples:');
-      console.log('   curl -X POST http://localhost:8080/v1/chat/completions \\');
+      console.log(
+        '   curl -X POST http://localhost:8080/v1/chat/completions \\',
+      );
       console.log('     -H "Content-Type: application/json" \\');
-      console.log('     -d \'{"model": "qwen2.5:1.5b", "messages": [{"role": "user", "content": "Hello!"}]}\'');
-      
+      console.log(
+        '     -d \'{"model": "qwen2.5:1.5b", "messages": [{"role": "user", "content": "Hello!"}]}\'',
+      );
+
       console.log('\n🛑 Press Ctrl+C to stop the server');
 
       // Keep the process alive
       await new Promise(() => {}); // This will run until the process is killed
-
-    } catch (error) {
+    } catch (error: any) {
       console.error(`❌ Failed to start server: ${error}`);
-      
-      if (error instanceof Error && error.message.includes('Ollama is not running')) {
+
+      if (
+        error instanceof Error &&
+        error.message.includes('Ollama is not running')
+      ) {
         console.log('\n🔧 Troubleshooting:');
         console.log('   1. Start Ollama: ollama serve');
-        console.log('   2. Verify Ollama is running: curl http://localhost:11434/api/tags');
+        console.log(
+          '   2. Verify Ollama is running: curl http://localhost:11434/api/tags',
+        );
         console.log('   3. Download a model: ollama pull qwen2.5:1.5b');
         console.log('   4. Try again: trust serve');
       }
-      
+
       process.exit(1);
     }
   }
@@ -125,16 +155,16 @@ export class ServeCommandHandler {
   private setupGracefulShutdown(): void {
     const handleShutdown = async (signal: string) => {
       console.log(`\n📥 Received ${signal}, shutting down gracefully...`);
-      
+
       if (currentServer) {
         try {
           await currentServer.stop();
           console.log('✅ Server stopped successfully');
-        } catch (error) {
+        } catch (_error) {
           console.error('❌ Error stopping server:', error);
         }
       }
-      
+
       process.exit(0);
     };
 
@@ -204,7 +234,9 @@ SECURITY:
   }
 }
 
-export async function handleServeCommand(args: ServeCommandArgs): Promise<void> {
+export async function handleServeCommand(
+  args: ServeCommandArgs,
+): Promise<void> {
   const handler = new ServeCommandHandler();
   await handler.handleCommand(args);
 }

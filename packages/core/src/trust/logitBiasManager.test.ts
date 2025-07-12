@@ -5,7 +5,11 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { LogitBiasManager, JSON_STRUCTURAL_TOKENS, JSON_INVALID_TOKENS } from './logitBiasManager.js';
+import {
+  LogitBiasManager,
+  JSON_STRUCTURAL_TOKENS,
+  JSON_INVALID_TOKENS,
+} from './logitBiasManager.js';
 import { LogitBiasConfig } from './types.js';
 
 describe('LogitBiasManager', () => {
@@ -42,7 +46,9 @@ describe('LogitBiasManager', () => {
     });
 
     it('should handle escaped quotes correctly', () => {
-      expect(biasManager.detectJsonContext('{"text": "He said \\"hello\\""}')).toBe('value');
+      expect(
+        biasManager.detectJsonContext('{"text": "He said \\"hello\\""}'),
+      ).toBe('value');
     });
   });
 
@@ -57,7 +63,7 @@ describe('LogitBiasManager', () => {
       };
 
       const bias = biasManager.generateJsonBias(config);
-      
+
       expect(bias[1]).toBe(10);
       expect(bias[2]).toBe(-5);
       expect(bias[3]).toBe(50);
@@ -66,13 +72,13 @@ describe('LogitBiasManager', () => {
     it('should clamp bias values to valid range', () => {
       const config: LogitBiasConfig = {
         tokenBias: {
-          1: 150,  // Should be clamped to 100
+          1: 150, // Should be clamped to 100
           2: -150, // Should be clamped to -100
         },
       };
 
       const bias = biasManager.generateJsonBias(config);
-      
+
       expect(bias[1]).toBe(100);
       expect(bias[2]).toBe(-100);
     });
@@ -87,7 +93,7 @@ describe('LogitBiasManager', () => {
       };
 
       const bias = biasManager.generateJsonBias(config);
-      
+
       // Should have bias values for structural tokens
       expect(Object.keys(bias).length).toBeGreaterThan(0);
     });
@@ -100,10 +106,10 @@ describe('LogitBiasManager', () => {
       };
 
       const bias = biasManager.generateJsonBias(config);
-      
+
       // Should have positive bias for structural tokens
       expect(Object.keys(bias).length).toBeGreaterThan(0);
-      Object.values(bias).forEach(value => {
+      Object.values(bias).forEach((value) => {
         expect(value).toBeGreaterThan(0);
       });
     });
@@ -116,10 +122,10 @@ describe('LogitBiasManager', () => {
       };
 
       const bias = biasManager.generateJsonBias(config);
-      
+
       // Should have negative bias for invalid tokens
       expect(Object.keys(bias).length).toBeGreaterThan(0);
-      Object.values(bias).forEach(value => {
+      Object.values(bias).forEach((value) => {
         expect(value).toBeLessThan(0);
       });
     });
@@ -128,15 +134,15 @@ describe('LogitBiasManager', () => {
       const config: LogitBiasConfig = {
         jsonBias: {
           valueBias: {
-            'true': 20,
-            'false': 15,
-            'null': -10,
+            true: 20,
+            false: 15,
+            null: -10,
           },
         },
       };
 
       const bias = biasManager.generateJsonBias(config);
-      
+
       expect(Object.keys(bias).length).toBeGreaterThan(0);
     });
   });
@@ -152,8 +158,12 @@ describe('LogitBiasManager', () => {
         },
       };
 
-      const bias = biasManager.generateContextualBias(config, 'object', '{"key"');
-      
+      const bias = biasManager.generateContextualBias(
+        config,
+        'object',
+        '{"key"',
+      );
+
       expect(Object.keys(bias).length).toBeGreaterThan(0);
     });
 
@@ -168,7 +178,7 @@ describe('LogitBiasManager', () => {
       };
 
       const bias = biasManager.generateContextualBias(config, 'array', '[1, 2');
-      
+
       expect(Object.keys(bias).length).toBeGreaterThan(0);
     });
 
@@ -181,16 +191,20 @@ describe('LogitBiasManager', () => {
         },
       };
 
-      const bias = biasManager.generateContextualBias(config, 'string', '"hello');
-      
+      const bias = biasManager.generateContextualBias(
+        config,
+        'string',
+        '"hello',
+      );
+
       expect(Object.keys(bias).length).toBeGreaterThan(0);
     });
 
     it('should return empty bias for missing contextual config', () => {
       const config: LogitBiasConfig = {};
-      
+
       const bias = biasManager.generateContextualBias(config, 'object', '{}');
-      
+
       expect(Object.keys(bias)).toHaveLength(0);
     });
   });
@@ -198,7 +212,7 @@ describe('LogitBiasManager', () => {
   describe('Preset Configurations', () => {
     it('should create light preset configuration', () => {
       const config = LogitBiasManager.createJsonPreset('light');
-      
+
       expect(config.jsonBias?.boostStructural).toBe(true);
       expect(config.jsonBias?.suppressInvalid).toBe(true);
       expect(config.jsonBias?.valueBias).toBeDefined();
@@ -207,7 +221,7 @@ describe('LogitBiasManager', () => {
 
     it('should create moderate preset configuration', () => {
       const config = LogitBiasManager.createJsonPreset('moderate');
-      
+
       expect(config.jsonBias?.boostStructural).toBe(true);
       expect(config.jsonBias?.suppressInvalid).toBe(true);
       expect(config.jsonBias?.valueBias).toBeDefined();
@@ -216,7 +230,7 @@ describe('LogitBiasManager', () => {
 
     it('should create aggressive preset configuration', () => {
       const config = LogitBiasManager.createJsonPreset('aggressive');
-      
+
       expect(config.jsonBias?.boostStructural).toBe(true);
       expect(config.jsonBias?.suppressInvalid).toBe(true);
       expect(config.jsonBias?.valueBias).toBeDefined();
@@ -227,7 +241,7 @@ describe('LogitBiasManager', () => {
     it('should default to moderate preset', () => {
       const config = LogitBiasManager.createJsonPreset();
       const moderateConfig = LogitBiasManager.createJsonPreset('moderate');
-      
+
       expect(config).toEqual(moderateConfig);
     });
   });
@@ -275,7 +289,7 @@ describe('LogitBiasManager', () => {
       };
 
       const bias = biasManager.generateJsonBias(config);
-      
+
       expect(bias[1]).toBe(100);
       expect(bias[2]).toBe(100);
       expect(bias[3]).toBe(100);
@@ -291,7 +305,7 @@ describe('LogitBiasManager', () => {
       };
 
       const bias = biasManager.generateJsonBias(config);
-      
+
       expect(bias[1]).toBe(-100);
       expect(bias[2]).toBe(-100);
       expect(bias[3]).toBe(-100);
@@ -309,7 +323,7 @@ describe('LogitBiasManager', () => {
       };
 
       const bias = biasManager.generateJsonBias(config);
-      
+
       expect(bias[1]).toBe(50);
       expect(bias[2]).toBe(-50);
       expect(bias[3]).toBe(0);
@@ -335,7 +349,8 @@ describe('LogitBiasManager', () => {
     });
 
     it('should handle strings with special characters', () => {
-      const stringWithSpecial = '{"text": "This has {brackets} and [arrays] and \\"quotes\\"';
+      const stringWithSpecial =
+        '{"text": "This has {brackets} and [arrays] and \\"quotes\\"';
       expect(biasManager.detectJsonContext(stringWithSpecial)).toBe('string');
     });
   });

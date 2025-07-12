@@ -20,21 +20,23 @@ describe('PerformanceMonitor', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     performanceMonitor = new PerformanceMonitor();
-    
+
     // Setup default os mocks
     mockOs.totalmem.mockReturnValue(16 * 1024 * 1024 * 1024); // 16GB
-    mockOs.freemem.mockReturnValue(8 * 1024 * 1024 * 1024);   // 8GB free
-    mockOs.cpus.mockReturnValue(new Array(8).fill({
-      model: 'Intel(R) Core(TM) i7-9750H CPU @ 2.60GHz',
-      speed: 2600,
-      times: {
-        user: 1000000,
-        nice: 0,
-        sys: 500000,
-        idle: 8000000,
-        irq: 0
-      }
-    }));
+    mockOs.freemem.mockReturnValue(8 * 1024 * 1024 * 1024); // 8GB free
+    mockOs.cpus.mockReturnValue(
+      new Array(8).fill({
+        model: 'Intel(R) Core(TM) i7-9750H CPU @ 2.60GHz',
+        speed: 2600,
+        times: {
+          user: 1000000,
+          nice: 0,
+          sys: 500000,
+          idle: 8000000,
+          irq: 0,
+        },
+      }),
+    );
     mockOs.loadavg.mockReturnValue([1.2, 1.5, 1.8]);
     mockOs.platform.mockReturnValue('linux');
     mockOs.arch.mockReturnValue('x64');
@@ -106,7 +108,7 @@ describe('PerformanceMonitor', () => {
         modelName: 'test-model',
         promptLength: 20,
         responseLength: 80,
-        timestamp: new Date()
+        timestamp: new Date(),
       };
 
       performanceMonitor.recordInference(metrics);
@@ -125,7 +127,7 @@ describe('PerformanceMonitor', () => {
         modelName: 'test-model',
         promptLength: 10,
         responseLength: 40,
-        timestamp: new Date()
+        timestamp: new Date(),
       };
 
       const metrics2: InferenceMetrics = {
@@ -135,7 +137,7 @@ describe('PerformanceMonitor', () => {
         modelName: 'test-model',
         promptLength: 15,
         responseLength: 85,
-        timestamp: new Date()
+        timestamp: new Date(),
       };
 
       performanceMonitor.recordInference(metrics1);
@@ -153,11 +155,11 @@ describe('PerformanceMonitor', () => {
         const metrics: InferenceMetrics = {
           tokensPerSecond: 10 + i, // Increasing performance
           totalTokens: 50,
-          inferenceTime: 5000 - (i * 100), // Decreasing time
+          inferenceTime: 5000 - i * 100, // Decreasing time
           modelName: 'test-model',
           promptLength: 10,
           responseLength: 40,
-          timestamp: new Date()
+          timestamp: new Date(),
         };
         performanceMonitor.recordInference(metrics);
       }
@@ -178,7 +180,7 @@ describe('PerformanceMonitor', () => {
         modelName: 'large-model',
         promptLength: 1000,
         responseLength: 100,
-        timestamp: new Date()
+        timestamp: new Date(),
       };
 
       performanceMonitor.recordInference(slowMetrics);
@@ -196,7 +198,7 @@ describe('PerformanceMonitor', () => {
         modelName: 'model-1',
         promptLength: 20,
         responseLength: 80,
-        timestamp: new Date()
+        timestamp: new Date(),
       };
 
       const model2Metrics: InferenceMetrics = {
@@ -206,7 +208,7 @@ describe('PerformanceMonitor', () => {
         modelName: 'model-2',
         promptLength: 20,
         responseLength: 80,
-        timestamp: new Date()
+        timestamp: new Date(),
       };
 
       performanceMonitor.recordInference(model1Metrics);
@@ -225,7 +227,8 @@ describe('PerformanceMonitor', () => {
       const metrics = performanceMonitor.getSystemMetrics();
       const settings = performanceMonitor.getOptimalModelSettings();
 
-      const usagePercentage = (metrics.memoryUsage.used / metrics.memoryUsage.total) * 100;
+      const usagePercentage =
+        (metrics.memoryUsage.used / metrics.memoryUsage.total) * 100;
       expect(usagePercentage).toBeGreaterThan(90);
       expect(settings.recommendedRAM).toBeLessThanOrEqual(1);
     });
@@ -250,11 +253,13 @@ describe('PerformanceMonitor', () => {
     });
 
     it('should consider CPU cores for parallel processing', () => {
-      mockOs.cpus.mockReturnValue(new Array(16).fill({
-        model: 'High-end CPU',
-        speed: 3600,
-        times: { user: 1000000, nice: 0, sys: 500000, idle: 8000000, irq: 0 }
-      }));
+      mockOs.cpus.mockReturnValue(
+        new Array(16).fill({
+          model: 'High-end CPU',
+          speed: 3600,
+          times: { user: 1000000, nice: 0, sys: 500000, idle: 8000000, irq: 0 },
+        }),
+      );
       // Also need enough RAM for fast performance
       mockOs.freemem.mockReturnValue(32 * 1024 * 1024 * 1024); // 32GB free
 
@@ -283,7 +288,7 @@ describe('PerformanceMonitor', () => {
         modelName: 'test-model',
         promptLength: 0,
         responseLength: 0,
-        timestamp: new Date()
+        timestamp: new Date(),
       };
 
       performanceMonitor.recordInference(edgeMetrics);

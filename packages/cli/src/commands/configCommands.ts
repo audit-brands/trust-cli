@@ -6,10 +6,17 @@
 
 import { TrustConfiguration } from '@trust-cli/trust-cli-core';
 import * as fs from 'fs/promises';
-import * as path from 'path';
 
 export interface ConfigCommandArgs {
-  action: 'show' | 'set' | 'get' | 'reset' | 'backend' | 'fallback' | 'export' | 'import';
+  action:
+    | 'show'
+    | 'set'
+    | 'get'
+    | 'reset'
+    | 'backend'
+    | 'fallback'
+    | 'export'
+    | 'import';
   key?: string;
   value?: string;
   backend?: 'ollama' | 'huggingface' | 'cloud';
@@ -44,7 +51,9 @@ export class ConfigCommandHandler {
         break;
       case 'set':
         if (!args.key || args.value === undefined) {
-          throw new Error('Configuration key and value required for set command');
+          throw new Error(
+            'Configuration key and value required for set command',
+          );
         }
         await this.setConfig(args.key, args.value);
         break;
@@ -85,11 +94,13 @@ export class ConfigCommandHandler {
     console.log('═══════════════════════════════════════════════════════════');
 
     const config = this.config.get();
-    
+
     // AI Backend Configuration
     console.log('\n🤖 AI Backend Configuration:');
     console.log(`   Preferred Backend: ${config.ai.preferredBackend}`);
-    console.log(`   Fallback Enabled: ${config.ai.enableFallback ? '✅' : '❌'}`);
+    console.log(
+      `   Fallback Enabled: ${config.ai.enableFallback ? '✅' : '❌'}`,
+    );
     console.log(`   Fallback Order: ${config.ai.fallbackOrder.join(' → ')}`);
 
     // Ollama Configuration
@@ -100,7 +111,7 @@ export class ConfigCommandHandler {
     console.log(`   Keep Alive: ${config.ai.ollama.keepAlive}`);
     console.log(`   Max Tool Calls: ${config.ai.ollama.maxToolCalls}`);
     console.log(`   Concurrency: ${config.ai.ollama.concurrency}`);
-    
+
     if (verbose) {
       console.log(`   Temperature: ${config.ai.ollama.temperature}`);
       console.log(`   Num Predict: ${config.ai.ollama.numPredict}`);
@@ -109,7 +120,9 @@ export class ConfigCommandHandler {
     // HuggingFace Configuration
     console.log('\n🤗 HuggingFace Configuration:');
     console.log(`   Enabled: ${config.ai.huggingface.enabled ? '✅' : '❌'}`);
-    console.log(`   GBNF Functions: ${config.ai.huggingface.gbnfFunctions ? '✅' : '❌'}`);
+    console.log(
+      `   GBNF Functions: ${config.ai.huggingface.gbnfFunctions ? '✅' : '❌'}`,
+    );
 
     // Cloud Configuration
     console.log('\n☁️  Cloud Configuration:');
@@ -126,8 +139,12 @@ export class ConfigCommandHandler {
       // Privacy Configuration
       console.log('\n🔒 Privacy Configuration:');
       console.log(`   Privacy Mode: ${config.privacy.privacyMode}`);
-      console.log(`   Audit Logging: ${config.privacy.auditLogging ? '✅' : '❌'}`);
-      console.log(`   Model Verification: ${config.privacy.modelVerification ? '✅' : '❌'}`);
+      console.log(
+        `   Audit Logging: ${config.privacy.auditLogging ? '✅' : '❌'}`,
+      );
+      console.log(
+        `   Model Verification: ${config.privacy.modelVerification ? '✅' : '❌'}`,
+      );
 
       // Inference Configuration
       console.log('\n⚡ Inference Configuration:');
@@ -138,10 +155,18 @@ export class ConfigCommandHandler {
 
       // Transparency Configuration
       console.log('\n👀 Transparency Configuration:');
-      console.log(`   Log Prompts: ${config.transparency.logPrompts ? '✅' : '❌'}`);
-      console.log(`   Log Responses: ${config.transparency.logResponses ? '✅' : '❌'}`);
-      console.log(`   Show Model Info: ${config.transparency.showModelInfo ? '✅' : '❌'}`);
-      console.log(`   Show Performance Metrics: ${config.transparency.showPerformanceMetrics ? '✅' : '❌'}`);
+      console.log(
+        `   Log Prompts: ${config.transparency.logPrompts ? '✅' : '❌'}`,
+      );
+      console.log(
+        `   Log Responses: ${config.transparency.logResponses ? '✅' : '❌'}`,
+      );
+      console.log(
+        `   Show Model Info: ${config.transparency.showModelInfo ? '✅' : '❌'}`,
+      );
+      console.log(
+        `   Show Performance Metrics: ${config.transparency.showPerformanceMetrics ? '✅' : '❌'}`,
+      );
     }
 
     console.log('\n💡 Use "trust config get <key>" for specific values');
@@ -152,9 +177,11 @@ export class ConfigCommandHandler {
   private async getConfig(key: string): Promise<void> {
     const config = this.config.get();
     const value = this.getNestedValue(config, key);
-    
+
     if (value !== undefined) {
-      console.log(`${key}: ${typeof value === 'object' ? JSON.stringify(value, null, 2) : value}`);
+      console.log(
+        `${key}: ${typeof value === 'object' ? JSON.stringify(value, null, 2) : value}`,
+      );
     } else {
       console.error(`❌ Configuration key '${key}' not found`);
       console.log('\n📝 Available keys:');
@@ -166,23 +193,27 @@ export class ConfigCommandHandler {
     try {
       const config = this.config.get();
       const parsedValue = this.parseValue(value);
-      
+
       this.setNestedValue(config, key, parsedValue);
-      
+
       // Update the configuration
       (this.config as any).config = config;
       await this.config.save();
-      
+
       console.log(`✅ Configuration updated: ${key} = ${value}`);
       console.log('💡 Restart Trust CLI for changes to take effect');
     } catch (error) {
-      console.error(`❌ Failed to set configuration: ${error instanceof Error ? error.message : String(error)}`);
+      console.error(
+        `❌ Failed to set configuration: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
   }
 
   private async resetConfig(): Promise<void> {
-    console.log('⚠️  This will reset all configuration to defaults. Continue? (y/N)');
-    
+    console.log(
+      '⚠️  This will reset all configuration to defaults. Continue? (y/N)',
+    );
+
     // In a real CLI, you'd use a prompt library here
     // For now, we'll just show what would be reset
     console.log('\n🔄 Configuration would be reset to defaults:');
@@ -191,38 +222,46 @@ export class ConfigCommandHandler {
     console.log('   - Ollama timeout: 60s');
     console.log('   - Privacy mode: strict');
     console.log('   - And all other settings...');
-    
-    console.log('\n❌ Reset cancelled (interactive prompts not implemented yet)');
+
+    console.log(
+      '\n❌ Reset cancelled (interactive prompts not implemented yet)',
+    );
     console.log('💡 Manually delete ~/.trustcli/config.json to reset');
   }
 
-  private async setBackend(backend: 'ollama' | 'huggingface' | 'cloud'): Promise<void> {
+  private async setBackend(
+    backend: 'ollama' | 'huggingface' | 'cloud',
+  ): Promise<void> {
     this.config.setPreferredBackend(backend as any);
     await this.config.save();
-    
+
     console.log(`✅ Preferred AI backend set to: ${backend}`);
-    
+
     // Show current backend status
     const isEnabled = this.config.isBackendEnabled(backend);
     if (!isEnabled && backend !== 'ollama') {
       console.log(`⚠️  Warning: ${backend} backend is currently disabled`);
-      console.log(`💡 Enable it with: trust config set ai.${backend === 'huggingface' ? 'huggingface' : backend}.enabled true`);
+      console.log(
+        `💡 Enable it with: trust config set ai.${backend === 'huggingface' ? 'huggingface' : backend}.enabled true`,
+      );
     }
   }
 
   private async setFallbackOrder(order: string[]): Promise<void> {
     const validBackends = ['ollama', 'huggingface', 'cloud'];
-    const invalidBackends = order.filter(b => !validBackends.includes(b));
-    
+    const invalidBackends = order.filter((b) => !validBackends.includes(b));
+
     if (invalidBackends.length > 0) {
-      throw new Error(`Invalid backends: ${invalidBackends.join(', ')}. Valid options: ${validBackends.join(', ')}`);
+      throw new Error(
+        `Invalid backends: ${invalidBackends.join(', ')}. Valid options: ${validBackends.join(', ')}`,
+      );
     }
-    
+
     this.config.setFallbackOrder(order as any);
     await this.config.save();
-    
+
     console.log(`✅ Fallback order set to: ${order.join(' → ')}`);
-    
+
     // Show which backends are enabled
     console.log('\n📊 Backend Status:');
     for (const backend of order) {
@@ -235,11 +274,13 @@ export class ConfigCommandHandler {
     try {
       const config = this.config.get();
       const configJson = JSON.stringify(config, null, 2);
-      
+
       await fs.writeFile(filePath, configJson, 'utf-8');
       console.log(`✅ Configuration exported to: ${filePath}`);
     } catch (error) {
-      console.error(`❌ Failed to export configuration: ${error instanceof Error ? error.message : String(error)}`);
+      console.error(
+        `❌ Failed to export configuration: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
   }
 
@@ -247,24 +288,36 @@ export class ConfigCommandHandler {
     try {
       const configData = await fs.readFile(filePath, 'utf-8');
       const importedConfig = JSON.parse(configData);
-      
+
       // Validate the imported config has the expected structure
-      if (!importedConfig.ai || !importedConfig.models || !importedConfig.privacy) {
+      if (
+        !importedConfig.ai ||
+        !importedConfig.models ||
+        !importedConfig.privacy
+      ) {
         throw new Error('Invalid configuration file format');
       }
-      
+
       (this.config as any).config = importedConfig;
       await this.config.save();
-      
+
       console.log(`✅ Configuration imported from: ${filePath}`);
       console.log('💡 Restart Trust CLI for changes to take effect');
     } catch (error) {
-      console.error(`❌ Failed to import configuration: ${error instanceof Error ? error.message : String(error)}`);
+      console.error(
+        `❌ Failed to import configuration: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
   }
 
   private getNestedValue(obj: any, path: string): any {
-    return path.split('.').reduce((current, key) => current && current[key] !== undefined ? current[key] : undefined, obj);
+    return path
+      .split('.')
+      .reduce(
+        (current, key) =>
+          current && current[key] !== undefined ? current[key] : undefined,
+        obj,
+      );
   }
 
   private setNestedValue(obj: any, path: string, value: any): void {
@@ -276,7 +329,7 @@ export class ConfigCommandHandler {
       }
       return current[key];
     }, obj);
-    
+
     target[lastKey] = value;
   }
 
@@ -288,11 +341,11 @@ export class ConfigCommandHandler {
       // If not JSON, try boolean
       if (value.toLowerCase() === 'true') return true;
       if (value.toLowerCase() === 'false') return false;
-      
+
       // Try number
       const numValue = Number(value);
       if (!isNaN(numValue)) return numValue;
-      
+
       // Return as string
       return value;
     }
@@ -331,11 +384,13 @@ export class ConfigCommandHandler {
       'transparency.showPerformanceMetrics',
     ];
 
-    keys.forEach(key => console.log(`   ${key}`));
+    keys.forEach((key) => console.log(`   ${key}`));
   }
 }
 
-export async function handleConfigCommand(args: ConfigCommandArgs): Promise<void> {
+export async function handleConfigCommand(
+  args: ConfigCommandArgs,
+): Promise<void> {
   const handler = new ConfigCommandHandler();
   await handler.handleCommand(args);
 }

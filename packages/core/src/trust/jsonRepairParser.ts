@@ -35,23 +35,21 @@ export class JsonRepairParser {
    */
   parseFunctionCalls(text: string): ParseResult {
     const errors: string[] = [];
-    const functionCalls: FunctionCall[] = [];
-    
+
     // Try to parse as-is first
     const directResult = this.tryDirectParse(text);
     if (directResult.success) {
       return directResult;
     }
-    
+
     errors.push(`Direct parse failed: ${directResult.error}`);
-    
+
     // Apply repair strategies
     let repairedText = text;
     for (const strategy of this.repairStrategies) {
       try {
-        const previousText = repairedText;
         repairedText = strategy(repairedText);
-        
+
         // Test after each strategy
         const result = this.tryDirectParse(repairedText);
         if (result.success) {
@@ -59,18 +57,17 @@ export class JsonRepairParser {
             success: true,
             functionCalls: result.functionCalls || [],
             repairedJson: repairedText,
-            errors
+            errors,
           };
         }
-        
+
         // If strategy didn't help, continue with the modified text anyway
         // This allows multiple strategies to work together
-        
       } catch (e) {
         errors.push(`Strategy ${strategy.name} failed: ${e}`);
       }
     }
-    
+
     // Last resort: try to extract function call patterns
     const extractedCalls = this.extractFunctionCallPatterns(text);
     if (extractedCalls.length > 0) {
@@ -78,18 +75,22 @@ export class JsonRepairParser {
         success: true,
         functionCalls: extractedCalls,
         repairedJson: JSON.stringify({ function_call: extractedCalls[0] }),
-        errors
+        errors,
       };
     }
-    
+
     return {
       success: false,
       functionCalls: [],
-      errors
+      errors,
     };
   }
 
-  private tryDirectParse(text: string): { success: boolean; functionCalls: FunctionCall[]; error?: string } {
+  private tryDirectParse(text: string): {
+    success: boolean;
+    functionCalls: FunctionCall[];
+    error?: string;
+  } {
     try {
       // First, try parsing the whole text directly
       const parsed = JSON.parse(text);
@@ -97,7 +98,7 @@ export class JsonRepairParser {
       if (functionCalls.length > 0) {
         return { success: true, functionCalls };
       }
-      
+
       // If no function calls found, try pattern matching
       const patterns = [
         // With code blocks
@@ -114,23 +115,23 @@ export class JsonRepairParser {
           const jsonText = match[1] || match[0];
           try {
             const parsed = JSON.parse(jsonText);
-            
+
             let functionCall: FunctionCall | null = null;
-            
+
             if (parsed.function_call) {
               functionCall = {
                 name: parsed.function_call.name,
                 args: parsed.function_call.arguments || {},
-                id: `call_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+                id: `call_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
               };
             } else if (parsed.name && parsed.arguments !== undefined) {
               functionCall = {
                 name: parsed.name,
                 args: parsed.arguments || {},
-                id: `call_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+                id: `call_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
               };
             }
-            
+
             if (functionCall) {
               return { success: true, functionCalls: [functionCall] };
             }
@@ -139,8 +140,12 @@ export class JsonRepairParser {
           }
         }
       }
-      
-      return { success: false, functionCalls: [], error: 'No function calls found in parsed JSON' };
+
+      return {
+        success: false,
+        functionCalls: [],
+        error: 'No function calls found in parsed JSON',
+      };
     } catch (e) {
       return { success: false, functionCalls: [], error: String(e) };
     }
@@ -148,21 +153,21 @@ export class JsonRepairParser {
 
   private extractFunctionCallsFromObject(obj: any): FunctionCall[] {
     const calls: FunctionCall[] = [];
-    
+
     if (obj.function_call) {
       calls.push({
         name: obj.function_call.name,
         args: obj.function_call.arguments || {},
-        id: `call_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+        id: `call_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       });
     } else if (obj.name && obj.arguments !== undefined) {
       calls.push({
         name: obj.name,
         args: obj.arguments || {},
-        id: `call_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+        id: `call_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       });
     }
-    
+
     return calls;
   }
 
@@ -191,11 +196,14 @@ export class JsonRepairParser {
   private fixMissingCommas(text: string): string {
     // Add missing commas between properties like "key": "value" "key2": "value2"
     // Handle both quoted and unquoted values, including nested objects
-    let result = text.replace(/(":\s*(?:"[^"]*"|\{[^}]*\}|[^,}\]]*?))\s+("[\w_]+"\s*:)/g, '$1,$2');
-    
+    let result = text.replace(
+      /(":\s*(?:"[^"]*"|\{[^}]*\}|[^,}\]]*?))\s+("[\w_]+"\s*:)/g,
+      '$1,$2',
+    );
+
     // Additional pattern for specific case like "test" "arguments"
     result = result.replace(/(")\s+("[\w_]+"\s*:)/g, '$1,$2');
-    
+
     return result;
   }
 
@@ -204,10 +212,11 @@ export class JsonRepairParser {
     const trimmed = text.trim();
     // Only add braces if it looks like a JSON property without surrounding braces
     // and doesn't already contain a complete JSON object
-    if (!trimmed.startsWith('{') && 
-        trimmed.includes('"name"') && 
-        !trimmed.includes('{"') &&
-        trimmed.match(/^"name":\s*"[^"]*"/) // Starts with name property
+    if (
+      !trimmed.startsWith('{') &&
+      trimmed.includes('"name"') &&
+      !trimmed.includes('{"') &&
+      trimmed.match(/^"name":\s*"[^"]*"/) // Starts with name property
     ) {
       return '{' + trimmed + '}';
     }
@@ -235,7 +244,7 @@ export class JsonRepairParser {
       // Already looks like JSON, don't extract
       return text;
     }
-    
+
     // Use a greedy approach to find the largest JSON object
     const jsonMatch = text.match(/\{.*\}/);
     if (jsonMatch) {
@@ -246,9 +255,10 @@ export class JsonRepairParser {
 
   private extractFunctionCallPatterns(text: string): FunctionCall[] {
     const calls: FunctionCall[] = [];
-    
+
     // Pattern 1: Direct function name and arguments
-    const pattern1 = /(?:function[_\s]*)?(?:call|name)[:\s]*["']?(\w+)["']?\s*(?:arguments|args|parameters)[:\s]*(\{[^}]*\})/gi;
+    const pattern1 =
+      /(?:function[_\s]*)?(?:call|name)[:\s]*["']?(\w+)["']?\s*(?:arguments|args|parameters)[:\s]*(\{[^}]*\})/gi;
     let match;
     while ((match = pattern1.exec(text)) !== null) {
       try {
@@ -256,13 +266,13 @@ export class JsonRepairParser {
         calls.push({
           name: match[1],
           args,
-          id: `call_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+          id: `call_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         });
       } catch (e) {
         // Continue if JSON parse fails
       }
     }
-    
+
     // Pattern 2: Tool/function mentions with parameters
     const pattern2 = /Execute tool:\s*(\w+)\s*with arguments:\s*(\{[^}]*\})/gi;
     while ((match = pattern2.exec(text)) !== null) {
@@ -271,13 +281,13 @@ export class JsonRepairParser {
         calls.push({
           name: match[1],
           args,
-          id: `call_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+          id: `call_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         });
       } catch (e) {
         // Continue if JSON parse fails
       }
     }
-    
+
     return calls;
   }
 
@@ -286,19 +296,19 @@ export class JsonRepairParser {
    */
   validateFunctionCall(call: FunctionCall): string[] {
     const errors: string[] = [];
-    
+
     if (!call.name || typeof call.name !== 'string') {
       errors.push('Function name must be a non-empty string');
     }
-    
+
     if (!call.args || typeof call.args !== 'object') {
       errors.push('Function arguments must be an object');
     }
-    
+
     if (!call.id) {
       errors.push('Function call must have an ID');
     }
-    
+
     return errors;
   }
 }

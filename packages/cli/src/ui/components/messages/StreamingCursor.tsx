@@ -12,7 +12,9 @@ interface StreamingCursorProps {
   isActive: boolean;
 }
 
-export const StreamingCursor: React.FC<StreamingCursorProps> = ({ isActive }) => {
+export const StreamingCursor: React.FC<StreamingCursorProps> = ({
+  isActive,
+}) => {
   const [isVisible, setIsVisible] = useState(true);
 
   useEffect(() => {
@@ -30,9 +32,5 @@ export const StreamingCursor: React.FC<StreamingCursorProps> = ({ isActive }) =>
 
   if (!isActive) return null;
 
-  return (
-    <Text color={Colors.AccentPurple}>
-      {isVisible ? '▊' : ' '}
-    </Text>
-  );
+  return <Text color={Colors.AccentPurple}>{isVisible ? '▊' : ' '}</Text>;
 };

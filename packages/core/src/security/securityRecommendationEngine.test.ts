@@ -5,7 +5,11 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { SecurityRecommendationEngine, SecurityAssessmentConfig, SecurityAssessmentReport } from './securityRecommendationEngine.js';
+import {
+  SecurityRecommendationEngine,
+  SecurityAssessmentConfig,
+  SecurityAssessmentReport,
+} from './securityRecommendationEngine.js';
 import { PrivacyManager, PrivacyConfig } from '../trust/privacyManager.js';
 import { PerformanceMonitor } from '../trust/performanceMonitor.js';
 
@@ -16,12 +20,12 @@ vi.mock('fs/promises', () => ({
   readFile: vi.fn().mockResolvedValue('{}'),
   writeFile: vi.fn().mockResolvedValue(undefined),
   stat: vi.fn().mockResolvedValue({
-    mode: parseInt('700', 8)
-  })
+    mode: parseInt('700', 8),
+  }),
 }));
 
 vi.mock('os', () => ({
-  homedir: vi.fn().mockReturnValue('/home/test')
+  homedir: vi.fn().mockReturnValue('/home/test'),
 }));
 
 describe('SecurityRecommendationEngine', () => {
@@ -38,15 +42,18 @@ describe('SecurityRecommendationEngine', () => {
     allowCloudSync: false,
     auditLogging: true,
     lastUpdated: new Date().toISOString(),
-    version: '1.0.0'
+    version: '1.0.0',
   };
 
   beforeEach(() => {
     mockPerformanceMonitor = {} as PerformanceMonitor;
     mockPrivacyManager = {
-      getPrivacyConfig: vi.fn().mockResolvedValue(mockPrivacyConfig)
+      getPrivacyConfig: vi.fn().mockResolvedValue(mockPrivacyConfig),
     } as any;
-    securityEngine = new SecurityRecommendationEngine(mockPrivacyManager, mockPerformanceMonitor);
+    securityEngine = new SecurityRecommendationEngine(
+      mockPrivacyManager,
+      mockPerformanceMonitor,
+    );
   });
 
   describe('Security Assessment', () => {
@@ -56,11 +63,11 @@ describe('SecurityRecommendationEngine', () => {
         depth: 'comprehensive',
         includeSystemScan: true,
         includeVulnerabilityAssessment: true,
-        includeComplianceCheck: true
+        includeComplianceCheck: true,
       };
 
       const report = await securityEngine.conductSecurityAssessment(config);
-      
+
       expect(report.id).toBeDefined();
       expect(report.timestamp).toBeInstanceOf(Date);
       expect(report.duration).toBeGreaterThanOrEqual(0);
@@ -75,11 +82,11 @@ describe('SecurityRecommendationEngine', () => {
         depth: 'standard',
         includeSystemScan: false,
         includeVulnerabilityAssessment: false,
-        includeComplianceCheck: false
+        includeComplianceCheck: false,
       };
 
       const report = await securityEngine.conductSecurityAssessment(config);
-      
+
       expect(report.summary.totalRecommendations).toBeGreaterThanOrEqual(0);
       expect(report.summary.overallSecurityScore).toBeGreaterThanOrEqual(0);
       expect(report.summary.overallSecurityScore).toBeLessThanOrEqual(100);
@@ -94,15 +101,19 @@ describe('SecurityRecommendationEngine', () => {
         depth: 'basic',
         includeSystemScan: false,
         includeVulnerabilityAssessment: false,
-        includeComplianceCheck: false
+        includeComplianceCheck: false,
       };
 
       const report = await securityEngine.conductSecurityAssessment(config);
-      
-      const authRecommendations = report.recommendations.filter(r => r.category === 'authentication');
+
+      const authRecommendations = report.recommendations.filter(
+        (r) => r.category === 'authentication',
+      );
       expect(authRecommendations).toHaveLength(1);
       expect(authRecommendations[0].level).toBe('info');
-      expect(authRecommendations[0].title).toContain('Local-Only Authentication');
+      expect(authRecommendations[0].title).toContain(
+        'Local-Only Authentication',
+      );
       expect(authRecommendations[0].riskScore).toBeLessThan(20);
     });
   });
@@ -110,19 +121,23 @@ describe('SecurityRecommendationEngine', () => {
   describe('Encryption Assessment', () => {
     it('should detect disabled encryption as critical issue', async () => {
       const unencryptedConfig = { ...mockPrivacyConfig, encryptStorage: false };
-      vi.mocked(mockPrivacyManager.getPrivacyConfig).mockResolvedValue(unencryptedConfig);
+      vi.mocked(mockPrivacyManager.getPrivacyConfig).mockResolvedValue(
+        unencryptedConfig,
+      );
 
       const config: SecurityAssessmentConfig = {
         categories: ['encryption'],
         depth: 'standard',
         includeSystemScan: false,
         includeVulnerabilityAssessment: false,
-        includeComplianceCheck: false
+        includeComplianceCheck: false,
       };
 
       const report = await securityEngine.conductSecurityAssessment(config);
-      
-      const encryptionRecs = report.recommendations.filter(r => r.id === 'encryption-at-rest');
+
+      const encryptionRecs = report.recommendations.filter(
+        (r) => r.id === 'encryption-at-rest',
+      );
       expect(encryptionRecs).toHaveLength(1);
       expect(encryptionRecs[0].level).toBe('critical');
       expect(encryptionRecs[0].category).toBe('encryption');
@@ -136,12 +151,14 @@ describe('SecurityRecommendationEngine', () => {
         depth: 'comprehensive',
         includeSystemScan: false,
         includeVulnerabilityAssessment: false,
-        includeComplianceCheck: false
+        includeComplianceCheck: false,
       };
 
       const report = await securityEngine.conductSecurityAssessment(config);
-      
-      const strengthRecs = report.recommendations.filter(r => r.id === 'encryption-strength-verification');
+
+      const strengthRecs = report.recommendations.filter(
+        (r) => r.id === 'encryption-strength-verification',
+      );
       expect(strengthRecs).toHaveLength(1);
       expect(strengthRecs[0].level).toBe('medium');
       expect(strengthRecs[0].category).toBe('encryption');
@@ -154,7 +171,7 @@ describe('SecurityRecommendationEngine', () => {
       // Mock insecure file permissions
       const fs = await import('fs/promises');
       vi.mocked(fs.stat).mockResolvedValue({
-        mode: parseInt('755', 8) // Insecure permissions
+        mode: parseInt('755', 8), // Insecure permissions
       } as any);
 
       const config: SecurityAssessmentConfig = {
@@ -162,12 +179,14 @@ describe('SecurityRecommendationEngine', () => {
         depth: 'standard',
         includeSystemScan: true,
         includeVulnerabilityAssessment: false,
-        includeComplianceCheck: false
+        includeComplianceCheck: false,
       };
 
       const report = await securityEngine.conductSecurityAssessment(config);
-      
-      const permissionRecs = report.recommendations.filter(r => r.id === 'file-permissions-trust-dir');
+
+      const permissionRecs = report.recommendations.filter(
+        (r) => r.id === 'file-permissions-trust-dir',
+      );
       expect(permissionRecs).toHaveLength(1);
       expect(permissionRecs[0].level).toBe('high');
       expect(permissionRecs[0].category).toBe('system');
@@ -180,12 +199,14 @@ describe('SecurityRecommendationEngine', () => {
         depth: 'basic',
         includeSystemScan: false,
         includeVulnerabilityAssessment: false,
-        includeComplianceCheck: false
+        includeComplianceCheck: false,
       };
 
       const report = await securityEngine.conductSecurityAssessment(config);
-      
-      const defaultRecs = report.recommendations.filter(r => r.id === 'secure-defaults');
+
+      const defaultRecs = report.recommendations.filter(
+        (r) => r.id === 'secure-defaults',
+      );
       expect(defaultRecs).toHaveLength(1);
       expect(defaultRecs[0].level).toBe('info');
       expect(defaultRecs[0].category).toBe('system');
@@ -199,12 +220,14 @@ describe('SecurityRecommendationEngine', () => {
         depth: 'standard',
         includeSystemScan: false,
         includeVulnerabilityAssessment: false,
-        includeComplianceCheck: false
+        includeComplianceCheck: false,
       };
 
       const report = await securityEngine.conductSecurityAssessment(config);
-      
-      const integrityRecs = report.recommendations.filter(r => r.id === 'model-integrity-verification');
+
+      const integrityRecs = report.recommendations.filter(
+        (r) => r.id === 'model-integrity-verification',
+      );
       expect(integrityRecs).toHaveLength(1);
       expect(integrityRecs[0].level).toBe('high');
       expect(integrityRecs[0].category).toBe('application');
@@ -217,12 +240,14 @@ describe('SecurityRecommendationEngine', () => {
         depth: 'comprehensive',
         includeSystemScan: false,
         includeVulnerabilityAssessment: false,
-        includeComplianceCheck: false
+        includeComplianceCheck: false,
       };
 
       const report = await securityEngine.conductSecurityAssessment(config);
-      
-      const validationRecs = report.recommendations.filter(r => r.id === 'input-validation');
+
+      const validationRecs = report.recommendations.filter(
+        (r) => r.id === 'input-validation',
+      );
       expect(validationRecs).toHaveLength(1);
       expect(validationRecs[0].level).toBe('medium');
       expect(validationRecs[0].category).toBe('application');
@@ -233,19 +258,23 @@ describe('SecurityRecommendationEngine', () => {
   describe('Monitoring Assessment', () => {
     it('should detect disabled security monitoring', async () => {
       const noAuditConfig = { ...mockPrivacyConfig, auditLogging: false };
-      vi.mocked(mockPrivacyManager.getPrivacyConfig).mockResolvedValue(noAuditConfig);
+      vi.mocked(mockPrivacyManager.getPrivacyConfig).mockResolvedValue(
+        noAuditConfig,
+      );
 
       const config: SecurityAssessmentConfig = {
         categories: ['monitoring'],
         depth: 'standard',
         includeSystemScan: false,
         includeVulnerabilityAssessment: false,
-        includeComplianceCheck: false
+        includeComplianceCheck: false,
       };
 
       const report = await securityEngine.conductSecurityAssessment(config);
-      
-      const monitoringRecs = report.recommendations.filter(r => r.id === 'security-monitoring');
+
+      const monitoringRecs = report.recommendations.filter(
+        (r) => r.id === 'security-monitoring',
+      );
       expect(monitoringRecs).toHaveLength(1);
       expect(monitoringRecs[0].level).toBe('high');
       expect(monitoringRecs[0].category).toBe('monitoring');
@@ -260,12 +289,14 @@ describe('SecurityRecommendationEngine', () => {
         depth: 'standard',
         includeSystemScan: false,
         includeVulnerabilityAssessment: false,
-        includeComplianceCheck: false
+        includeComplianceCheck: false,
       };
 
       const report = await securityEngine.conductSecurityAssessment(config);
-      
-      const networkRecs = report.recommendations.filter(r => r.id === 'network-isolation');
+
+      const networkRecs = report.recommendations.filter(
+        (r) => r.id === 'network-isolation',
+      );
       expect(networkRecs).toHaveLength(1);
       expect(networkRecs[0].level).toBe('info');
       expect(networkRecs[0].category).toBe('network');
@@ -280,12 +311,14 @@ describe('SecurityRecommendationEngine', () => {
         depth: 'standard',
         includeSystemScan: false,
         includeVulnerabilityAssessment: false,
-        includeComplianceCheck: false
+        includeComplianceCheck: false,
       };
 
       const report = await securityEngine.conductSecurityAssessment(config);
-      
-      const authzRecs = report.recommendations.filter(r => r.id === 'file-based-authorization');
+
+      const authzRecs = report.recommendations.filter(
+        (r) => r.id === 'file-based-authorization',
+      );
       expect(authzRecs).toHaveLength(1);
       expect(authzRecs[0].level).toBe('medium');
       expect(authzRecs[0].category).toBe('authorization');
@@ -300,12 +333,14 @@ describe('SecurityRecommendationEngine', () => {
         depth: 'standard',
         includeSystemScan: false,
         includeVulnerabilityAssessment: false,
-        includeComplianceCheck: true
+        includeComplianceCheck: true,
       };
 
       const report = await securityEngine.conductSecurityAssessment(config);
-      
-      const complianceRecs = report.recommendations.filter(r => r.id === 'regular-compliance-assessment');
+
+      const complianceRecs = report.recommendations.filter(
+        (r) => r.id === 'regular-compliance-assessment',
+      );
       expect(complianceRecs).toHaveLength(1);
       expect(complianceRecs[0].level).toBe('medium');
       expect(complianceRecs[0].category).toBe('compliance');
@@ -319,11 +354,11 @@ describe('SecurityRecommendationEngine', () => {
         depth: 'comprehensive',
         includeSystemScan: true,
         includeVulnerabilityAssessment: false,
-        includeComplianceCheck: false
+        includeComplianceCheck: false,
       };
 
       const report = await securityEngine.conductSecurityAssessment(config);
-      
+
       expect(report.scope.systemScan).toBe(true);
       expect(report.systemHardening).toBeInstanceOf(Array);
       expect(report.systemHardening.length).toBeGreaterThan(0);
@@ -335,44 +370,52 @@ describe('SecurityRecommendationEngine', () => {
         depth: 'comprehensive',
         includeSystemScan: true,
         includeVulnerabilityAssessment: false,
-        includeComplianceCheck: false
+        includeComplianceCheck: false,
       };
 
       const report = await securityEngine.conductSecurityAssessment(config);
-      
+
       // Could be either permissions check (if directory exists) or existence check (if directory missing)
-      const permissionChecks = report.systemHardening.filter(h => 
-        h.id === 'trust-dir-permissions' || h.id === 'trust-dir-exists'
+      const permissionChecks = report.systemHardening.filter(
+        (h) => h.id === 'trust-dir-permissions' || h.id === 'trust-dir-exists',
       );
       expect(permissionChecks).toHaveLength(1);
       expect(permissionChecks[0].category).toBe('filesystem');
-      
+
       // The test should pass regardless of which check runs - both are valid outcomes
       expect(['pass', 'fail']).toContain(permissionChecks[0].status);
-      expect(['trust-dir-permissions', 'trust-dir-exists']).toContain(permissionChecks[0].id);
+      expect(['trust-dir-permissions', 'trust-dir-exists']).toContain(
+        permissionChecks[0].id,
+      );
     });
   });
 
   describe('Action Plan Generation', () => {
     it('should generate prioritized action plan', async () => {
-      const criticalConfig = { ...mockPrivacyConfig, encryptStorage: false, auditLogging: false };
-      vi.mocked(mockPrivacyManager.getPrivacyConfig).mockResolvedValue(criticalConfig);
+      const criticalConfig = {
+        ...mockPrivacyConfig,
+        encryptStorage: false,
+        auditLogging: false,
+      };
+      vi.mocked(mockPrivacyManager.getPrivacyConfig).mockResolvedValue(
+        criticalConfig,
+      );
 
       const config: SecurityAssessmentConfig = {
         categories: ['encryption', 'monitoring'],
         depth: 'standard',
         includeSystemScan: false,
         includeVulnerabilityAssessment: false,
-        includeComplianceCheck: false
+        includeComplianceCheck: false,
       };
 
       const report = await securityEngine.conductSecurityAssessment(config);
-      
+
       expect(report.actionPlan).toBeDefined();
       expect(report.actionPlan.immediate).toBeInstanceOf(Array);
       expect(report.actionPlan.shortTerm).toBeInstanceOf(Array);
       expect(report.actionPlan.longTerm).toBeInstanceOf(Array);
-      
+
       // Should have immediate actions for critical issues
       expect(report.actionPlan.immediate.length).toBeGreaterThan(0);
       expect(report.actionPlan.immediate[0].level).toBe('critical');
@@ -384,20 +427,20 @@ describe('SecurityRecommendationEngine', () => {
         depth: 'comprehensive',
         includeSystemScan: true,
         includeVulnerabilityAssessment: false,
-        includeComplianceCheck: false
+        includeComplianceCheck: false,
       };
 
       const report = await securityEngine.conductSecurityAssessment(config);
-      
+
       // Recommendations should be sorted by level and risk score
       for (let i = 0; i < report.recommendations.length - 1; i++) {
         const current = report.recommendations[i];
         const next = report.recommendations[i + 1];
-        
+
         const levelOrder = { critical: 4, high: 3, medium: 2, low: 1, info: 0 };
         const currentLevel = levelOrder[current.level];
         const nextLevel = levelOrder[next.level];
-        
+
         if (currentLevel === nextLevel) {
           // Same level, should be sorted by risk score
           expect(current.riskScore).toBeGreaterThanOrEqual(next.riskScore);
@@ -414,30 +457,32 @@ describe('SecurityRecommendationEngine', () => {
       const customCheck = {
         name: 'Custom Security Check',
         description: 'A test custom security check',
-        check: vi.fn().mockResolvedValue([{
-          id: 'custom-security-test',
-          level: 'high' as const,
-          category: 'system' as const,
-          title: 'Custom Security Finding',
-          description: 'Test finding from custom security check',
-          impact: 'Test security impact',
-          recommendation: 'Test security recommendation',
-          implementation: {
-            steps: ['Test security step'],
-            effort: 'medium' as const,
-            timeEstimate: '2 hours',
-            cost: 'low' as const
+        check: vi.fn().mockResolvedValue([
+          {
+            id: 'custom-security-test',
+            level: 'high' as const,
+            category: 'system' as const,
+            title: 'Custom Security Finding',
+            description: 'Test finding from custom security check',
+            impact: 'Test security impact',
+            recommendation: 'Test security recommendation',
+            implementation: {
+              steps: ['Test security step'],
+              effort: 'medium' as const,
+              timeEstimate: '2 hours',
+              cost: 'low' as const,
+            },
+            remediation: {
+              automated: false,
+              manualSteps: ['Manual security step'],
+              verificationSteps: ['Verify security'],
+            },
+            compliance: ['Test Compliance'],
+            priority: 2,
+            riskScore: 75,
+            timestamp: new Date(),
           },
-          remediation: {
-            automated: false,
-            manualSteps: ['Manual security step'],
-            verificationSteps: ['Verify security']
-          },
-          compliance: ['Test Compliance'],
-          priority: 2,
-          riskScore: 75,
-          timestamp: new Date()
-        }])
+        ]),
       };
 
       const config: SecurityAssessmentConfig = {
@@ -446,13 +491,15 @@ describe('SecurityRecommendationEngine', () => {
         includeSystemScan: false,
         includeVulnerabilityAssessment: false,
         includeComplianceCheck: false,
-        customChecks: [customCheck]
+        customChecks: [customCheck],
       };
 
       const report = await securityEngine.conductSecurityAssessment(config);
-      
+
       expect(customCheck.check).toHaveBeenCalled();
-      const customRecs = report.recommendations.filter(r => r.id === 'custom-security-test');
+      const customRecs = report.recommendations.filter(
+        (r) => r.id === 'custom-security-test',
+      );
       expect(customRecs).toHaveLength(1);
       expect(customRecs[0].title).toBe('Custom Security Finding');
       expect(customRecs[0].level).toBe('high');
@@ -462,7 +509,7 @@ describe('SecurityRecommendationEngine', () => {
       const failingCheck = {
         name: 'Failing Security Check',
         description: 'A security check that fails',
-        check: vi.fn().mockRejectedValue(new Error('Security check failed'))
+        check: vi.fn().mockRejectedValue(new Error('Security check failed')),
       };
 
       const config: SecurityAssessmentConfig = {
@@ -471,13 +518,13 @@ describe('SecurityRecommendationEngine', () => {
         includeSystemScan: false,
         includeVulnerabilityAssessment: false,
         includeComplianceCheck: false,
-        customChecks: [failingCheck]
+        customChecks: [failingCheck],
       };
 
       const report = await securityEngine.conductSecurityAssessment(config);
-      
-      const errorRecs = report.recommendations.filter(r => 
-        r.id.startsWith('custom-security-check-error')
+
+      const errorRecs = report.recommendations.filter((r) =>
+        r.id.startsWith('custom-security-check-error'),
       );
       expect(errorRecs).toHaveLength(1);
       expect(errorRecs[0].title).toBe('Custom Security Check Error');
@@ -492,12 +539,12 @@ describe('SecurityRecommendationEngine', () => {
         depth: 'basic',
         includeSystemScan: false,
         includeVulnerabilityAssessment: false,
-        includeComplianceCheck: false
+        includeComplianceCheck: false,
       };
 
       const report = await securityEngine.conductSecurityAssessment(config);
       const textReport = securityEngine.formatReportAsText(report);
-      
+
       expect(textReport).toContain('Security Assessment Report');
       expect(textReport).toContain('Security Score');
       expect(textReport).toContain('Risk Level');
@@ -510,11 +557,11 @@ describe('SecurityRecommendationEngine', () => {
         depth: 'comprehensive',
         includeSystemScan: false,
         includeVulnerabilityAssessment: true,
-        includeComplianceCheck: false
+        includeComplianceCheck: false,
       };
 
       const report = await securityEngine.conductSecurityAssessment(config);
-      
+
       // Even if no vulnerabilities found, format should handle empty array
       const textReport = securityEngine.formatReportAsText(report);
       expect(textReport).toContain('Security Assessment Report');
@@ -524,24 +571,28 @@ describe('SecurityRecommendationEngine', () => {
   describe('Risk Scoring', () => {
     it('should calculate risk scores appropriately', async () => {
       const criticalConfig = { ...mockPrivacyConfig, encryptStorage: false };
-      vi.mocked(mockPrivacyManager.getPrivacyConfig).mockResolvedValue(criticalConfig);
+      vi.mocked(mockPrivacyManager.getPrivacyConfig).mockResolvedValue(
+        criticalConfig,
+      );
 
       const config: SecurityAssessmentConfig = {
         categories: ['encryption'],
         depth: 'standard',
         includeSystemScan: false,
         includeVulnerabilityAssessment: false,
-        includeComplianceCheck: false
+        includeComplianceCheck: false,
       };
 
       const report = await securityEngine.conductSecurityAssessment(config);
-      
+
       expect(report.summary.overallSecurityScore).toBeLessThan(100);
       expect(report.summary.riskLevel).toMatch(/^(medium|high|critical)$/);
-      
+
       // Critical recommendations should have high risk scores
-      const criticalRecs = report.recommendations.filter(r => r.level === 'critical');
-      criticalRecs.forEach(rec => {
+      const criticalRecs = report.recommendations.filter(
+        (r) => r.level === 'critical',
+      );
+      criticalRecs.forEach((rec) => {
         expect(rec.riskScore).toBeGreaterThan(70);
       });
     });

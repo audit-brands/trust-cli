@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { 
-  PerformanceBenchmark, 
+import {
+  PerformanceBenchmark,
   BenchmarkReport,
-  globalPerformanceMonitor, 
-  TrustModelManagerImpl 
+  globalPerformanceMonitor,
+  TrustModelManagerImpl,
 } from '@trust-cli/trust-cli-core';
 import * as fs from 'fs/promises';
 import * as path from 'path';
@@ -31,7 +31,7 @@ export class BenchmarkCommandHandler {
     this.modelManager = new TrustModelManagerImpl();
     this.performanceBenchmark = new PerformanceBenchmark(
       globalPerformanceMonitor,
-      this.modelManager
+      this.modelManager,
     );
   }
 
@@ -73,10 +73,12 @@ export class BenchmarkCommandHandler {
   private async runBenchmark(args: BenchmarkCommandArgs): Promise<void> {
     const suite = args.suite || 'speed';
     const models = args.models || this.getAvailableModelNames();
-    
+
     if (models.length === 0) {
       console.log('❌ No models available for benchmarking.');
-      console.log('💡 Download models first: trust model download <model-name>');
+      console.log(
+        '💡 Download models first: trust model download <model-name>',
+      );
       return;
     }
 
@@ -97,11 +99,13 @@ export class BenchmarkCommandHandler {
             console.log(`⏳ ${status} (${Math.round(progress)}%)`);
             lastProgress = progress;
           }
-        }
+        },
       );
 
       const duration = Date.now() - startTime;
-      console.log(`\n✅ Benchmark completed in ${(duration / 1000).toFixed(1)}s\n`);
+      console.log(
+        `\n✅ Benchmark completed in ${(duration / 1000).toFixed(1)}s\n`,
+      );
 
       // Display results
       const textReport = this.performanceBenchmark.generateTextReport(report);
@@ -112,9 +116,10 @@ export class BenchmarkCommandHandler {
         await this.saveReport(report, args.output, args.format || 'json');
         console.log(`💾 Results saved to: ${args.output}`);
       }
-
     } catch (error) {
-      console.error(`❌ Benchmark failed: ${error instanceof Error ? error.message : String(error)}`);
+      console.error(
+        `❌ Benchmark failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
       console.log('\n🔧 Troubleshooting:');
       console.log('   • Check that models are downloaded and verified');
       console.log('   • Ensure sufficient system resources');
@@ -133,25 +138,31 @@ export class BenchmarkCommandHandler {
       console.log(`\n🎯 ${suite.name} (${suite.id})`);
       console.log(`   ${suite.description}`);
       console.log(`   Tests: ${suite.tests.length}`);
-      
+
       if (verbose) {
         console.log('   Test Details:');
         for (const test of suite.tests) {
-          console.log(`     • ${test.name} (${test.category}, ${test.difficulty})`);
+          console.log(
+            `     • ${test.name} (${test.category}, ${test.difficulty})`,
+          );
           console.log(`       ${test.description}`);
         }
       }
     }
 
     console.log('\n💡 Usage:');
-    console.log(`   trust benchmark run --suite <suite-id> --models <model1,model2>`);
-    console.log(`   trust benchmark run --suite speed --models phi-3.5-mini-instruct`);
+    console.log(
+      `   trust benchmark run --suite <suite-id> --models <model1,model2>`,
+    );
+    console.log(
+      `   trust benchmark run --suite speed --models phi-3.5-mini-instruct`,
+    );
   }
 
   private async showResults(args: BenchmarkCommandArgs): Promise<void> {
     const results = this.performanceBenchmark.getResults(
       args.filter,
-      undefined
+      undefined,
     );
 
     if (results.length === 0) {
@@ -174,22 +185,30 @@ export class BenchmarkCommandHandler {
 
     for (const [modelName, modelResults] of modelResultsMap) {
       console.log(`\n🤖 ${modelName}`);
-      
-      const successful = modelResults.filter(r => r.success);
-      const successRate = (successful.length / modelResults.length) * 100;
-      const avgSpeed = successful.length > 0 
-        ? successful.reduce((sum, r) => sum + r.metrics.tokensPerSecond, 0) / successful.length
-        : 0;
 
-      console.log(`   Success Rate: ${successRate.toFixed(1)}% (${successful.length}/${modelResults.length})`);
+      const successful = modelResults.filter((r) => r.success);
+      const successRate = (successful.length / modelResults.length) * 100;
+      const avgSpeed =
+        successful.length > 0
+          ? successful.reduce((sum, r) => sum + r.metrics.tokensPerSecond, 0) /
+            successful.length
+          : 0;
+
+      console.log(
+        `   Success Rate: ${successRate.toFixed(1)}% (${successful.length}/${modelResults.length})`,
+      );
       console.log(`   Average Speed: ${avgSpeed.toFixed(1)} tokens/sec`);
-      console.log(`   Last Run: ${modelResults[modelResults.length - 1].timestamp.toLocaleString()}`);
+      console.log(
+        `   Last Run: ${modelResults[modelResults.length - 1].timestamp.toLocaleString()}`,
+      );
 
       if (args.verbose) {
         console.log('   Individual Tests:');
         for (const result of modelResults) {
           const status = result.success ? '✅' : '❌';
-          console.log(`     ${status} ${result.testId}: ${result.metrics.tokensPerSecond.toFixed(1)} tokens/sec`);
+          console.log(
+            `     ${status} ${result.testId}: ${result.metrics.tokensPerSecond.toFixed(1)} tokens/sec`,
+          );
         }
       }
     }
@@ -199,7 +218,7 @@ export class BenchmarkCommandHandler {
 
   private async compareModels(args: BenchmarkCommandArgs): Promise<void> {
     const models = args.models || [];
-    
+
     if (models.length < 2) {
       console.log('❌ Need at least 2 models to compare');
       console.log('💡 Usage: trust benchmark compare --models model1,model2');
@@ -218,16 +237,19 @@ export class BenchmarkCommandHandler {
 
     for (const model of models) {
       const results = this.performanceBenchmark.getResults(model);
-      const successful = results.filter(r => r.success);
-      const avgSpeed = successful.length > 0 
-        ? successful.reduce((sum, r) => sum + r.metrics.tokensPerSecond, 0) / successful.length
-        : 0;
-      
+      const successful = results.filter((r) => r.success);
+      const avgSpeed =
+        successful.length > 0
+          ? successful.reduce((sum, r) => sum + r.metrics.tokensPerSecond, 0) /
+            successful.length
+          : 0;
+
       comparison.push({
         model,
         avgSpeed,
-        successRate: results.length > 0 ? (successful.length / results.length) * 100 : 0,
-        totalTests: results.length
+        successRate:
+          results.length > 0 ? (successful.length / results.length) * 100 : 0,
+        totalTests: results.length,
       });
     }
 
@@ -236,7 +258,14 @@ export class BenchmarkCommandHandler {
 
     console.log('\n🏁 Speed Rankings:');
     comparison.forEach((item, index) => {
-      const rank = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}.`;
+      const rank =
+        index === 0
+          ? '🥇'
+          : index === 1
+            ? '🥈'
+            : index === 2
+              ? '🥉'
+              : `${index + 1}.`;
       console.log(`   ${rank} ${item.model}`);
       console.log(`      Speed: ${item.avgSpeed.toFixed(1)} tokens/sec`);
       console.log(`      Success Rate: ${item.successRate.toFixed(1)}%`);
@@ -247,16 +276,19 @@ export class BenchmarkCommandHandler {
     if (comparison.length >= 2) {
       const fastest = comparison[0];
       const slowest = comparison[comparison.length - 1];
-      const speedDiff = ((fastest.avgSpeed - slowest.avgSpeed) / slowest.avgSpeed) * 100;
-      
+      const speedDiff =
+        ((fastest.avgSpeed - slowest.avgSpeed) / slowest.avgSpeed) * 100;
+
       console.log(`\n📈 Performance Analysis:`);
-      console.log(`   ${fastest.model} is ${speedDiff.toFixed(1)}% faster than ${slowest.model}`);
+      console.log(
+        `   ${fastest.model} is ${speedDiff.toFixed(1)}% faster than ${slowest.model}`,
+      );
     }
   }
 
   private async exportResults(args: BenchmarkCommandArgs): Promise<void> {
     const results = this.performanceBenchmark.getResults();
-    
+
     if (results.length === 0) {
       console.log('📊 No results to export.');
       return;
@@ -269,12 +301,18 @@ export class BenchmarkCommandHandler {
       await this.exportToFile(results, outputPath, format);
       console.log(`✅ Exported ${results.length} results to: ${outputPath}`);
     } catch (error) {
-      console.error(`❌ Export failed: ${error instanceof Error ? error.message : String(error)}`);
+      console.error(
+        `❌ Export failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
       throw error;
     }
   }
 
-  private async saveReport(report: BenchmarkReport, outputPath: string, format: string): Promise<void> {
+  private async saveReport(
+    report: BenchmarkReport,
+    outputPath: string,
+    format: string,
+  ): Promise<void> {
     const dir = path.dirname(outputPath);
     await fs.mkdir(dir, { recursive: true });
 
@@ -297,7 +335,11 @@ export class BenchmarkCommandHandler {
     }
   }
 
-  private async exportToFile(results: any[], outputPath: string, format: string): Promise<void> {
+  private async exportToFile(
+    results: any[],
+    outputPath: string,
+    format: string,
+  ): Promise<void> {
     const dir = path.dirname(outputPath);
     await fs.mkdir(dir, { recursive: true });
 
@@ -324,10 +366,10 @@ export class BenchmarkCommandHandler {
       'Reliability (%)',
       'Total Tests',
       'Successful Tests',
-      'Best Categories'
+      'Best Categories',
     ];
 
-    const rows = report.models.map(model => [
+    const rows = report.models.map((model) => [
       model.modelName,
       model.overallScore.toFixed(1),
       model.averageSpeed.toFixed(1),
@@ -335,10 +377,10 @@ export class BenchmarkCommandHandler {
       model.reliability.toFixed(1),
       model.totalTests.toString(),
       model.successfulTests.toString(),
-      model.bestCategories.join('; ')
+      model.bestCategories.join('; '),
     ]);
 
-    return [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
+    return [headers.join(','), ...rows.map((row) => row.join(','))].join('\n');
   }
 
   private generateCSVFromResults(results: any[]): string {
@@ -351,10 +393,10 @@ export class BenchmarkCommandHandler {
       'Total Tokens',
       'Inference Time (ms)',
       'Memory Used (bytes)',
-      'CPU Usage (%)'
+      'CPU Usage (%)',
     ];
 
-    const rows = results.map(result => [
+    const rows = results.map((result) => [
       result.timestamp.toISOString(),
       result.modelName,
       result.testId,
@@ -363,15 +405,15 @@ export class BenchmarkCommandHandler {
       result.metrics.totalTokens.toString(),
       result.metrics.inferenceTime.toString(),
       result.metrics.memoryUsed.toString(),
-      result.metrics.cpuUsage.toFixed(1)
+      result.metrics.cpuUsage.toFixed(1),
     ]);
 
-    return [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
+    return [headers.join(','), ...rows.map((row) => row.join(','))].join('\n');
   }
 
   private getAvailableModelNames(): string[] {
     const models = this.modelManager.listAvailableModels();
-    return models.map(m => m.name);
+    return models.map((m) => m.name);
   }
 
   private showHelp(): void {

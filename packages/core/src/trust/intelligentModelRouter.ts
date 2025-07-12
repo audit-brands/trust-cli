@@ -4,7 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { UnifiedModelManager, UnifiedModel, TaskType, HardwareConstraints } from './unifiedModelManager.js';
+import {
+  UnifiedModelManager,
+  UnifiedModel,
+  TaskType,
+  HardwareConstraints,
+} from './unifiedModelManager.js';
 import { TrustConfiguration } from '../config/trustConfig.js';
 import { OllamaClient } from './ollamaClient.js';
 import { TrustModelManagerImpl } from './modelManager.js';
@@ -97,9 +102,11 @@ export class IntelligentModelRouter {
   /**
    * Perform the complete 4-step intelligent routing process
    */
-  async routeToOptimalModel(config: RoutingConfig = {}): Promise<ModelRoutingDecision> {
+  async routeToOptimalModel(
+    config: RoutingConfig = {},
+  ): Promise<ModelRoutingDecision> {
     const startTime = Date.now();
-    
+
     // Step 1: Consolidate - Build master list from all backends
     const step1Start = Date.now();
     const allModels = await this.unifiedManager.discoverAllModels();
@@ -113,20 +120,33 @@ export class IntelligentModelRouter {
 
     // Step 3: Select - Choose best model based on scoring
     const step3Start = Date.now();
-    const selectionResults = await this.performSelection(filterResults.filtered, config);
+    const selectionResults = await this.performSelection(
+      filterResults.filtered,
+      config,
+    );
     const step3Duration = Date.now() - step3Start;
 
     // Step 4: Route - Determine routing to target backend
     const step4Start = Date.now();
-    const routingResults = await this.performRouting(selectionResults.selected, config);
+    const routingResults = await this.performRouting(
+      selectionResults.selected,
+      config,
+    );
     const step4Duration = Date.now() - step4Start;
 
     const totalDuration = Date.now() - startTime;
 
     return {
       selectedModel: selectionResults.selected,
-      reasoning: this.generateReasoning(selectionResults.selected, config, filterResults, selectionResults),
-      alternatives: selectionResults.topCandidates.slice(1, 4).map(c => c.model),
+      reasoning: this.generateReasoning(
+        selectionResults.selected,
+        config,
+        filterResults,
+        selectionResults,
+      ),
+      alternatives: selectionResults.topCandidates
+        .slice(1, 4)
+        .map((c) => c.model),
       step1_consolidation: {
         totalModels: allModels.length,
         backendCounts,
@@ -158,7 +178,7 @@ export class IntelligentModelRouter {
    */
   async detectSystemResources(): Promise<SystemResources> {
     const os = await import('os');
-    
+
     return {
       availableRAM: Math.floor(os.freemem() / 1024 / 1024 / 1024), // GB
       totalRAM: Math.floor(os.totalmem() / 1024 / 1024 / 1024), // GB
@@ -177,7 +197,7 @@ export class IntelligentModelRouter {
     systemInfo: SystemResources;
   }> {
     const systemInfo = await this.detectSystemResources();
-    
+
     const recommended: RoutingConfig = {
       task,
       hardwareConstraints: {
@@ -203,8 +223,8 @@ export class IntelligentModelRouter {
    * Step 2: Apply filtering based on task and hardware constraints
    */
   private async applyFiltering(
-    models: UnifiedModel[], 
-    config: RoutingConfig
+    models: UnifiedModel[],
+    config: RoutingConfig,
   ): Promise<{
     filtered: UnifiedModel[];
     taskFiltered: number;
@@ -217,13 +237,13 @@ export class IntelligentModelRouter {
     let availabilityFiltered = 0;
 
     // Filter by availability first
-    const availableModels = working.filter(m => m.available);
+    const availableModels = working.filter((m) => m.available);
     availabilityFiltered = working.length - availableModels.length;
     working = availableModels;
 
     // Apply task filtering if specified
     if (config.task && config.task !== 'general') {
-      const taskSuitable = working.filter(model => {
+      const taskSuitable = working.filter((model) => {
         const suitability = model.taskSuitability?.[config.task!] || 0;
         return suitability >= 6; // Minimum task suitability threshold
       });
@@ -236,7 +256,7 @@ export class IntelligentModelRouter {
       const hardwareSuitable = this.unifiedManager.filterModels(
         working,
         undefined,
-        config.hardwareConstraints
+        config.hardwareConstraints,
       );
       hardwareFiltered = working.length - hardwareSuitable.length;
       working = hardwareSuitable;
@@ -244,12 +264,16 @@ export class IntelligentModelRouter {
 
     // Apply trust score filtering
     if (config.minimumTrustScore) {
-      working = working.filter(m => (m.trustScore || 0) >= config.minimumTrustScore!);
+      working = working.filter(
+        (m) => (m.trustScore || 0) >= config.minimumTrustScore!,
+      );
     }
 
     // Apply backend preferences
     if (config.preferredBackends && config.preferredBackends.length > 0) {
-      const preferred = working.filter(m => config.preferredBackends!.includes(m.backend));
+      const preferred = working.filter((m) =>
+        config.preferredBackends!.includes(m.backend),
+      );
       if (preferred.length > 0) {
         working = preferred;
       }
@@ -267,8 +291,8 @@ export class IntelligentModelRouter {
    * Step 3: Perform model selection with advanced scoring
    */
   private async performSelection(
-    candidates: UnifiedModel[], 
-    config: RoutingConfig
+    candidates: UnifiedModel[],
+    config: RoutingConfig,
   ): Promise<{
     selected: UnifiedModel;
     topCandidates: Array<{
@@ -285,17 +309,20 @@ export class IntelligentModelRouter {
     if (candidates.length === 1) {
       return {
         selected: candidates[0],
-        topCandidates: [{
-          model: candidates[0],
-          score: this.calculateModelScore(candidates[0], config).total,
-          breakdown: this.calculateModelScore(candidates[0], config).breakdown,
-        }],
+        topCandidates: [
+          {
+            model: candidates[0],
+            score: this.calculateModelScore(candidates[0], config).total,
+            breakdown: this.calculateModelScore(candidates[0], config)
+              .breakdown,
+          },
+        ],
         scoringMethod: 'single_candidate',
       };
     }
 
     // Score all candidates
-    const scored = candidates.map(model => {
+    const scored = candidates.map((model) => {
       const scoring = this.calculateModelScore(model, config);
       return {
         model,
@@ -321,10 +348,7 @@ export class IntelligentModelRouter {
   /**
    * Step 4: Perform routing to target backend
    */
-  private async performRouting(
-    selectedModel: UnifiedModel, 
-    config: RoutingConfig
-  ): Promise<{
+  private async performRouting(selectedModel: UnifiedModel): Promise<{
     targetBackend: string;
     method: string;
   }> {
@@ -344,8 +368,8 @@ export class IntelligentModelRouter {
    * Calculate comprehensive model score
    */
   private calculateModelScore(
-    model: UnifiedModel, 
-    config: RoutingConfig
+    model: UnifiedModel,
+    config: RoutingConfig,
   ): {
     total: number;
     breakdown: Record<string, number>;
@@ -375,10 +399,16 @@ export class IntelligentModelRouter {
     breakdown.availability = Math.min(availabilityScore, 1.0) * 0.1;
 
     // Resource efficiency (5% weight)
-    const efficiencyScore = this.calculateEfficiencyScore(model, config.hardwareConstraints);
+    const efficiencyScore = this.calculateEfficiencyScore(
+      model,
+      config.hardwareConstraints,
+    );
     breakdown.efficiency = efficiencyScore * 0.05;
 
-    const total = Object.values(breakdown).reduce((sum, score) => sum + score, 0);
+    const total = Object.values(breakdown).reduce(
+      (sum, score) => sum + score,
+      0,
+    );
 
     return { total, breakdown };
   }
@@ -390,21 +420,24 @@ export class IntelligentModelRouter {
     if (!model.parameters) return 0.5;
 
     const params = this.parseParameters(model.parameters);
-    
+
     // Score based on parameter count (more parameters generally = better quality)
-    if (params >= 70) return 1.0;      // 70B+ models
-    if (params >= 30) return 0.9;      // 30-70B models  
-    if (params >= 13) return 0.8;      // 13-30B models
-    if (params >= 7) return 0.7;       // 7-13B models
-    if (params >= 3) return 0.6;       // 3-7B models
-    if (params >= 1) return 0.5;       // 1-3B models
-    return 0.3;                        // <1B models
+    if (params >= 70) return 1.0; // 70B+ models
+    if (params >= 30) return 0.9; // 30-70B models
+    if (params >= 13) return 0.8; // 13-30B models
+    if (params >= 7) return 0.7; // 7-13B models
+    if (params >= 3) return 0.6; // 3-7B models
+    if (params >= 1) return 0.5; // 1-3B models
+    return 0.3; // <1B models
   }
 
   /**
    * Calculate efficiency score based on resource usage
    */
-  private calculateEfficiencyScore(model: UnifiedModel, constraints?: HardwareConstraints): number {
+  private calculateEfficiencyScore(
+    model: UnifiedModel,
+    constraints?: HardwareConstraints,
+  ): number {
     if (!constraints?.availableRAM || !model.ramRequirement) return 0.5;
 
     const modelRAM = this.parseRAMRequirement(model.ramRequirement);
@@ -412,12 +445,12 @@ export class IntelligentModelRouter {
 
     // Score based on how efficiently the model uses available RAM
     const ratio = modelRAM / availableRAM;
-    
-    if (ratio <= 0.3) return 1.0;      // Very efficient
-    if (ratio <= 0.5) return 0.8;      // Efficient
-    if (ratio <= 0.7) return 0.6;      // Moderate
-    if (ratio <= 0.9) return 0.4;      // Less efficient
-    return 0.2;                        // Inefficient
+
+    if (ratio <= 0.3) return 1.0; // Very efficient
+    if (ratio <= 0.5) return 0.8; // Efficient
+    if (ratio <= 0.7) return 0.6; // Moderate
+    if (ratio <= 0.9) return 0.4; // Less efficient
+    return 0.2; // Inefficient
   }
 
   /**
@@ -427,23 +460,28 @@ export class IntelligentModelRouter {
     selectedModel: UnifiedModel,
     config: RoutingConfig,
     filterResults: any,
-    selectionResults: any
   ): string {
     const reasons = [];
 
     if (config.task) {
       const taskScore = selectedModel.taskSuitability?.[config.task] || 0;
-      reasons.push(`Optimized for ${config.task} tasks (score: ${taskScore}/10)`);
+      reasons.push(
+        `Optimized for ${config.task} tasks (score: ${taskScore}/10)`,
+      );
     }
 
     reasons.push(`High trust score (${selectedModel.trustScore}/10)`);
 
     if (config.hardwareConstraints?.availableRAM) {
-      reasons.push(`Fits within ${config.hardwareConstraints.availableRAM}GB RAM constraint`);
+      reasons.push(
+        `Fits within ${config.hardwareConstraints.availableRAM}GB RAM constraint`,
+      );
     }
 
     if (filterResults.filtered.length > 1) {
-      reasons.push(`Selected from ${filterResults.filtered.length} suitable candidates`);
+      reasons.push(
+        `Selected from ${filterResults.filtered.length} suitable candidates`,
+      );
     }
 
     reasons.push(`Available on ${selectedModel.backend} backend`);
@@ -454,17 +492,24 @@ export class IntelligentModelRouter {
   /**
    * Generate system-specific recommendations
    */
-  private generateSystemReasoning(systemInfo: SystemResources, config: RoutingConfig): string {
+  private generateSystemReasoning(
+    systemInfo: SystemResources,
+    config: RoutingConfig,
+  ): string {
     const reasons = [];
 
     reasons.push(`System has ${systemInfo.availableRAM}GB available RAM`);
-    
+
     if (config.hardwareConstraints?.preferredSize) {
-      reasons.push(`Recommending ${config.hardwareConstraints.preferredSize} models for optimal performance`);
+      reasons.push(
+        `Recommending ${config.hardwareConstraints.preferredSize} models for optimal performance`,
+      );
     }
 
     if (config.preferredBackends) {
-      reasons.push(`Prioritizing ${config.preferredBackends.join(', ')} backends`);
+      reasons.push(
+        `Prioritizing ${config.preferredBackends.join(', ')} backends`,
+      );
     }
 
     return reasons.join('. ');
@@ -472,7 +517,9 @@ export class IntelligentModelRouter {
 
   // Helper methods
 
-  private calculateBackendCounts(models: UnifiedModel[]): Record<string, number> {
+  private calculateBackendCounts(
+    models: UnifiedModel[],
+  ): Record<string, number> {
     const counts: Record<string, number> = {};
     for (const model of models) {
       counts[model.backend] = (counts[model.backend] || 0) + 1;
@@ -501,28 +548,32 @@ export class IntelligentModelRouter {
     return 100; // GB
   }
 
-  private getPreferredSizeForRAM(availableRAM: number): 'small' | 'medium' | 'large' {
+  private getPreferredSizeForRAM(
+    availableRAM: number,
+  ): 'small' | 'medium' | 'large' {
     if (availableRAM >= 16) return 'large';
     if (availableRAM >= 8) return 'medium';
     return 'small';
   }
 
-  private getPreferredBackendsForSystem(systemInfo: SystemResources): Array<'ollama' | 'huggingface' | 'cloud'> {
+  private getPreferredBackendsForSystem(
+    systemInfo: SystemResources,
+  ): Array<'ollama' | 'huggingface' | 'cloud'> {
     const backends: Array<'ollama' | 'huggingface' | 'cloud'> = [];
-    
+
     // Prefer Ollama for systems with sufficient RAM
     if (systemInfo.availableRAM >= 4) {
       backends.push('ollama');
     }
-    
+
     // Always include HuggingFace as it's local
     backends.push('huggingface');
-    
+
     // Include cloud for low-resource systems
     if (systemInfo.availableRAM < 8) {
       backends.push('cloud');
     }
-    
+
     return backends;
   }
 }

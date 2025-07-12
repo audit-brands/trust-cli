@@ -5,10 +5,6 @@
  */
 
 import {
-  CountTokensResponse,
-  GenerateContentResponse,
-  GenerateContentParameters,
-  CountTokensParameters,
   EmbedContentResponse,
   EmbedContentParameters,
   GoogleGenAI,
@@ -68,7 +64,10 @@ export async function createContentGeneratorConfig(
   };
 
   // if we are using google auth or huggingface nothing else to validate for now
-  if (authType === AuthType.LOGIN_WITH_GOOGLE || authType === AuthType.USE_TRUST_LOCAL) {
+  if (
+    authType === AuthType.LOGIN_WITH_GOOGLE ||
+    authType === AuthType.USE_TRUST_LOCAL
+  ) {
     return contentGeneratorConfig;
   }
 
@@ -112,9 +111,11 @@ export async function createContentGenerator(
       'User-Agent': `TrustCLI/${version} (${process.platform}; ${process.arch})`,
     },
   };
-  
+
   if (config.authType === AuthType.USE_TRUST_LOCAL) {
-    const { TrustContentGenerator } = await import('../trust/trustContentGenerator.js');
+    const { TrustContentGenerator } = await import(
+      '../trust/trustContentGenerator.js'
+    );
     // Pass real Config and ToolRegistry for GBNF function calling support
     let toolRegistry = null;
     if (fullConfig && fullConfig.getToolRegistry) {
@@ -128,15 +129,19 @@ export async function createContentGenerator(
         targetDir: process.cwd(),
         debugMode: false,
         cwd: process.cwd(),
-        model: 'fallback'
+        model: 'fallback',
       });
       toolRegistry = new ToolRegistry(emptyConfig);
     }
-    const trustGenerator = new TrustContentGenerator(config.trustModelsDir, fullConfig, toolRegistry);
+    const trustGenerator = new TrustContentGenerator(
+      config.trustModelsDir,
+      fullConfig,
+      toolRegistry,
+    );
     await trustGenerator.initialize();
     return trustGenerator;
   }
-  
+
   if (config.authType === AuthType.LOGIN_WITH_GOOGLE) {
     return createCodeAssistContentGenerator(
       httpOptions,

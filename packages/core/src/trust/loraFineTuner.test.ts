@@ -7,7 +7,12 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import fs from 'fs/promises';
 import path from 'path';
-import { LoRAFineTuner, type LoRATrainingConfig, type TrainingDataset, type FineTuningJob } from './loraFineTuner.js';
+import {
+  LoRAFineTuner,
+  type LoRATrainingConfig,
+  type TrainingDataset,
+  type FineTuningJob,
+} from './loraFineTuner.js';
 import { ErrorCollector } from './errorCollector.js';
 import { PerformanceBenchmark } from './performanceBenchmark.js';
 import { TrustModelConfig } from './types.js';
@@ -22,18 +27,22 @@ describe('LoRAFineTuner', () => {
     // Create temporary directory for testing
     tempDir = path.join(process.cwd(), 'test_lora_temp');
     await fs.mkdir(tempDir, { recursive: true });
-    
+
     // Mock dependencies
     errorCollector = {
       getErrorsByTool: vi.fn(),
-      getAnalytics: vi.fn()
+      getAnalytics: vi.fn(),
     } as any;
-    
+
     performanceBenchmark = {
-      getResultsForModel: vi.fn()
+      getResultsForModel: vi.fn(),
     } as any;
-    
-    fineTuner = new LoRAFineTuner(tempDir, errorCollector, performanceBenchmark);
+
+    fineTuner = new LoRAFineTuner(
+      tempDir,
+      errorCollector,
+      performanceBenchmark,
+    );
   });
 
   afterEach(async () => {
@@ -55,15 +64,15 @@ describe('LoRAFineTuner', () => {
           trustScore: 8.0,
           downloadUrl: 'https://example.com/model.gguf',
           verificationHash: 'test-hash',
-          expectedSize: 1000000
-        }
+          expectedSize: 1000000,
+        },
       ];
 
       // Mock high error rate
       vi.mocked(errorCollector.getErrorsByTool).mockReturnValue([
         { id: '1', failureType: 'parse_error' },
         { id: '2', failureType: 'wrong_tool' },
-        { id: '3', failureType: 'parse_error' }
+        { id: '3', failureType: 'parse_error' },
       ] as any);
 
       vi.mocked(errorCollector.getAnalytics).mockReturnValue({
@@ -72,11 +81,11 @@ describe('LoRAFineTuner', () => {
         errorsByCategory: {},
         errorsByDifficulty: {},
         commonFailures: [],
-        toolAccuracy: {}
+        toolAccuracy: {},
       });
 
       const weakModels = await fineTuner.identifyWeakModels(models);
-      
+
       expect(weakModels).toHaveLength(1);
       expect(weakModels[0].model.name).toBe('weak-model');
       expect(weakModels[0].weaknesses).toContain('high_error_rate');
@@ -98,15 +107,15 @@ describe('LoRAFineTuner', () => {
           trustScore: 8.5,
           downloadUrl: 'https://example.com/model.gguf',
           verificationHash: 'test-hash',
-          expectedSize: 2000000
-        }
+          expectedSize: 2000000,
+        },
       ];
 
       // Mock tool selection errors
       vi.mocked(errorCollector.getErrorsByTool).mockReturnValue([
         { id: '1', failureType: 'wrong_tool' },
         { id: '2', failureType: 'wrong_tool' },
-        { id: '3', failureType: 'wrong_args' }
+        { id: '3', failureType: 'wrong_args' },
       ] as any);
 
       vi.mocked(errorCollector.getAnalytics).mockReturnValue({
@@ -115,11 +124,11 @@ describe('LoRAFineTuner', () => {
         errorsByCategory: {},
         errorsByDifficulty: {},
         commonFailures: [],
-        toolAccuracy: {}
+        toolAccuracy: {},
       });
 
       const weakModels = await fineTuner.identifyWeakModels(models);
-      
+
       expect(weakModels).toHaveLength(1);
       expect(weakModels[0].weaknesses).toContain('poor_tool_selection');
       expect(weakModels[0].priority).toBe('medium');
@@ -138,8 +147,8 @@ describe('LoRAFineTuner', () => {
           trustScore: 9.5,
           downloadUrl: 'https://example.com/model.gguf',
           verificationHash: 'test-hash',
-          expectedSize: 4000000
-        }
+          expectedSize: 4000000,
+        },
       ];
 
       // Mock no errors
@@ -150,11 +159,11 @@ describe('LoRAFineTuner', () => {
         errorsByCategory: {},
         errorsByDifficulty: {},
         commonFailures: [],
-        toolAccuracy: {}
+        toolAccuracy: {},
       });
 
       const weakModels = await fineTuner.identifyWeakModels(models);
-      
+
       expect(weakModels).toHaveLength(0);
     });
   });
@@ -169,7 +178,7 @@ describe('LoRAFineTuner', () => {
           expectedArgs: { path: '.' },
           failureType: 'parse_error',
           category: 'file_operations',
-          difficulty: 'easy'
+          difficulty: 'easy',
         },
         {
           id: 'error2',
@@ -178,8 +187,8 @@ describe('LoRAFineTuner', () => {
           expectedArgs: { path: 'test.txt' },
           failureType: 'wrong_tool',
           category: 'file_operations',
-          difficulty: 'medium'
-        }
+          difficulty: 'medium',
+        },
       ];
 
       // Add more mock errors to meet minimum requirement
@@ -191,35 +200,55 @@ describe('LoRAFineTuner', () => {
           expectedArgs: {},
           failureType: 'parse_error',
           category: 'test',
-          difficulty: 'easy'
+          difficulty: 'easy',
         });
       }
 
-      vi.mocked(errorCollector.getErrorsByTool).mockReturnValue(mockErrors as any);
+      vi.mocked(errorCollector.getErrorsByTool).mockReturnValue(
+        mockErrors as any,
+      );
 
       const dataset = await fineTuner.generateDatasetFromErrors('test-model');
-      
+
       expect(dataset.samples).toHaveLength(60);
       expect(dataset.source).toBe('error_collection');
       expect(dataset.domain).toBe('function_calling');
       expect(dataset.quality).toBe('low'); // < 100 samples
-      
+
       // Check that files were created
-      const datasetPath = path.join(tempDir, 'training_datasets', `${dataset.id}.json`);
-      const jsonlPath = path.join(tempDir, 'training_datasets', `${dataset.id}.jsonl`);
-      
-      expect(await fs.access(datasetPath).then(() => true).catch(() => false)).toBe(true);
-      expect(await fs.access(jsonlPath).then(() => true).catch(() => false)).toBe(true);
+      const datasetPath = path.join(
+        tempDir,
+        'training_datasets',
+        `${dataset.id}.json`,
+      );
+      const jsonlPath = path.join(
+        tempDir,
+        'training_datasets',
+        `${dataset.id}.jsonl`,
+      );
+
+      expect(
+        await fs
+          .access(datasetPath)
+          .then(() => true)
+          .catch(() => false),
+      ).toBe(true);
+      expect(
+        await fs
+          .access(jsonlPath)
+          .then(() => true)
+          .catch(() => false),
+      ).toBe(true);
     });
 
     it('should throw error when insufficient samples', async () => {
       vi.mocked(errorCollector.getErrorsByTool).mockReturnValue([
-        { id: 'error1', failureType: 'parse_error' }
+        { id: 'error1', failureType: 'parse_error' },
       ] as any);
 
-      await expect(fineTuner.generateDatasetFromErrors('test-model')).rejects.toThrow(
-        'Insufficient error samples'
-      );
+      await expect(
+        fineTuner.generateDatasetFromErrors('test-model'),
+      ).rejects.toThrow('Insufficient error samples');
     });
 
     it('should assess dataset quality correctly', async () => {
@@ -230,13 +259,15 @@ describe('LoRAFineTuner', () => {
         expectedArgs: {},
         failureType: 'parse_error',
         category: 'test',
-        difficulty: 'easy'
+        difficulty: 'easy',
       }));
 
-      vi.mocked(errorCollector.getErrorsByTool).mockReturnValue(mockErrors as any);
+      vi.mocked(errorCollector.getErrorsByTool).mockReturnValue(
+        mockErrors as any,
+      );
 
       const dataset = await fineTuner.generateDatasetFromErrors('test-model');
-      
+
       expect(dataset.quality).toBe('high'); // >= 200 samples
     });
   });
@@ -254,7 +285,7 @@ describe('LoRAFineTuner', () => {
         trustScore: 8.0,
         downloadUrl: 'https://example.com/model.gguf',
         verificationHash: 'test-hash',
-        expectedSize: 1000000
+        expectedSize: 1000000,
       };
 
       const dataset: TrainingDataset = {
@@ -265,11 +296,15 @@ describe('LoRAFineTuner', () => {
         samples: [],
         createdAt: new Date(),
         quality: 'medium',
-        domain: 'function_calling'
+        domain: 'function_calling',
       };
 
-      const config = fineTuner.createOptimalConfig('small-model', modelConfig, dataset);
-      
+      const config = fineTuner.createOptimalConfig(
+        'small-model',
+        modelConfig,
+        dataset,
+      );
+
       expect(config.rank).toBe(8);
       expect(config.alpha).toBe(16);
       expect(config.batchSize).toBe(2);
@@ -289,7 +324,7 @@ describe('LoRAFineTuner', () => {
         trustScore: 9.0,
         downloadUrl: 'https://example.com/model.gguf',
         verificationHash: 'test-hash',
-        expectedSize: 4000000
+        expectedSize: 4000000,
       };
 
       const dataset: TrainingDataset = {
@@ -300,11 +335,15 @@ describe('LoRAFineTuner', () => {
         samples: [],
         createdAt: new Date(),
         quality: 'high',
-        domain: 'function_calling'
+        domain: 'function_calling',
       };
 
-      const config = fineTuner.createOptimalConfig('large-model', modelConfig, dataset);
-      
+      const config = fineTuner.createOptimalConfig(
+        'large-model',
+        modelConfig,
+        dataset,
+      );
+
       expect(config.rank).toBe(32);
       expect(config.alpha).toBe(64);
       expect(config.batchSize).toBe(1);
@@ -325,7 +364,7 @@ describe('LoRAFineTuner', () => {
         trustScore: 8.5,
         downloadUrl: 'https://example.com/model.gguf',
         verificationHash: 'test-hash',
-        expectedSize: 2000000
+        expectedSize: 2000000,
       };
 
       const lowQualityDataset: TrainingDataset = {
@@ -336,11 +375,15 @@ describe('LoRAFineTuner', () => {
         samples: [],
         createdAt: new Date(),
         quality: 'low',
-        domain: 'function_calling'
+        domain: 'function_calling',
       };
 
-      const config = fineTuner.createOptimalConfig('test-model', modelConfig, lowQualityDataset);
-      
+      const config = fineTuner.createOptimalConfig(
+        'test-model',
+        modelConfig,
+        lowQualityDataset,
+      );
+
       expect(config.epochs).toBe(2);
       expect(config.learningRate).toBe(3e-4);
     });
@@ -365,7 +408,7 @@ describe('LoRAFineTuner', () => {
         gradientAccumulationSteps: 4,
         weightDecay: 0.01,
         targetModules: ['q_proj', 'v_proj'],
-        taskType: 'CAUSAL_LM'
+        taskType: 'CAUSAL_LM',
       };
 
       const dataset: TrainingDataset = {
@@ -376,11 +419,11 @@ describe('LoRAFineTuner', () => {
         samples: [],
         createdAt: new Date(),
         quality: 'medium',
-        domain: 'function_calling'
+        domain: 'function_calling',
       };
 
       const job = await fineTuner.startFineTuning(config, dataset);
-      
+
       expect(job.id).toBeDefined();
       expect(job.status).toBe('completed');
       expect(job.progress).toBe(100);
@@ -407,7 +450,7 @@ describe('LoRAFineTuner', () => {
         gradientAccumulationSteps: 4,
         weightDecay: 0.01,
         targetModules: ['q_proj', 'v_proj'],
-        taskType: 'CAUSAL_LM'
+        taskType: 'CAUSAL_LM',
       };
 
       const dataset: TrainingDataset = {
@@ -418,12 +461,12 @@ describe('LoRAFineTuner', () => {
         samples: [],
         createdAt: new Date(),
         quality: 'medium',
-        domain: 'function_calling'
+        domain: 'function_calling',
       };
 
       const job = await fineTuner.startFineTuning(config, dataset);
       const status = fineTuner.getJobStatus(job.id);
-      
+
       expect(status).toBeDefined();
       expect(status?.id).toBe(job.id);
       expect(status?.status).toBe('completed');
@@ -443,18 +486,22 @@ describe('LoRAFineTuner', () => {
           accuracy: 0.9,
           loss: 0.3,
           perplexity: 10,
-          benchmarkScore: 0.85
+          benchmarkScore: 0.85,
         },
         createdAt: new Date(),
-        trainingDuration: 60000
+        trainingDuration: 60000,
       };
 
-      const adapterPath = path.join(tempDir, 'lora_adapters', 'test-adapter.json');
+      const adapterPath = path.join(
+        tempDir,
+        'lora_adapters',
+        'test-adapter.json',
+      );
       await fs.mkdir(path.dirname(adapterPath), { recursive: true });
       await fs.writeFile(adapterPath, JSON.stringify(mockAdapter, null, 2));
 
       const adapters = await fineTuner.listAdapters();
-      
+
       expect(adapters).toHaveLength(1);
       expect(adapters[0].id).toBe('test-adapter');
       expect(adapters[0].name).toBe('Test Adapter');
@@ -471,18 +518,22 @@ describe('LoRAFineTuner', () => {
           accuracy: 0.9,
           loss: 0.3,
           perplexity: 10,
-          benchmarkScore: 0.85
+          benchmarkScore: 0.85,
         },
         createdAt: new Date(),
-        trainingDuration: 60000
+        trainingDuration: 60000,
       };
 
-      const adapterPath = path.join(tempDir, 'lora_adapters', 'test-adapter.json');
+      const adapterPath = path.join(
+        tempDir,
+        'lora_adapters',
+        'test-adapter.json',
+      );
       await fs.mkdir(path.dirname(adapterPath), { recursive: true });
       await fs.writeFile(adapterPath, JSON.stringify(mockAdapter, null, 2));
 
       const adapter = await fineTuner.loadAdapter('test-adapter');
-      
+
       expect(adapter.id).toBe('test-adapter');
       expect(adapter.name).toBe('Test Adapter');
     });
@@ -498,20 +549,27 @@ describe('LoRAFineTuner', () => {
           accuracy: 0.9,
           loss: 0.3,
           perplexity: 10,
-          benchmarkScore: 0.85
+          benchmarkScore: 0.85,
         },
         createdAt: new Date(),
-        trainingDuration: 60000
+        trainingDuration: 60000,
       };
 
-      const adapterPath = path.join(tempDir, 'lora_adapters', 'test-adapter.json');
+      const adapterPath = path.join(
+        tempDir,
+        'lora_adapters',
+        'test-adapter.json',
+      );
       await fs.mkdir(path.dirname(adapterPath), { recursive: true });
       await fs.mkdir(mockAdapter.adapterPath, { recursive: true });
       await fs.writeFile(adapterPath, JSON.stringify(mockAdapter, null, 2));
 
       await fineTuner.deleteAdapter('test-adapter');
-      
-      const exists = await fs.access(adapterPath).then(() => true).catch(() => false);
+
+      const exists = await fs
+        .access(adapterPath)
+        .then(() => true)
+        .catch(() => false);
       expect(exists).toBe(false);
     });
   });
@@ -529,10 +587,10 @@ describe('LoRAFineTuner', () => {
           accuracy: 0.9,
           loss: 0.3,
           perplexity: 10,
-          benchmarkScore: 0.85
+          benchmarkScore: 0.85,
         },
         createdAt: new Date(),
-        trainingDuration: 60000
+        trainingDuration: 60000,
       };
 
       const mockDataset: TrainingDataset = {
@@ -543,19 +601,27 @@ describe('LoRAFineTuner', () => {
         samples: [],
         createdAt: new Date(),
         quality: 'medium',
-        domain: 'function_calling'
+        domain: 'function_calling',
       };
 
-      const adapterPath = path.join(tempDir, 'lora_adapters', 'test-adapter.json');
-      const datasetPath = path.join(tempDir, 'training_datasets', 'test-dataset.json');
-      
+      const adapterPath = path.join(
+        tempDir,
+        'lora_adapters',
+        'test-adapter.json',
+      );
+      const datasetPath = path.join(
+        tempDir,
+        'training_datasets',
+        'test-dataset.json',
+      );
+
       await fs.mkdir(path.dirname(adapterPath), { recursive: true });
       await fs.mkdir(path.dirname(datasetPath), { recursive: true });
       await fs.writeFile(adapterPath, JSON.stringify(mockAdapter, null, 2));
       await fs.writeFile(datasetPath, JSON.stringify(mockDataset, null, 2));
 
       const report = await fineTuner.generateTrainingReport();
-      
+
       expect(report).toContain('# LoRA Fine-tuning Report');
       expect(report).toContain('Total Adapters: 1');
       expect(report).toContain('Total Datasets: 1');

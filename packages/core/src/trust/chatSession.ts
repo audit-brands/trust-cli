@@ -71,9 +71,14 @@ export class TrustChatSession {
       ...config,
     };
     this.sessionId = config.sessionId || this.generateSessionId();
-    
+
     if (this.config.persistHistory) {
-      this.historyPath = path.join(os.homedir(), '.trustcli', 'history', `${this.sessionId}.json`);
+      this.historyPath = path.join(
+        os.homedir(),
+        '.trustcli',
+        'history',
+        `${this.sessionId}.json`,
+      );
     }
   }
 
@@ -104,44 +109,47 @@ export class TrustChatSession {
    * Send a message and get streaming response
    */
   async *sendMessage(
-    content: string, 
-    options?: GenerationOptions
+    content: string,
+    options?: GenerationOptions,
   ): AsyncGenerator<{ chunk: string; messageId: string; isComplete: boolean }> {
     const messageId = this.generateMessageId();
     const startTime = Date.now();
-    
+
     // Add user message to history
     this.addMessage('user', content);
-    
+
     // Prepare the conversation context
     const conversationContext = this.buildConversationContext();
     const finalOptions = { ...this.config.generationOptions, ...options };
-    
+
     let fullResponse = '';
     let tokenCount = 0;
-    
+
     try {
       // Generate streaming response
-      for await (const chunk of this.client.generateStream(conversationContext, finalOptions)) {
+      for await (const chunk of this.client.generateStream(
+        conversationContext,
+        finalOptions,
+      )) {
         fullResponse += chunk;
         tokenCount++;
-        
+
         yield {
           chunk,
           messageId,
           isComplete: false,
         };
       }
-      
+
       const responseTime = Date.now() - startTime;
-      
+
       // Add assistant response to history
       const assistantMessage = this.addMessage('assistant', fullResponse, {
         modelUsed: this.client.getModelInfo()?.name,
         tokensUsed: tokenCount,
         responseTime,
       });
-      
+
       // Record performance metrics
       globalPerformanceMonitor.recordInference({
         tokensPerSecond: tokenCount / (responseTime / 1000),
@@ -152,7 +160,7 @@ export class TrustChatSession {
         responseLength: fullResponse.length,
         timestamp: new Date(),
       });
-      
+
       // Check if compression is needed
       if (this.shouldCompress()) {
         await this.compressHistory();
@@ -160,22 +168,21 @@ export class TrustChatSession {
 
       // Save history
       await this.saveHistory();
-      
+
       yield {
         chunk: '',
         messageId: assistantMessage.id,
         isComplete: true,
       };
-      
     } catch (error) {
       console.error('Error in chat session:', error);
-      
+
       // Add error message to history
       const errorMessage = this.addMessage('assistant', `Error: ${error}`, {
         modelUsed: this.client.getModelInfo()?.name,
         responseTime: Date.now() - startTime,
       });
-      
+
       yield {
         chunk: `Error: ${error}`,
         messageId: errorMessage.id,
@@ -187,19 +194,25 @@ export class TrustChatSession {
   /**
    * Send a message and get complete response (non-streaming)
    */
-  async sendMessageSync(content: string, options?: GenerationOptions): Promise<ChatMessage> {
+  async sendMessageSync(
+    content: string,
+    options?: GenerationOptions,
+  ): Promise<ChatMessage> {
     let fullResponse = '';
     let messageId = '';
-    
-    for await (const { chunk, messageId: id, isComplete } of this.sendMessage(content, options)) {
+
+    for await (const { chunk, messageId: id, isComplete } of this.sendMessage(
+      content,
+      options,
+    )) {
       fullResponse += chunk;
       messageId = id;
-      
+
       if (isComplete) {
         break;
       }
     }
-    
+
     return this.getMessageById(messageId)!;
   }
 
@@ -215,12 +228,12 @@ export class TrustChatSession {
    */
   async clearHistory(): Promise<void> {
     this.messages = [];
-    
+
     // Re-add system prompt if configured
     if (this.config.systemPrompt) {
       this.addMessage('system', this.config.systemPrompt);
     }
-    
+
     await this.saveHistory();
   }
 
@@ -234,11 +247,18 @@ export class TrustChatSession {
     averageResponseTime: number;
     totalTokensUsed: number;
   } {
-    const userMessages = this.messages.filter(m => m.role === 'user').length;
-    const assistantMessages = this.messages.filter(m => m.role === 'assistant');
-    const totalTokens = assistantMessages.reduce((sum, m) => sum + (m.tokensUsed || 0), 0);
-    const avgResponseTime = assistantMessages.reduce((sum, m) => sum + (m.responseTime || 0), 0) / assistantMessages.length;
-    
+    const userMessages = this.messages.filter((m) => m.role === 'user').length;
+    const assistantMessages = this.messages.filter(
+      (m) => m.role === 'assistant',
+    );
+    const totalTokens = assistantMessages.reduce(
+      (sum, m) => sum + (m.tokensUsed || 0),
+      0,
+    );
+    const avgResponseTime =
+      assistantMessages.reduce((sum, m) => sum + (m.responseTime || 0), 0) /
+      assistantMessages.length;
+
     return {
       totalMessages: this.messages.length,
       userMessages,
@@ -255,16 +275,16 @@ export class TrustChatSession {
     let markdown = `# Trust CLI Conversation\\n`;
     markdown += `**Session ID:** ${this.sessionId}\\n`;
     markdown += `**Date:** ${new Date().toISOString()}\\n\\n`;
-    
+
     for (const message of this.messages) {
       if (message.role === 'system') continue;
-      
+
       const role = message.role === 'user' ? '**User**' : '**Assistant**';
       const timestamp = message.timestamp.toLocaleString();
-      
+
       markdown += `## ${role} (${timestamp})\\n\\n`;
       markdown += `${message.content}\\n\\n`;
-      
+
       if (message.role === 'assistant' && message.modelUsed) {
         markdown += `*Model: ${message.modelUsed}*`;
         if (message.tokensUsed) {
@@ -276,7 +296,7 @@ export class TrustChatSession {
         markdown += '\\n\\n';
       }
     }
-    
+
     return markdown;
   }
 
@@ -285,19 +305,22 @@ export class TrustChatSession {
    * Based on upstream Gemini CLI context compression implementation
    */
   async compressHistory(): Promise<ChatCompressionInfo | null> {
-    const nonSystemMessages = this.messages.filter(m => m.role !== 'system');
-    
-    if (!this.config.compressionThreshold || nonSystemMessages.length <= this.config.compressionThreshold) {
+    const nonSystemMessages = this.messages.filter((m) => m.role !== 'system');
+
+    if (
+      !this.config.compressionThreshold ||
+      nonSystemMessages.length <= this.config.compressionThreshold
+    ) {
       return null; // No compression needed
     }
 
-    const systemMessages = this.messages.filter(m => m.role === 'system');
+    const systemMessages = this.messages.filter((m) => m.role === 'system');
     const recentHistorySize = this.config.recentHistorySize || 10;
-    
+
     // Preserve recent messages
     const recentMessages = nonSystemMessages.slice(-recentHistorySize);
     const olderMessages = nonSystemMessages.slice(0, -recentHistorySize);
-    
+
     if (olderMessages.length === 0) {
       return null; // Nothing to compress
     }
@@ -306,10 +329,11 @@ export class TrustChatSession {
       // Create a summary of older messages
       const compressionContext = this.buildCompressionContext(olderMessages);
       const compressionPrompt = this.getCompressionPrompt(compressionContext);
-      
+
       // Generate compressed summary using the client
-      const compressedSummary = await this.generateCompression(compressionPrompt);
-      
+      const compressedSummary =
+        await this.generateCompression(compressionPrompt);
+
       // Create compressed message
       const compressedMessage: ChatMessage = {
         id: this.generateMessageId(),
@@ -320,11 +344,7 @@ export class TrustChatSession {
       };
 
       // Replace old messages with compressed summary
-      this.messages = [
-        ...systemMessages,
-        compressedMessage,
-        ...recentMessages,
-      ];
+      this.messages = [...systemMessages, compressedMessage, ...recentMessages];
 
       const compressionInfo: ChatCompressionInfo = {
         originalMessageCount: systemMessages.length + nonSystemMessages.length,
@@ -351,15 +371,15 @@ export class TrustChatSession {
     if (!this.config.compressionThreshold) {
       return false;
     }
-    
-    const nonSystemMessages = this.messages.filter(m => m.role !== 'system');
+
+    const nonSystemMessages = this.messages.filter((m) => m.role !== 'system');
     return nonSystemMessages.length > this.config.compressionThreshold;
   }
 
   private addMessage(
-    role: 'user' | 'assistant' | 'system', 
-    content: string, 
-    metadata?: Partial<ChatMessage>
+    role: 'user' | 'assistant' | 'system',
+    content: string,
+    metadata?: Partial<ChatMessage>,
   ): ChatMessage {
     const message: ChatMessage = {
       id: this.generateMessageId(),
@@ -368,25 +388,30 @@ export class TrustChatSession {
       timestamp: new Date(),
       ...metadata,
     };
-    
+
     this.messages.push(message);
-    
+
     // Trim history if needed
-    if (this.config.maxHistory && this.messages.length > this.config.maxHistory) {
-      const systemMessages = this.messages.filter(m => m.role === 'system');
-      const otherMessages = this.messages.filter(m => m.role !== 'system');
-      
+    if (
+      this.config.maxHistory &&
+      this.messages.length > this.config.maxHistory
+    ) {
+      const systemMessages = this.messages.filter((m) => m.role === 'system');
+      const otherMessages = this.messages.filter((m) => m.role !== 'system');
+
       // Keep system messages and trim others
-      const trimmed = otherMessages.slice(-this.config.maxHistory + systemMessages.length);
+      const trimmed = otherMessages.slice(
+        -this.config.maxHistory + systemMessages.length,
+      );
       this.messages = [...systemMessages, ...trimmed];
     }
-    
+
     return message;
   }
 
   private buildConversationContext(): string {
     let context = '';
-    
+
     for (const message of this.messages) {
       if (message.role === 'system') {
         context += `System: ${message.content}\\n\\n`;
@@ -396,7 +421,7 @@ export class TrustChatSession {
         context += `Assistant: ${message.content}\\n\\n`;
       }
     }
-    
+
     return context.trim();
   }
 
@@ -404,22 +429,25 @@ export class TrustChatSession {
     if (!this.historyPath || !this.config.persistHistory) {
       return;
     }
-    
+
     try {
       const historyData = {
         sessionId: this.sessionId,
         createdAt: new Date().toISOString(),
         messages: this.messages,
       };
-      
-      await fs.writeFile(this.historyPath, JSON.stringify(historyData, null, 2));
+
+      await fs.writeFile(
+        this.historyPath,
+        JSON.stringify(historyData, null, 2),
+      );
     } catch (error) {
       console.warn('Failed to save chat history:', error);
     }
   }
 
   private getMessageById(id: string): ChatMessage | undefined {
-    return this.messages.find(m => m.id === id);
+    return this.messages.find((m) => m.id === id);
   }
 
   private generateSessionId(): string {
@@ -432,7 +460,7 @@ export class TrustChatSession {
 
   private buildCompressionContext(messages: ChatMessage[]): string {
     let context = '';
-    
+
     for (const message of messages) {
       if (message.role === 'user') {
         context += `User: ${message.content}\n\n`;
@@ -440,7 +468,7 @@ export class TrustChatSession {
         context += `Assistant: ${message.content}\n\n`;
       }
     }
-    
+
     return context.trim();
   }
 

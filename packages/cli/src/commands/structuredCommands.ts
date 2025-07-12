@@ -5,14 +5,14 @@
  */
 
 import { Command } from 'commander';
-import { 
-  TrustSchemaEnforcement, 
+import {
+  TrustSchemaEnforcement,
   TrustNodeLlamaClient,
   LogitBiasManager,
-  type JSONSchema, 
-  type StructuredRequest, 
+  type JSONSchema,
+  type StructuredRequest,
   type OutputFormat,
-  type LogitBiasConfig 
+  type LogitBiasConfig,
 } from '@trust-cli/trust-cli-core';
 import chalk from 'chalk';
 
@@ -26,15 +26,24 @@ export function addStructuredCommands(program: Command): void {
 
   structuredCmd
     .command('generate')
-    .description('Generate structured data from a prompt with schema validation')
+    .description(
+      'Generate structured data from a prompt with schema validation',
+    )
     .option('-f, --format <format>', 'Output format: json, xml, or kv', 'json')
     .option('-s, --schema <schema>', 'JSON schema file or inline schema')
     .option('-p, --prompt <prompt>', 'Generation prompt')
     .option('-r, --retries <number>', 'Maximum retry attempts', '3')
     .option('--strict', 'Enable strict validation', false)
     .option('-o, --output <file>', 'Output file path')
-    .option('-b, --bias <level>', 'Logit bias level for JSON: light, moderate, aggressive', 'moderate')
-    .option('--bias-config <config>', 'Custom logit bias configuration (JSON file or inline)')
+    .option(
+      '-b, --bias <level>',
+      'Logit bias level for JSON: light, moderate, aggressive',
+      'moderate',
+    )
+    .option(
+      '--bias-config <config>',
+      'Custom logit bias configuration (JSON file or inline)',
+    )
     .action(async (options) => {
       try {
         await handleStructuredGenerate(options);
@@ -78,10 +87,20 @@ export function addStructuredCommands(program: Command): void {
   structuredCmd
     .command('bias')
     .description('Configure logit bias for JSON token generation')
-    .option('-l, --level <level>', 'Bias preset level: light, moderate, aggressive', 'moderate')
-    .option('-c, --config <config>', 'Custom bias configuration (JSON file or inline)')
+    .option(
+      '-l, --level <level>',
+      'Bias preset level: light, moderate, aggressive',
+      'moderate',
+    )
+    .option(
+      '-c, --config <config>',
+      'Custom bias configuration (JSON file or inline)',
+    )
     .option('-t, --test <prompt>', 'Test bias configuration with a prompt')
-    .option('-s, --schema <schema>', 'JSON schema for testing (required with --test)')
+    .option(
+      '-s, --schema <schema>',
+      'JSON schema for testing (required with --test)',
+    )
     .option('-o, --output <file>', 'Save bias configuration to file')
     .option('--show-presets', 'Show available bias presets')
     .action(async (options) => {
@@ -107,7 +126,8 @@ async function handleStructuredGenerate(options: {
   bias?: string;
   biasConfig?: string;
 }): Promise<void> {
-  const { format, schema, prompt, retries, strict, output, bias, biasConfig } = options;
+  const { format, schema, prompt, retries, strict, output, bias, biasConfig } =
+    options;
 
   if (!prompt) {
     throw new Error('Prompt is required. Use -p or --prompt option.');
@@ -120,7 +140,9 @@ async function handleStructuredGenerate(options: {
   // Validate format
   const validFormats: OutputFormat[] = ['json', 'xml', 'kv'];
   if (!validFormats.includes(format)) {
-    throw new Error(`Invalid format: ${format}. Must be one of: ${validFormats.join(', ')}`);
+    throw new Error(
+      `Invalid format: ${format}. Must be one of: ${validFormats.join(', ')}`,
+    );
   }
 
   // Parse schema
@@ -135,7 +157,9 @@ async function handleStructuredGenerate(options: {
       const schemaContent = await fs.readFile(schema, 'utf-8');
       parsedSchema = JSON.parse(schemaContent);
     } catch {
-      throw new Error(`Invalid schema: ${schema}. Must be valid JSON or a file path.`);
+      throw new Error(
+        `Invalid schema: ${schema}. Must be valid JSON or a file path.`,
+      );
     }
   }
 
@@ -150,7 +174,7 @@ async function handleStructuredGenerate(options: {
 
   // Prepare logit bias configuration
   let logitBiasConfig: LogitBiasConfig | undefined;
-  
+
   if (biasConfig) {
     // Parse custom bias configuration
     try {
@@ -162,12 +186,16 @@ async function handleStructuredGenerate(options: {
         const configContent = await fs.readFile(biasConfig, 'utf-8');
         logitBiasConfig = JSON.parse(configContent);
       } catch {
-        throw new Error(`Invalid bias configuration: ${biasConfig}. Must be valid JSON or a file path.`);
+        throw new Error(
+          `Invalid bias configuration: ${biasConfig}. Must be valid JSON or a file path.`,
+        );
       }
     }
   } else if (format === 'json' && bias) {
     // Use preset bias level for JSON format
-    logitBiasConfig = LogitBiasManager.createJsonPreset(bias as 'light' | 'moderate' | 'aggressive');
+    logitBiasConfig = LogitBiasManager.createJsonPreset(
+      bias as 'light' | 'moderate' | 'aggressive',
+    );
   }
 
   const request: StructuredRequest = {
@@ -180,12 +208,12 @@ async function handleStructuredGenerate(options: {
   };
 
   console.log(chalk.blue('🚀 Generating structured output...'));
-  
+
   const result = await schemaEnforcement.generateStructured(request);
 
   if (result.valid) {
     console.log(chalk.green('✅ Successfully generated structured output!'));
-    
+
     if (output) {
       const fs = await import('fs/promises');
       await fs.writeFile(output, result.rawResponse || '', 'utf-8');
@@ -204,12 +232,12 @@ async function handleStructuredGenerate(options: {
     result.errors?.forEach((error: string) => {
       console.log(chalk.red(`  • ${error}`));
     });
-    
+
     if (result.rawResponse) {
       console.log(chalk.yellow('\n📋 Raw Response:'));
       console.log(result.rawResponse);
     }
-    
+
     process.exit(1);
   }
 }
@@ -242,7 +270,9 @@ async function handleStructuredValidate(options: {
       const schemaContent = await fs.readFile(schema, 'utf-8');
       parsedSchema = JSON.parse(schemaContent);
     } catch {
-      throw new Error(`Invalid schema: ${schema}. Must be valid JSON or a file path.`);
+      throw new Error(
+        `Invalid schema: ${schema}. Must be valid JSON or a file path.`,
+      );
     }
   }
 
@@ -267,11 +297,16 @@ async function handleStructuredValidate(options: {
   const client = new TrustNodeLlamaClient();
   const schemaEnforcement = new TrustSchemaEnforcement(client);
 
-  const result = schemaEnforcement.validateAndExtract(dataContent, parsedSchema, true, format as OutputFormat);
+  const result = schemaEnforcement.validateAndExtract(
+    dataContent,
+    parsedSchema,
+    true,
+    format as OutputFormat,
+  );
 
   if (result.valid) {
     console.log(chalk.green('✅ Data is valid!'));
-    
+
     if (result.data) {
       console.log(chalk.cyan('\n📊 Parsed Data:'));
       console.log(JSON.stringify(result.data, null, 2));
@@ -302,10 +337,14 @@ async function handleStructuredConvert(options: {
 
   const validFormats: OutputFormat[] = ['json', 'xml', 'kv'];
   if (!validFormats.includes(from)) {
-    throw new Error(`Invalid source format: ${from}. Must be one of: ${validFormats.join(', ')}`);
+    throw new Error(
+      `Invalid source format: ${from}. Must be one of: ${validFormats.join(', ')}`,
+    );
   }
   if (!validFormats.includes(to)) {
-    throw new Error(`Invalid target format: ${to}. Must be one of: ${validFormats.join(', ')}`);
+    throw new Error(
+      `Invalid target format: ${to}. Must be one of: ${validFormats.join(', ')}`,
+    );
   }
 
   // Parse data
@@ -330,11 +369,16 @@ async function handleStructuredConvert(options: {
   // Create a permissive schema for conversion
   const permissiveSchema: JSONSchema = {
     type: 'object',
-    description: 'Permissive schema for data conversion'
+    description: 'Permissive schema for data conversion',
   };
 
   // Parse the source data
-  const parseResult = schemaEnforcement.validateAndExtract(dataContent, permissiveSchema, false, from as OutputFormat);
+  const parseResult = schemaEnforcement.validateAndExtract(
+    dataContent,
+    permissiveSchema,
+    false,
+    from as OutputFormat,
+  );
 
   if (!parseResult.valid || !parseResult.data) {
     console.log(chalk.red('❌ Failed to parse source data:'));
@@ -350,10 +394,14 @@ async function handleStructuredConvert(options: {
     convertedData = JSON.stringify(parseResult.data, null, 2);
   } else if (to === 'xml') {
     // Access private method for conversion (this is a utility function)
-    convertedData = (schemaEnforcement as any).convertJSONToXML(parseResult.data);
+    convertedData = (schemaEnforcement as any).convertJSONToXML(
+      parseResult.data,
+    );
   } else if (to === 'kv') {
     // Access private method for conversion
-    convertedData = (schemaEnforcement as any).convertJSONToKV(parseResult.data);
+    convertedData = (schemaEnforcement as any).convertJSONToKV(
+      parseResult.data as any,
+    );
   } else {
     throw new Error(`Unsupported target format: ${to}`);
   }
@@ -386,15 +434,23 @@ async function handleLogitBias(options: {
   if (showPresets) {
     console.log(chalk.blue('📋 Available Logit Bias Presets:'));
     console.log();
-    
+
     const presets = ['light', 'moderate', 'aggressive'] as const;
     for (const preset of presets) {
       const presetConfig = LogitBiasManager.createJsonPreset(preset);
       console.log(chalk.green(`${preset.toUpperCase()}:`));
-      console.log(`  - Structural token boost: ${presetConfig.jsonBias?.boostStructural ? 'enabled' : 'disabled'}`);
-      console.log(`  - Invalid token suppression: ${presetConfig.jsonBias?.suppressInvalid ? 'enabled' : 'disabled'}`);
-      console.log(`  - Contextual biases: ${presetConfig.contextualBias ? 'enabled' : 'disabled'}`);
-      console.log(`  - Value biases: ${Object.keys(presetConfig.jsonBias?.valueBias || {}).length} configured`);
+      console.log(
+        `  - Structural token boost: ${presetConfig.jsonBias?.boostStructural ? 'enabled' : 'disabled'}`,
+      );
+      console.log(
+        `  - Invalid token suppression: ${presetConfig.jsonBias?.suppressInvalid ? 'enabled' : 'disabled'}`,
+      );
+      console.log(
+        `  - Contextual biases: ${presetConfig.contextualBias ? 'enabled' : 'disabled'}`,
+      );
+      console.log(
+        `  - Value biases: ${Object.keys(presetConfig.jsonBias?.valueBias || {}).length} configured`,
+      );
       console.log();
     }
     return;
@@ -413,12 +469,17 @@ async function handleLogitBias(options: {
         const configContent = await fs.readFile(config, 'utf-8');
         biasConfig = JSON.parse(configContent);
       } catch {
-        throw new Error(`Invalid bias configuration: ${config}. Must be valid JSON or a file path.`);
+        throw new Error(
+          `Invalid bias configuration: ${config}. Must be valid JSON or a file path.`,
+        );
       }
     }
   } else {
     // Use preset level
-    const presetLevel = (level || 'moderate') as 'light' | 'moderate' | 'aggressive';
+    const presetLevel = (level || 'moderate') as
+      | 'light'
+      | 'moderate'
+      | 'aggressive';
     biasConfig = LogitBiasManager.createJsonPreset(presetLevel);
   }
 
@@ -433,7 +494,7 @@ async function handleLogitBias(options: {
 
   if (test && schema) {
     console.log(chalk.blue('\n🧪 Testing bias configuration...'));
-    
+
     // Parse schema
     let parsedSchema: JSONSchema;
     try {
@@ -444,7 +505,9 @@ async function handleLogitBias(options: {
         const schemaContent = await fs.readFile(schema, 'utf-8');
         parsedSchema = JSON.parse(schemaContent);
       } catch {
-        throw new Error(`Invalid schema: ${schema}. Must be valid JSON or a file path.`);
+        throw new Error(
+          `Invalid schema: ${schema}. Must be valid JSON or a file path.`,
+        );
       }
     }
 
@@ -463,14 +526,14 @@ async function handleLogitBias(options: {
 
     console.log(chalk.gray(`Test prompt: ${test}`));
     console.log(chalk.blue('🚀 Generating test output...'));
-    
+
     const result = await schemaEnforcement.generateStructured(request);
 
     if (result.valid) {
       console.log(chalk.green('✅ Test generation successful!'));
       console.log(chalk.cyan('\n📋 Generated Output:'));
       console.log(result.rawResponse);
-      
+
       if (result.data) {
         console.log(chalk.cyan('\n📊 Parsed Data:'));
         console.log(JSON.stringify(result.data, null, 2));
@@ -480,13 +543,17 @@ async function handleLogitBias(options: {
       result.errors?.forEach((error: string) => {
         console.log(chalk.red(`  • ${error}`));
       });
-      
+
       if (result.rawResponse) {
         console.log(chalk.yellow('\n📋 Raw Response:'));
         console.log(result.rawResponse);
       }
     }
   } else if (test) {
-    console.log(chalk.yellow('⚠️ Schema is required for testing. Use -s or --schema option.'));
+    console.log(
+      chalk.yellow(
+        '⚠️ Schema is required for testing. Use -s or --schema option.',
+      ),
+    );
   }
 }

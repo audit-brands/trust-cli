@@ -4,7 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { OllamaClient, OllamaConfig, ToolDefinition, OllamaMessage } from './ollamaClient.js';
+import {
+  OllamaClient,
+  OllamaConfig,
+  ToolDefinition,
+  OllamaMessage,
+} from './ollamaClient.js';
 import { ToolRegistry } from '../tools/tool-registry.js';
 import { Config } from '../config/config.js';
 
@@ -77,7 +82,7 @@ export class OllamaApiServer {
     config: Config,
     toolRegistry: ToolRegistry,
     ollamaConfig: OllamaConfig = {},
-    serverConfig: ApiServerConfig = {}
+    serverConfig: ApiServerConfig = {},
   ) {
     this.config = config;
     this.toolRegistry = toolRegistry;
@@ -98,12 +103,16 @@ export class OllamaApiServer {
     // Check if Ollama is available
     const isConnected = await this.ollamaClient.checkConnection();
     if (!isConnected) {
-      throw new Error('Ollama is not running. Please start Ollama with: ollama serve');
+      throw new Error(
+        'Ollama is not running. Please start Ollama with: ollama serve',
+      );
     }
 
     console.log(`🚀 Starting OpenAI-compatible API server on ${host}:${port}`);
     console.log(`📡 Proxying to Ollama at http://localhost:11434`);
-    console.log(`🛠️  Tool calling enabled with ${await this.getToolCount()} tools`);
+    console.log(
+      `🛠️  Tool calling enabled with ${await this.getToolCount()} tools`,
+    );
 
     // Create Express server
     const express = await import('express');
@@ -112,27 +121,31 @@ export class OllamaApiServer {
 
     // Middleware
     app.use(express.json({ limit: '10mb' }));
-    
+
     if (serverConfig.cors) {
-      app.use(cors.default({
-        origin: true,
-        credentials: true,
-      }));
+      app.use(
+        cors.default({
+          origin: true,
+          credentials: true,
+        }),
+      );
     }
 
     // API Key middleware
     if (serverConfig.apiKey) {
       app.use('/v1/*', (req: any, res: any, next: any) => {
         const authHeader = req.headers.authorization;
-        const providedKey = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
-        
+        const providedKey = authHeader?.startsWith('Bearer ')
+          ? authHeader.slice(7)
+          : null;
+
         if (!providedKey || providedKey !== serverConfig.apiKey) {
           return res.status(401).json({
             error: {
               message: 'Invalid API key',
               type: 'authentication_error',
-              code: 'invalid_api_key'
-            }
+              code: 'invalid_api_key',
+            },
           });
         }
         next();
@@ -149,8 +162,8 @@ export class OllamaApiServer {
           error: {
             message: error instanceof Error ? error.message : 'Unknown error',
             type: 'invalid_request_error',
-            code: 'bad_request'
-          }
+            code: 'bad_request',
+          },
         });
       }
     });
@@ -164,8 +177,8 @@ export class OllamaApiServer {
           error: {
             message: error instanceof Error ? error.message : 'Unknown error',
             type: 'api_error',
-            code: 'internal_error'
-          }
+            code: 'internal_error',
+          },
         });
       }
     });
@@ -179,8 +192,8 @@ export class OllamaApiServer {
           error: {
             message: error instanceof Error ? error.message : 'Unknown error',
             type: 'api_error',
-            code: 'internal_error'
-          }
+            code: 'internal_error',
+          },
         });
       }
     });
@@ -194,8 +207,8 @@ export class OllamaApiServer {
           error: {
             message: error instanceof Error ? error.message : 'Unknown error',
             type: 'api_error',
-            code: 'internal_error'
-          }
+            code: 'internal_error',
+          },
         });
       }
     });
@@ -204,15 +217,15 @@ export class OllamaApiServer {
     app.get('/v1/models/:model', async (req: any, res: any) => {
       try {
         const models = await this.ollamaClient.listModels();
-        const model = models.find(m => m === req.params.model);
-        
+        const model = models.find((m) => m === req.params.model);
+
         if (!model) {
           return res.status(404).json({
             error: {
               message: 'Model not found',
               type: 'invalid_request_error',
-              code: 'model_not_found'
-            }
+              code: 'model_not_found',
+            },
           });
         }
 
@@ -223,15 +236,15 @@ export class OllamaApiServer {
           owned_by: 'ollama',
           permission: [],
           root: model,
-          parent: null
+          parent: null,
         });
       } catch (error) {
         res.status(500).json({
           error: {
             message: error instanceof Error ? error.message : 'Unknown error',
             type: 'api_error',
-            code: 'internal_error'
-          }
+            code: 'internal_error',
+          },
         });
       }
     });
@@ -242,8 +255,8 @@ export class OllamaApiServer {
         error: {
           message: `The endpoint ${req.method} ${req.path} is not supported.`,
           type: 'invalid_request_error',
-          code: 'unsupported_endpoint'
-        }
+          code: 'unsupported_endpoint',
+        },
       });
     });
 
@@ -270,7 +283,7 @@ export class OllamaApiServer {
     }
 
     console.log('🛑 Stopping API server...');
-    
+
     // Close server if running
     if (this.server) {
       await new Promise<void>((resolve) => {
@@ -301,7 +314,7 @@ export class OllamaApiServer {
     try {
       // Convert OpenAI format to Ollama format
       const ollamaMessages = this.convertToOllamaMessages(request.messages);
-      
+
       // Get available tools from registry if tools are requested
       let tools: ToolDefinition[] | undefined;
       if (request.tools && request.tools.length > 0) {
@@ -319,16 +332,16 @@ export class OllamaApiServer {
               parameters: tool.parameters || {
                 type: 'object',
                 properties: {},
-                required: []
-              }
-            }
+                required: [],
+              },
+            },
           }));
         } catch (error) {
           console.warn('Failed to load Trust CLI tools:', error);
           tools = undefined;
         }
       }
-      
+
       // Execute chat completion with tools
       const response = await this.ollamaClient.chatCompletion(
         ollamaMessages,
@@ -336,24 +349,34 @@ export class OllamaApiServer {
         {
           temperature: request.temperature || 0.7,
           maxTokens: request.max_tokens || 1000,
-        }
+        },
       );
 
       // Convert back to OpenAI format
       return this.convertToApiResponse(response, request.model || 'ollama');
     } catch (error) {
       console.error('Error in chat completion:', error);
-      throw new Error(`Chat completion failed: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `Chat completion failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
   }
 
   /**
    * Handle models list request
    */
-  async handleModelsRequest(): Promise<{ object: string; data: Array<{ id: string; object: string; created: number; owned_by: string }> }> {
+  async handleModelsRequest(): Promise<{
+    object: string;
+    data: Array<{
+      id: string;
+      object: string;
+      created: number;
+      owned_by: string;
+    }>;
+  }> {
     try {
       const models = await this.ollamaClient.listModels();
-      
+
       return {
         object: 'list',
         data: models.map((model) => ({
@@ -365,14 +388,22 @@ export class OllamaApiServer {
       };
     } catch (error) {
       console.error('Error listing models:', error);
-      throw new Error(`Failed to list models: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `Failed to list models: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
   }
 
   /**
    * Get server health status
    */
-  async getHealth(): Promise<{ status: string; ollama: boolean; models: number; tools: number; uptime: number }> {
+  async getHealth(): Promise<{
+    status: string;
+    ollama: boolean;
+    models: number;
+    tools: number;
+    uptime: number;
+  }> {
     const ollamaConnected = await this.ollamaClient.checkConnection();
     const models = ollamaConnected ? await this.ollamaClient.listModels() : [];
     const toolCount = await this.getToolCount();
@@ -435,7 +466,7 @@ export class OllamaApiServer {
    */
   private convertToApiResponse(response: any, model: string): ApiResponse {
     const id = `chatcmpl-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    
+
     return {
       id,
       object: 'chat.completion',
@@ -448,7 +479,9 @@ export class OllamaApiServer {
             role: 'assistant',
             content: response.content,
             tool_calls: response.toolCalls?.map((tc: any) => ({
-              id: tc.id || `call_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+              id:
+                tc.id ||
+                `call_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
               type: 'function' as const,
               function: {
                 name: tc.name,
@@ -470,7 +503,11 @@ export class OllamaApiServer {
   /**
    * Check rate limiting
    */
-  private checkRateLimit(endpoint: string, limit = 60, window = 60000): boolean {
+  private checkRateLimit(
+    endpoint: string,
+    limit = 60,
+    window = 60000,
+  ): boolean {
     const now = Date.now();
     const key = endpoint;
     const current = this.rateLimitMap.get(key) || { count: 0, window: now };

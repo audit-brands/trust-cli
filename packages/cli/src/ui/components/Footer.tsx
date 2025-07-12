@@ -7,7 +7,11 @@
 import React from 'react';
 import { Box, Text } from 'ink';
 import { Colors } from '../colors.js';
-import { shortenPath, tildeifyPath, tokenLimit } from '@trust-cli/trust-cli-core';
+import {
+  shortenPath,
+  tildeifyPath,
+  tokenLimit,
+} from '@trust-cli/trust-cli-core';
 import { ConsoleSummaryDisplay } from './ConsoleSummaryDisplay.js';
 import process from 'node:process';
 import { MemoryUsageDisplay } from './MemoryUsageDisplay.js';
@@ -86,13 +90,19 @@ export const Footer: React.FC<FooterProps> = ({
           {model}{' '}
           {backend && (
             <Text color={Colors.Gray}>
-              via {backend === 'ollama' ? '🦙 Ollama' : 
-                   backend === 'huggingface' ? '🤗 HuggingFace' : 
-                   backend === 'cloud' ? '☁️  Cloud' : backend}
+              via{' '}
+              {backend === 'ollama'
+                ? '🦙 Ollama'
+                : backend === 'huggingface'
+                  ? '🤗 HuggingFace'
+                  : backend === 'cloud'
+                    ? '☁️  Cloud'
+                    : backend}
             </Text>
           )}
           <Text color={Colors.Gray}>
-            {' '}({((1 - percentage) * 100).toFixed(0)}% context left)
+            {' '}
+            ({((1 - percentage) * 100).toFixed(0)}% context left)
           </Text>
         </Text>
         {corgiMode && (

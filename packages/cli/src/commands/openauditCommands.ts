@@ -13,8 +13,8 @@ function slugify(text: string): string {
     .toString()
     .toLowerCase()
     .replace(/\s+/g, '-') // Replace spaces with -
-    .replace(/[^\w\-]+/g, '') // Remove all non-word chars
-    .replace(/\-\-+/g, '-') // Replace multiple - with single -
+    .replace(/[^\w-]+/g, '') // Remove all non-word chars
+    .replace(/--+/g, '-') // Replace multiple - with single -
     .replace(/^-+/, '') // Trim - from start of text
     .replace(/-+$/, ''); // Trim - from end of text
 }
@@ -70,7 +70,9 @@ export async function handleOpenAuditCommand(options: {
 
   program
     .name('openaudit')
-    .description('A suite of tools for working with the OpenAudit Integrated Assurance framework.');
+    .description(
+      'A suite of tools for working with the OpenAudit Integrated Assurance framework.',
+    );
 
   program
     .command('new <engagement_name>')
@@ -93,7 +95,7 @@ export async function handleOpenAuditCommand(options: {
   try {
     // Prepend 'openaudit' to the args array so that commander knows how to parse it.
     program.parse(['openaudit', action, ...args]);
-  } catch (e) {
+  } catch (_e) {
     // Ignore errors in test environment
   }
 }

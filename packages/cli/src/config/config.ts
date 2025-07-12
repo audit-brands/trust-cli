@@ -14,12 +14,12 @@ import {
   getCurrentGeminiMdFilename,
   ApprovalMode,
   GEMINI_CONFIG_DIR as GEMINI_DIR,
-  DEFAULT_GEMINI_MODEL,
   DEFAULT_GEMINI_EMBEDDING_MODEL,
   FileDiscoveryService,
   TelemetryTarget,
   AuthType,
- DEFAULT_TRUST_MODEL } from '@trust-cli/trust-cli-core';
+  DEFAULT_TRUST_MODEL,
+} from '@trust-cli/trust-cli-core';
 import { Settings } from './settings.js';
 
 import { Extension } from './extension.js';
@@ -174,7 +174,12 @@ export async function loadCliConfig(
   loadEnvironment();
 
   const argv = await parseArguments();
-  const debugMode = argv.debug || process.env.DEBUG === '1' || process.env.DEBUG === 'true' || process.env.DEBUG === 'verbose' || false;
+  const debugMode =
+    argv.debug ||
+    process.env.DEBUG === '1' ||
+    process.env.DEBUG === 'true' ||
+    process.env.DEBUG === 'verbose' ||
+    false;
 
   // Set the context filename in the server's memoryTool module BEFORE loading memory
   // TODO(b/343434939): This is a bit of a hack. The contextFileName should ideally be passed
@@ -190,11 +195,11 @@ export async function loadCliConfig(
   const extensionContextFilePaths = extensions.flatMap((e) => e.contextFiles);
 
   const fileService = new FileDiscoveryService(process.cwd());
-  
+
   // Skip memory discovery for local models to prevent prompt bloat
   let memoryContent = '';
   let fileCount = 0;
-  
+
   if (settings.selectedAuthType !== AuthType.USE_TRUST_LOCAL) {
     // Call the (now wrapper) loadHierarchicalGeminiMemory which calls the server's version
     const memoryResult = await loadHierarchicalGeminiMemory(
@@ -206,7 +211,9 @@ export async function loadCliConfig(
     memoryContent = memoryResult.memoryContent;
     fileCount = memoryResult.fileCount;
   } else {
-    console.log('DEBUG: Skipping memory discovery for local models to prevent prompt bloat');
+    console.log(
+      'DEBUG: Skipping memory discovery for local models to prevent prompt bloat',
+    );
   }
 
   const mcpServers = mergeMcpServers(settings, extensions);
@@ -313,7 +320,7 @@ function findEnvFile(startDir: string): string | null {
       return envPath;
     }
     const parentDir = path.dirname(currentDir);
-    
+
     // Fix infinite loop on Windows - upstream commit f7ad9a7e
     if (parentDir === currentDir) {
       // check .env under home as fallback, again preferring gemini-specific .env

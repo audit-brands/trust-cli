@@ -4,7 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { describe, it, expect, beforeEach, vi, afterEach, type MockedFunction } from 'vitest';
+import {
+  describe,
+  it,
+  expect,
+  beforeEach,
+  vi,
+  afterEach,
+  type MockedFunction,
+} from 'vitest';
 import { TrustContentGenerator } from './trustContentGenerator.js';
 import { TrustModelManagerImpl } from './modelManager.js';
 import { PerformanceMonitor } from './performanceMonitor.js';
@@ -34,19 +42,19 @@ vi.mock('./nodeLlamaClient.js', () => ({
     generateResponse: vi.fn().mockResolvedValue('Mock AI response'),
     isModelLoaded: vi.fn().mockReturnValue(true),
     dispose: vi.fn().mockResolvedValue(undefined),
-  }))
+  })),
 }));
 
 vi.mock('os', () => ({
   cpus: vi.fn(() => [
-    { 
+    {
       model: 'Apple M1',
-      times: { user: 1000, nice: 0, sys: 500, idle: 8000, irq: 0 }
-    }, 
-    { 
+      times: { user: 1000, nice: 0, sys: 500, idle: 8000, irq: 0 },
+    },
+    {
       model: 'Apple M1',
-      times: { user: 1200, nice: 0, sys: 600, idle: 7800, irq: 0 }
-    }
+      times: { user: 1200, nice: 0, sys: 600, idle: 7800, irq: 0 },
+    },
   ]),
   totalmem: vi.fn(() => 8589934592),
   freemem: vi.fn(() => 4294967296),
@@ -62,18 +70,18 @@ vi.mock('crypto', () => ({
   randomUUID: vi.fn(() => 'test-uuid-1234-5678-9012-abcdef123456'),
   createHash: vi.fn(() => ({
     update: vi.fn().mockReturnThis(),
-    digest: vi.fn(() => 'hashed-value')
+    digest: vi.fn(() => 'hashed-value'),
   })),
   createCipheriv: vi.fn(() => ({
     update: vi.fn((data: string) => data),
     final: vi.fn(() => ''),
-    getAuthTag: vi.fn(() => Buffer.from('auth-tag'))
+    getAuthTag: vi.fn(() => Buffer.from('auth-tag')),
   })),
   createDecipheriv: vi.fn(() => ({
     setAuthTag: vi.fn(),
     update: vi.fn((data: Buffer) => data.toString()),
-    final: vi.fn(() => '')
-  }))
+    final: vi.fn(() => ''),
+  })),
 }));
 
 // Import mocked fs after mocking
@@ -92,7 +100,7 @@ describe('Trust CLI Integration Tests', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    
+
     // Setup common mocks
     mockFs.access.mockResolvedValue(undefined);
     mockFs.readdir.mockResolvedValue([]);
@@ -121,7 +129,7 @@ describe('Trust CLI Integration Tests', () => {
 
     // Mock model verification to always return true for tests
     vi.spyOn(modelManager, 'verifyModel').mockResolvedValue(true);
-    
+
     // Mock the model client methods on the content generator instance
     vi.spyOn(contentGenerator as any, 'modelClient', 'get').mockReturnValue({
       loadModel: vi.fn().mockResolvedValue(undefined),
@@ -129,15 +137,17 @@ describe('Trust CLI Integration Tests', () => {
       isModelLoaded: vi.fn().mockReturnValue(true),
       dispose: vi.fn().mockResolvedValue(undefined),
       generateText: vi.fn().mockResolvedValue('Mock text response'),
-      generateStream: vi.fn().mockReturnValue(async function* () { yield 'Mock stream'; }),
+      generateStream: vi.fn().mockReturnValue(async function* () {
+        yield 'Mock stream';
+      }),
       getMetrics: vi.fn().mockReturnValue({}),
     });
-    
+
     // Also mock the file access for model verification
     mockFs.access.mockResolvedValue(undefined);
-    mockFs.stat.mockResolvedValue({ 
-      isFile: () => true, 
-      size: 1000000000 
+    mockFs.stat.mockResolvedValue({
+      isFile: () => true,
+      size: 1000000000,
     } as any);
   });
 
@@ -172,7 +182,7 @@ describe('Trust CLI Integration Tests', () => {
 
       expect(codingModel).toBeDefined();
       expect(writingModel).toBeDefined();
-      
+
       // Coding models should have high trust scores
       if (codingModel) {
         expect(codingModel.trustScore).toBeGreaterThan(7);
@@ -184,10 +194,12 @@ describe('Trust CLI Integration Tests', () => {
 
       // Test with limited RAM
       const limitedModel = modelManager.getRecommendedModel('coding', 2);
-      
+
       if (limitedModel) {
         // Extract numeric value from "2GB" format
-        const ramValue = parseFloat(limitedModel.ramRequirement.replace('GB', ''));
+        const ramValue = parseFloat(
+          limitedModel.ramRequirement.replace('GB', ''),
+        );
         expect(ramValue).toBeLessThanOrEqual(2);
       }
     });
@@ -206,7 +218,7 @@ describe('Trust CLI Integration Tests', () => {
         modelName: 'test-model',
         promptLength: 20,
         responseLength: 80,
-        timestamp: new Date()
+        timestamp: new Date(),
       };
 
       performanceMonitor.recordInference(inferenceMetrics);
@@ -225,14 +237,16 @@ describe('Trust CLI Integration Tests', () => {
       // Recommend model based on system capabilities
       const recommendedModel = modelManager.getRecommendedModel(
         'coding',
-        Math.floor(systemMetrics.memoryUsage.available)
+        Math.floor(systemMetrics.memoryUsage.available),
       );
 
       if (recommendedModel) {
-        const ramValue = parseFloat(recommendedModel.ramRequirement.replace('GB', ''));
+        const ramValue = parseFloat(
+          recommendedModel.ramRequirement.replace('GB', ''),
+        );
         // Adjust expectation - model recommendations can be slightly above optimal
         expect(ramValue).toBeLessThanOrEqual(
-          optimalSettings.recommendedRAM + 1 // Allow 1GB buffer
+          optimalSettings.recommendedRAM + 1, // Allow 1GB buffer
         );
       }
     });
@@ -248,7 +262,7 @@ describe('Trust CLI Integration Tests', () => {
         modelName: 'heavy-model',
         promptLength: 100,
         responseLength: 50,
-        timestamp: new Date()
+        timestamp: new Date(),
       };
 
       performanceMonitor.recordInference(poorPerformance);
@@ -271,11 +285,15 @@ describe('Trust CLI Integration Tests', () => {
       await privacyManager.setPrivacyMode('strict');
 
       const sensitiveRequest: GenerateContentParameters = {
-        contents: [{
-          parts: [{ text: 'My API key is sk-1234567890 and password is secret123' }],
-          role: 'user'
-        }],
-        model: 'test-model'
+        contents: [
+          {
+            parts: [
+              { text: 'My API key is sk-1234567890 and password is secret123' },
+            ],
+            role: 'user',
+          },
+        ],
+        model: 'test-model',
       };
 
       // Sanitize the request data
@@ -310,12 +328,14 @@ describe('Trust CLI Integration Tests', () => {
       const sensitiveModelData = {
         modelPath: '/sensitive/path/model.gguf',
         userQueries: ['What is my password?', 'Show me private data'],
-        apiKeys: ['sk-abc123', 'sk-def456']
+        apiKeys: ['sk-abc123', 'sk-def456'],
       };
 
       // Mock encryption/decryption for tests
       const originalData = JSON.stringify(sensitiveModelData);
-      vi.spyOn(privacyManager, 'encryptData').mockResolvedValue('encrypted_data');
+      vi.spyOn(privacyManager, 'encryptData').mockResolvedValue(
+        'encrypted_data',
+      );
       vi.spyOn(privacyManager, 'decryptData').mockResolvedValue(originalData);
 
       const encrypted = await privacyManager.encryptData(originalData);
@@ -343,7 +363,7 @@ describe('Trust CLI Integration Tests', () => {
       // Select appropriate model
       const recommendedModel = modelManager.getRecommendedModel(
         'coding',
-        Math.floor(systemMetrics.memoryUsage.available * 0.8) // Use 80% of available RAM
+        Math.floor(systemMetrics.memoryUsage.available * 0.8), // Use 80% of available RAM
       );
 
       expect(recommendedModel).toBeDefined();
@@ -358,15 +378,19 @@ describe('Trust CLI Integration Tests', () => {
 
         // Prepare request
         const request: GenerateContentParameters = {
-          contents: [{
-            parts: [{ text: 'Write a simple hello world function in Python' }],
-            role: 'user'
-          }],
+          contents: [
+            {
+              parts: [
+                { text: 'Write a simple hello world function in Python' },
+              ],
+              role: 'user',
+            },
+          ],
           model: 'test-model',
           config: {
             temperature: 0.7,
-            topP: 0.9
-          }
+            topP: 0.9,
+          },
         };
 
         // Sanitize request if needed
@@ -374,10 +398,10 @@ describe('Trust CLI Integration Tests', () => {
 
         // Record performance metrics
         const startTime = Date.now();
-        
+
         // Simulate content generation (would normally call actual model)
         const mockResponse = 'def hello_world():\n    print("Hello, World!")';
-        
+
         const endTime = Date.now();
         const inferenceTime = endTime - startTime;
 
@@ -389,7 +413,7 @@ describe('Trust CLI Integration Tests', () => {
           modelName: recommendedModel.name,
           promptLength: 10,
           responseLength: 15,
-          timestamp: new Date()
+          timestamp: new Date(),
         });
 
         // Verify performance tracking
@@ -402,16 +426,16 @@ describe('Trust CLI Integration Tests', () => {
     it('should handle error scenarios across components', async () => {
       // Test model loading failure
       mockFs.access.mockRejectedValue(new Error('Model file not found'));
-      
+
       await modelManager.initialize();
       const models = modelManager.listAvailableModels();
-      
+
       // Should still have default models available
       expect(models.length).toBeGreaterThan(0);
 
       // Test invalid model switch
       await expect(
-        contentGenerator.switchModel('non-existent-model')
+        contentGenerator.switchModel('non-existent-model'),
       ).rejects.toThrow();
     });
 
@@ -428,12 +452,12 @@ describe('Trust CLI Integration Tests', () => {
       const models = modelManager.listAvailableModels();
       if (models.length > 0) {
         await contentGenerator.switchModel(models[0].name);
-        
+
         const contentGenModel = contentGenerator.getCurrentModel();
-        
+
         // The content generator should have the expected model
         expect(contentGenModel?.name).toBe(models[0].name);
-        
+
         // Since the content generator has its own model manager instance,
         // we verify it's working correctly by checking the model is set
         expect(contentGenModel).toBeDefined();
@@ -449,8 +473,8 @@ describe('Trust CLI Integration Tests', () => {
       const mockToolCall = {
         name: 'filesystem_read',
         parameters: {
-          path: '/test/file.txt'
-        }
+          path: '/test/file.txt',
+        },
       };
 
       // In a real scenario, this would:
@@ -471,12 +495,12 @@ describe('Trust CLI Integration Tests', () => {
       const mcpToolResult = {
         toolName: 'filesystem_read',
         result: 'File contents with sensitive data: API_KEY=sk-secret123',
-        timestamp: new Date()
+        timestamp: new Date(),
       };
 
       // Sanitize MCP tool results
       const sanitized = privacyManager.sanitizeData(mcpToolResult);
-      
+
       expect(JSON.stringify(sanitized)).toContain('[REDACTED]');
       expect(JSON.stringify(sanitized)).not.toContain('sk-secret123');
     });
@@ -512,7 +536,7 @@ describe('Trust CLI Integration Tests', () => {
 
       // Simulate restart by creating new instances
       const newPrivacyManager = new PrivacyManager();
-      
+
       // Mock reading the saved configuration
       const savedConfig = {
         mode: 'moderate',
@@ -520,13 +544,13 @@ describe('Trust CLI Integration Tests', () => {
         allowTelemetry: false,
         encryptStorage: true,
         shareData: false,
-        allowCloudSync: false
+        allowCloudSync: false,
       };
-      
+
       mockFs.readFile.mockResolvedValue(JSON.stringify(savedConfig));
-      
+
       await newPrivacyManager.initialize();
-      
+
       expect(newPrivacyManager.getCurrentMode().name).toBe('moderate');
       expect(newPrivacyManager.getDataRetentionDays()).toBe(30);
     });

@@ -21,9 +21,12 @@ export class TrustModelManagerImpl implements TrustModelManager {
   private integrityChecker: ModelIntegrityChecker;
 
   constructor(modelsDir?: string) {
-    this.modelsDir = modelsDir || path.join(os.homedir(), '.trustcli', 'models');
+    this.modelsDir =
+      modelsDir || path.join(os.homedir(), '.trustcli', 'models');
     this.configFile = path.join(path.dirname(this.modelsDir), 'models.json');
-    this.integrityChecker = new ModelIntegrityChecker(path.dirname(this.modelsDir));
+    this.integrityChecker = new ModelIntegrityChecker(
+      path.dirname(this.modelsDir),
+    );
     this.initializeDefaultModels();
   }
 
@@ -40,9 +43,10 @@ export class TrustModelManagerImpl implements TrustModelManager {
         description: 'Fast coding assistance model - 3.8B parameters',
         parameters: '3.8B',
         trustScore: 9.5,
-        downloadUrl: 'https://huggingface.co/bartowski/Phi-3.5-mini-instruct-GGUF/blob/main/Phi-3.5-mini-instruct-Q4_K_M.gguf',
+        downloadUrl:
+          'https://huggingface.co/bartowski/Phi-3.5-mini-instruct-GGUF/blob/main/Phi-3.5-mini-instruct-Q4_K_M.gguf',
         verificationHash: 'sha256:pending', // Will be computed after first download
-        expectedSize: 2393232672 // ~2.23GB (actual downloaded size)
+        expectedSize: 2393232672, // ~2.23GB (actual downloaded size)
       },
       {
         name: 'phi-3.5-mini-uncensored',
@@ -51,12 +55,14 @@ export class TrustModelManagerImpl implements TrustModelManager {
         quantization: 'Q4_K_M',
         contextSize: 4096,
         ramRequirement: '3GB',
-        description: 'Uncensored coding model for risk analysis & auditing - 3.8B parameters',
+        description:
+          'Uncensored coding model for risk analysis & auditing - 3.8B parameters',
         parameters: '3.8B',
         trustScore: 9.3,
-        downloadUrl: 'https://huggingface.co/bartowski/Phi-3.5-mini-instruct_Uncensored-GGUF/blob/main/Phi-3.5-mini-instruct_Uncensored-Q4_K_M.gguf',
+        downloadUrl:
+          'https://huggingface.co/bartowski/Phi-3.5-mini-instruct_Uncensored-GGUF/blob/main/Phi-3.5-mini-instruct_Uncensored-Q4_K_M.gguf',
         verificationHash: 'sha256:pending',
-        expectedSize: 2390000000 // ~2.4GB
+        expectedSize: 2390000000, // ~2.4GB
       },
       {
         name: 'llama-3.2-3b-instruct',
@@ -68,9 +74,10 @@ export class TrustModelManagerImpl implements TrustModelManager {
         description: 'Balanced performance model - 3B parameters',
         parameters: '3B',
         trustScore: 9.2,
-        downloadUrl: 'https://huggingface.co/bartowski/Llama-3.2-3B-Instruct-GGUF/blob/main/Llama-3.2-3B-Instruct-Q4_K_M.gguf',
+        downloadUrl:
+          'https://huggingface.co/bartowski/Llama-3.2-3B-Instruct-GGUF/blob/main/Llama-3.2-3B-Instruct-Q4_K_M.gguf',
         verificationHash: 'sha256:pending',
-        expectedSize: 2019377696 // ~1.88GB (actual downloaded size)
+        expectedSize: 2019377696, // ~1.88GB (actual downloaded size)
       },
       {
         name: 'qwen2.5-1.5b-instruct',
@@ -82,9 +89,10 @@ export class TrustModelManagerImpl implements TrustModelManager {
         description: 'Lightweight model for quick questions - 1.5B parameters',
         parameters: '1.5B',
         trustScore: 8.8,
-        downloadUrl: 'https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-gguf/blob/main/qwen2.5-1.5b-instruct-q8_0.gguf',
+        downloadUrl:
+          'https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-gguf/blob/main/qwen2.5-1.5b-instruct-q8_0.gguf',
         verificationHash: 'sha256:pending',
-        expectedSize: 1894532128 // ~1.76GB (actual downloaded size)
+        expectedSize: 1894532128, // ~1.76GB (actual downloaded size)
       },
       {
         name: 'deepseek-r1-distill-7b',
@@ -93,12 +101,14 @@ export class TrustModelManagerImpl implements TrustModelManager {
         quantization: 'Q4_K_M',
         contextSize: 4096,
         ramRequirement: '6GB',
-        description: 'Advanced reasoning model for complex analysis - 7.6B parameters',
+        description:
+          'Advanced reasoning model for complex analysis - 7.6B parameters',
         parameters: '7.6B',
         trustScore: 9.6,
-        downloadUrl: 'https://huggingface.co/bartowski/DeepSeek-R1-Distill-Qwen-7B-GGUF/blob/main/DeepSeek-R1-Distill-Qwen-7B-Q4_K_M.gguf',
+        downloadUrl:
+          'https://huggingface.co/bartowski/DeepSeek-R1-Distill-Qwen-7B-GGUF/blob/main/DeepSeek-R1-Distill-Qwen-7B-Q4_K_M.gguf',
         verificationHash: 'sha256:pending',
-        expectedSize: 4450000000 // ~4.5GB
+        expectedSize: 4450000000, // ~4.5GB
       },
       {
         name: 'llama-3.1-8b-instruct',
@@ -110,9 +120,10 @@ export class TrustModelManagerImpl implements TrustModelManager {
         description: 'High-quality responses - 8B parameters',
         parameters: '8B',
         trustScore: 9.7,
-        downloadUrl: 'https://huggingface.co/bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/blob/main/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf',
+        downloadUrl:
+          'https://huggingface.co/bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/blob/main/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf',
         verificationHash: 'sha256:pending',
-        expectedSize: 4920000000 // ~4.9GB
+        expectedSize: 4920000000, // ~4.9GB
       },
       {
         name: 'mistral-7b-instruct',
@@ -124,9 +135,10 @@ export class TrustModelManagerImpl implements TrustModelManager {
         description: 'Efficient multilingual model - 7B parameters',
         parameters: '7B',
         trustScore: 9.1,
-        downloadUrl: 'https://huggingface.co/bartowski/Mistral-7B-Instruct-v0.3-GGUF/blob/main/Mistral-7B-Instruct-v0.3-Q4_K_M.gguf',
+        downloadUrl:
+          'https://huggingface.co/bartowski/Mistral-7B-Instruct-v0.3-GGUF/blob/main/Mistral-7B-Instruct-v0.3-Q4_K_M.gguf',
         verificationHash: 'sha256:pending',
-        expectedSize: 4370000000 // ~4.37GB
+        expectedSize: 4370000000, // ~4.37GB
       },
       {
         name: 'mistral-nemo-12b-instruct',
@@ -138,9 +150,10 @@ export class TrustModelManagerImpl implements TrustModelManager {
         description: 'Large context multilingual model - 12B parameters',
         parameters: '12B',
         trustScore: 9.4,
-        downloadUrl: 'https://huggingface.co/bartowski/Mistral-Nemo-Instruct-2407-GGUF/blob/main/Mistral-Nemo-Instruct-2407-Q4_K_M.gguf',
+        downloadUrl:
+          'https://huggingface.co/bartowski/Mistral-Nemo-Instruct-2407-GGUF/blob/main/Mistral-Nemo-Instruct-2407-Q4_K_M.gguf',
         verificationHash: 'sha256:pending',
-        expectedSize: 6900000000 // ~6.9GB
+        expectedSize: 6900000000, // ~6.9GB
       },
       {
         name: 'gemma-2-2b-instruct',
@@ -152,9 +165,10 @@ export class TrustModelManagerImpl implements TrustModelManager {
         description: 'Compact Google model - 2.6B parameters',
         parameters: '2.6B',
         trustScore: 8.9,
-        downloadUrl: 'https://huggingface.co/bartowski/gemma-2-2b-it-GGUF/blob/main/gemma-2-2b-it-Q4_K_M.gguf',
+        downloadUrl:
+          'https://huggingface.co/bartowski/gemma-2-2b-it-GGUF/blob/main/gemma-2-2b-it-Q4_K_M.gguf',
         verificationHash: 'sha256:pending',
-        expectedSize: 1640000000 // ~1.64GB
+        expectedSize: 1640000000, // ~1.64GB
       },
       {
         name: 'gemma-2-9b-instruct',
@@ -166,10 +180,11 @@ export class TrustModelManagerImpl implements TrustModelManager {
         description: 'Advanced Google model - 9B parameters',
         parameters: '9B',
         trustScore: 9.3,
-        downloadUrl: 'https://huggingface.co/bartowski/gemma-2-9b-it-GGUF/blob/main/gemma-2-9b-it-Q4_K_M.gguf',
+        downloadUrl:
+          'https://huggingface.co/bartowski/gemma-2-9b-it-GGUF/blob/main/gemma-2-9b-it-Q4_K_M.gguf',
         verificationHash: 'sha256:pending',
-        expectedSize: 5400000000 // ~5.4GB
-      }
+        expectedSize: 5400000000, // ~5.4GB
+      },
     ];
   }
 
@@ -177,10 +192,10 @@ export class TrustModelManagerImpl implements TrustModelManager {
     try {
       // Ensure models directory exists
       await fs.mkdir(this.modelsDir, { recursive: true });
-      
+
       // Initialize integrity checker
       await this.integrityChecker.initialize();
-      
+
       // Load existing config if it exists
       try {
         const configData = await fs.readFile(this.configFile, 'utf-8');
@@ -195,13 +210,14 @@ export class TrustModelManagerImpl implements TrustModelManager {
         // Config file doesn't exist, use defaults
         await this.saveConfig();
       }
-      
+
       // Update model paths to be absolute
-      this.availableModels = this.availableModels.map(model => ({
+      this.availableModels = this.availableModels.map((model) => ({
         ...model,
-        path: path.isAbsolute(model.path) ? model.path : path.join(this.modelsDir, model.path)
+        path: path.isAbsolute(model.path)
+          ? model.path
+          : path.join(this.modelsDir, model.path),
       }));
-      
     } catch (error) {
       console.error('Failed to initialize model manager:', error);
       throw error;
@@ -213,7 +229,7 @@ export class TrustModelManagerImpl implements TrustModelManager {
   }
 
   async downloadModel(modelId: string): Promise<void> {
-    const model = this.availableModels.find(m => m.name === modelId);
+    const model = this.availableModels.find((m) => m.name === modelId);
     if (!model) {
       throw new Error(`Model ${modelId} not found in available models`);
     }
@@ -224,30 +240,30 @@ export class TrustModelManagerImpl implements TrustModelManager {
 
     // Load HF token for authentication
     const hfToken = await this.getHuggingFaceToken();
-    
+
     const downloader = new ModelDownloader(this.modelsDir, hfToken);
-    
+
     try {
       console.log(`🚀 Starting download of ${modelId}...`);
-      
+
       const finalPath = await downloader.downloadModel(model, (progress) => {
         const { percentage, speed, eta, downloaded, total } = progress;
-        
+
         // Clear previous line and show progress
         process.stdout.write('\r\x1b[K');
         process.stdout.write(
           `📥 ${percentage.toFixed(1)}% | ` +
-          `${ModelDownloader.formatSpeed(speed)} | ` +
-          `ETA: ${ModelDownloader.formatETA(eta)} | ` +
-          `${this.formatBytes(downloaded)}/${this.formatBytes(total)}`
+            `${ModelDownloader.formatSpeed(speed)} | ` +
+            `ETA: ${ModelDownloader.formatETA(eta)} | ` +
+            `${this.formatBytes(downloaded)}/${this.formatBytes(total)}`,
         );
       });
-      
+
       // Clear progress line
       process.stdout.write('\r\x1b[K');
       console.log(`✅ Model ${modelId} downloaded successfully`);
       console.log(`📁 Location: ${finalPath}`);
-      
+
       // Verify the downloaded model
       console.log(`🔍 Verifying model integrity...`);
       const verificationResult = await this.integrityChecker.verifyModel(
@@ -256,34 +272,44 @@ export class TrustModelManagerImpl implements TrustModelManager {
         model.verificationHash,
         (status, progress) => {
           process.stdout.write('\r\x1b[K');
-          process.stdout.write(`🔍 ${status}${progress ? ` (${Math.round(progress)}%)` : ''}`);
-        }
+          process.stdout.write(
+            `🔍 ${status}${progress ? ` (${Math.round(progress)}%)` : ''}`,
+          );
+        },
       );
-      
+
       process.stdout.write('\r\x1b[K');
-      
+
       if (!verificationResult.valid) {
         // Delete the corrupted download
         await fs.unlink(finalPath);
-        throw new Error(`Model verification failed: ${verificationResult.reason}`);
+        throw new Error(
+          `Model verification failed: ${verificationResult.reason}`,
+        );
       }
-      
+
       console.log(`✅ Model integrity verified`);
-      
+
       // Add to trusted registry
-      await this.integrityChecker.addTrustedModel(modelId, finalPath, model.downloadUrl!);
-      
+      await this.integrityChecker.addTrustedModel(
+        modelId,
+        finalPath,
+        model.downloadUrl!,
+      );
+
       // Update model path to point to the downloaded file
-      const modelIndex = this.availableModels.findIndex(m => m.name === modelId);
+      const modelIndex = this.availableModels.findIndex(
+        (m) => m.name === modelId,
+      );
       if (modelIndex !== -1) {
         this.availableModels[modelIndex].path = finalPath;
         // Update hash if it was computed
         if (verificationResult.details?.actualHash) {
-          this.availableModels[modelIndex].verificationHash = verificationResult.details.actualHash;
+          this.availableModels[modelIndex].verificationHash =
+            verificationResult.details.actualHash;
         }
         await this.saveConfig();
       }
-      
     } catch (error) {
       console.error(`\n❌ Failed to download model ${modelId}:`, error);
       throw error;
@@ -296,21 +322,20 @@ export class TrustModelManagerImpl implements TrustModelManager {
       if (!stats.isFile()) {
         return false;
       }
-      
+
       // Basic verification - check if file exists and has some content
       return stats.size > 0;
-      
     } catch (error) {
       // Silently return false for missing files - this is expected for undownloaded models
       return false;
     }
   }
-  
+
   async computeModelHash(modelPath: string): Promise<string> {
     return new Promise((resolve, reject) => {
       const hash = createHash('sha256');
       const stream = createReadStream(modelPath);
-      
+
       stream.on('data', (data) => hash.update(data));
       stream.on('end', () => resolve(`sha256:${hash.digest('hex')}`));
       stream.on('error', reject);
@@ -321,64 +346,81 @@ export class TrustModelManagerImpl implements TrustModelManager {
    * Check if a model is a HuggingFace model based on its definition
    */
   isHuggingFaceModel(modelName: string): boolean {
-    const model = this.availableModels.find(m => m.name === modelName);
+    const model = this.availableModels.find((m) => m.name === modelName);
     return model?.downloadUrl?.includes('huggingface.co') ?? false;
   }
-  
-  async verifyModelIntegrity(modelName: string, showProgress: boolean = true): Promise<{ valid: boolean; message: string }> {
-    const model = this.availableModels.find(m => m.name === modelName);
+
+  async verifyModelIntegrity(
+    modelName: string,
+    showProgress: boolean = true,
+  ): Promise<{ valid: boolean; message: string }> {
+    const model = this.availableModels.find((m) => m.name === modelName);
     if (!model) {
       return { valid: false, message: `Model ${modelName} not found` };
     }
-    
+
     try {
       // Use the new integrity checker for comprehensive verification
       const result = await this.integrityChecker.verifyModel(
         model.path,
         modelName,
         model.verificationHash,
-        showProgress ? (status, progress) => {
-          process.stdout.write('\r\x1b[K');
-          process.stdout.write(`🔍 ${status}${progress ? ` (${Math.round(progress)}%)` : ''}`);
-        } : undefined
+        showProgress
+          ? (status, progress) => {
+              process.stdout.write('\r\x1b[K');
+              process.stdout.write(
+                `🔍 ${status}${progress ? ` (${Math.round(progress)}%)` : ''}`,
+              );
+            }
+          : undefined,
       );
-      
+
       if (showProgress) {
         process.stdout.write('\r\x1b[K');
       }
-      
+
       // Update model hash if it was computed for the first time
-      if (result.valid && result.details?.actualHash && 
-          (!model.verificationHash || model.verificationHash === 'sha256:pending')) {
-        const modelIndex = this.availableModels.findIndex(m => m.name === modelName);
+      if (
+        result.valid &&
+        result.details?.actualHash &&
+        (!model.verificationHash || model.verificationHash === 'sha256:pending')
+      ) {
+        const modelIndex = this.availableModels.findIndex(
+          (m) => m.name === modelName,
+        );
         if (modelIndex !== -1) {
-          this.availableModels[modelIndex].verificationHash = result.details.actualHash;
+          this.availableModels[modelIndex].verificationHash =
+            result.details.actualHash;
           await this.saveConfig();
         }
       }
-      
-      return { 
-        valid: result.valid, 
-        message: result.reason + (result.details?.timeTaken ? 
-          ` (took ${(result.details.timeTaken / 1000).toFixed(1)}s)` : '')
+
+      return {
+        valid: result.valid,
+        message:
+          result.reason +
+          (result.details?.timeTaken
+            ? ` (took ${(result.details.timeTaken / 1000).toFixed(1)}s)`
+            : ''),
       };
-      
     } catch (error) {
-      return { 
-        valid: false, 
-        message: `Error verifying model: ${error instanceof Error ? error.message : String(error)}` 
+      return {
+        valid: false,
+        message: `Error verifying model: ${error instanceof Error ? error.message : String(error)}`,
       };
     }
   }
-  
+
   /**
    * Verify all downloaded models
    */
-  async verifyAllModels(): Promise<Map<string, { valid: boolean; message: string }>> {
+  async verifyAllModels(): Promise<
+    Map<string, { valid: boolean; message: string }>
+  > {
     console.log('🔍 Verifying all models...\n');
-    
+
     const results = new Map<string, { valid: boolean; message: string }>();
-    
+
     for (const model of this.availableModels) {
       const exists = await this.verifyModel(model.path);
       if (exists) {
@@ -387,36 +429,42 @@ export class TrustModelManagerImpl implements TrustModelManager {
         results.set(model.name, result);
         console.log(`  ${result.valid ? '✅' : '❌'} ${result.message}\n`);
       } else {
-        results.set(model.name, { valid: false, message: 'Model not downloaded' });
+        results.set(model.name, {
+          valid: false,
+          message: 'Model not downloaded',
+        });
       }
     }
-    
+
     return results;
   }
-  
+
   /**
    * Generate an integrity report for a model
    */
   async generateModelReport(modelName: string): Promise<string | null> {
-    const model = this.availableModels.find(m => m.name === modelName);
+    const model = this.availableModels.find((m) => m.name === modelName);
     if (!model) {
       return null;
     }
-    
+
     try {
-      const report = await this.integrityChecker.generateIntegrityReport(model.path, modelName);
+      const report = await this.integrityChecker.generateIntegrityReport(
+        model.path,
+        modelName,
+      );
       const manifestPath = await this.integrityChecker.createModelManifest(
-        model.path, 
+        model.path,
         modelName,
         {
           type: model.type,
           quantization: model.quantization,
           parameters: model.parameters,
           contextSize: model.contextSize,
-          trustScore: model.trustScore
-        }
+          trustScore: model.trustScore,
+        },
       );
-      
+
       console.log(`📄 Integrity report saved to: ${manifestPath}`);
       return manifestPath;
     } catch (error) {
@@ -426,7 +474,7 @@ export class TrustModelManagerImpl implements TrustModelManager {
   }
 
   async switchModel(modelName: string): Promise<void> {
-    const model = this.availableModels.find(m => m.name === modelName);
+    const model = this.availableModels.find((m) => m.name === modelName);
     if (!model) {
       throw new Error(`Model ${modelName} not found`);
     }
@@ -434,7 +482,9 @@ export class TrustModelManagerImpl implements TrustModelManager {
     // Verify model exists
     const isValid = await this.verifyModel(model.path);
     if (!isValid) {
-      throw new Error(`Model ${modelName} at ${model.path} is not valid or doesn't exist`);
+      throw new Error(
+        `Model ${modelName} at ${model.path} is not valid or doesn't exist`,
+      );
     }
 
     this.currentModel = model;
@@ -447,15 +497,18 @@ export class TrustModelManagerImpl implements TrustModelManager {
   }
 
   async getTrustRating(modelId: string): Promise<number> {
-    const model = this.availableModels.find(m => m.name === modelId);
+    const model = this.availableModels.find((m) => m.name === modelId);
     return model?.trustScore || 0;
   }
 
-  getRecommendedModel(task: string, ramLimit?: number): TrustModelConfig | null {
+  getRecommendedModel(
+    task: string,
+    ramLimit?: number,
+  ): TrustModelConfig | null {
     const ramLimitGB = ramLimit || this.getSystemRAM();
-    
+
     // Filter models by RAM requirement
-    const suitableModels = this.availableModels.filter(model => {
+    const suitableModels = this.availableModels.filter((model) => {
       const modelRAM = parseInt(model.ramRequirement.replace('GB', ''));
       return modelRAM <= ramLimitGB;
     });
@@ -470,69 +523,85 @@ export class TrustModelManagerImpl implements TrustModelManager {
       case 'code':
       case 'programming':
         // Prefer Phi models for coding, then DeepSeek for complex reasoning
-        return suitableModels.find(m => m.type === 'phi') || 
-               suitableModels.find(m => m.type === 'deepseek') ||
-               suitableModels.find(m => m.name.includes('llama-3.1')) ||
-               suitableModels[0];
-      
+        return (
+          suitableModels.find((m) => m.type === 'phi') ||
+          suitableModels.find((m) => m.type === 'deepseek') ||
+          suitableModels.find((m) => m.name.includes('llama-3.1')) ||
+          suitableModels[0]
+        );
+
       case 'quick':
       case 'simple':
       case 'lightweight':
         // Prefer smallest models: Qwen -> Gemma -> Phi
-        return suitableModels.find(m => m.type === 'qwen') ||
-               suitableModels.find(m => m.type === 'gemma' && m.parameters === '2.6B') ||
-               suitableModels.reduce((smallest, current) => 
-                 parseInt(current.ramRequirement) < parseInt(smallest.ramRequirement) ? current : smallest
-               );
-      
+        return (
+          suitableModels.find((m) => m.type === 'qwen') ||
+          suitableModels.find(
+            (m) => m.type === 'gemma' && m.parameters === '2.6B',
+          ) ||
+          suitableModels.reduce((smallest, current) =>
+            parseInt(current.ramRequirement) < parseInt(smallest.ramRequirement)
+              ? current
+              : smallest,
+          )
+        );
+
       case 'multilingual':
       case 'translation':
       case 'international':
         // Prefer Mistral models for multilingual tasks
-        return suitableModels.find(m => m.type === 'mistral') ||
-               suitableModels.find(m => m.type === 'gemma') ||
-               suitableModels[0];
-      
+        return (
+          suitableModels.find((m) => m.type === 'mistral') ||
+          suitableModels.find((m) => m.type === 'gemma') ||
+          suitableModels[0]
+        );
+
       case 'reasoning':
       case 'analysis':
       case 'research':
         // Prefer DeepSeek for advanced reasoning, then larger models
-        return suitableModels.find(m => m.type === 'deepseek') ||
-               suitableModels.find(m => m.name.includes('llama-3.1-8b')) ||
-               suitableModels.find(m => m.name.includes('gemma-2-9b')) ||
-               suitableModels.reduce((best, current) => 
-                 (current.trustScore || 0) > (best.trustScore || 0) ? current : best
-               );
-      
+        return (
+          suitableModels.find((m) => m.type === 'deepseek') ||
+          suitableModels.find((m) => m.name.includes('llama-3.1-8b')) ||
+          suitableModels.find((m) => m.name.includes('gemma-2-9b')) ||
+          suitableModels.reduce((best, current) =>
+            (current.trustScore || 0) > (best.trustScore || 0) ? current : best,
+          )
+        );
+
       case 'context':
       case 'longform':
       case 'document':
         // Prefer models with larger context windows
-        return suitableModels.find(m => m.name.includes('mistral-nemo')) || // 128k context
-               suitableModels.find(m => m.contextSize >= 8192) ||
-               suitableModels[0];
-      
+        return (
+          suitableModels.find((m) => m.name.includes('mistral-nemo')) || // 128k context
+          suitableModels.find((m) => m.contextSize >= 8192) ||
+          suitableModels[0]
+        );
+
       case 'quality':
       case 'complex':
       case 'detailed':
         // Prefer highest quality models within RAM limit
-        return suitableModels.reduce((best, current) => 
-          (current.trustScore || 0) > (best.trustScore || 0) ? current : best
+        return suitableModels.reduce((best, current) =>
+          (current.trustScore || 0) > (best.trustScore || 0) ? current : best,
         );
-      
+
       case 'general':
       case 'default':
       default:
         // Default to balanced model: Llama -> Phi -> others
-        return suitableModels.find(m => m.name.includes('llama-3.2')) ||
-               suitableModels.find(m => m.type === 'phi') ||
-               suitableModels.find(m => m.type === 'gemma') ||
-               suitableModels[0];
+        return (
+          suitableModels.find((m) => m.name.includes('llama-3.2')) ||
+          suitableModels.find((m) => m.type === 'phi') ||
+          suitableModels.find((m) => m.type === 'gemma') ||
+          suitableModels[0]
+        );
     }
   }
 
   async deleteModel(modelName: string): Promise<void> {
-    const model = this.availableModels.find(m => m.name === modelName);
+    const model = this.availableModels.find((m) => m.name === modelName);
     if (!model) {
       throw new Error(`Model ${modelName} not found`);
     }
@@ -550,7 +619,7 @@ export class TrustModelManagerImpl implements TrustModelManager {
     const config = {
       models: this.availableModels,
       currentModel: this.currentModel,
-      lastUpdated: new Date().toISOString()
+      lastUpdated: new Date().toISOString(),
     };
 
     try {
@@ -564,17 +633,17 @@ export class TrustModelManagerImpl implements TrustModelManager {
     const totalMemory = os.totalmem();
     return Math.floor(totalMemory / (1024 * 1024 * 1024)); // Convert to GB
   }
-  
+
   private formatBytes(bytes: number): string {
     const units = ['B', 'KB', 'MB', 'GB'];
     let size = bytes;
     let unitIndex = 0;
-    
+
     while (size >= 1024 && unitIndex < units.length - 1) {
       size /= 1024;
       unitIndex++;
     }
-    
+
     return `${size.toFixed(1)} ${units[unitIndex]}`;
   }
 

@@ -7,18 +7,22 @@ The comprehensive privacy manager file system operations implementation complete
 ## Issue Status Analysis
 
 ### ❌ Issue #8: Function calling hangs with local models
+
 **Status**: Cannot be closed - unrelated to privacy manager
 
 **Problem**: Local GGUF models experience infinite hangs when function calling is enabled
+
 - Simple prompts work: `"hello"` → response
 - Tool prompts hang: `"Use ls to list files"` → timeout
 
 **Root Cause**: Performance/timeout issue in the core inference engine, specifically:
+
 - Prompt complexity with tool instructions
 - Potential infinite loop in streaming logic
 - Local model struggling with function call format
 
 **Why Privacy Manager Doesn't Help**: This is a core inference performance issue, not related to:
+
 - File system operations
 - Privacy configuration
 - Data sanitization or encryption
@@ -27,19 +31,22 @@ The comprehensive privacy manager file system operations implementation complete
 
 ---
 
-### 🔄 Issue #5: Auto-migrate legacy OAuth settings  
+### 🔄 Issue #5: Auto-migrate legacy OAuth settings
+
 **Status**: Can be implemented using privacy manager infrastructure
 
 **Problem**: Users with legacy `"selectedAuthType": "oauth-personal"` need automatic migration to `"trust-local"`
 
 **How Privacy Manager Helps**: The new implementation provides:
+
 - **Configuration management patterns** for reading/writing settings
-- **Backup system** for safe migration with rollback capability  
+- **Backup system** for safe migration with rollback capability
 - **Secure file operations** with proper permissions (600/700)
 - **Validation framework** for configuration integrity
 - **Audit logging** for migration tracking
 
-**Implementation Path**: 
+**Implementation Path**:
+
 1. Extend privacy manager's configuration infrastructure
 2. Add OAuth setting detection and migration logic
 3. Use existing backup/validation patterns
@@ -56,9 +63,10 @@ The comprehensive privacy manager file system operations implementation complete
 ## Privacy Manager Implementation Value
 
 While not directly closing issues, the privacy manager provides:
+
 - ✅ **67 file system operations** with comprehensive testing
 - ✅ **Secure configuration management** infrastructure
-- ✅ **Audit logging and retention** policies  
+- ✅ **Audit logging and retention** policies
 - ✅ **Data encryption and sanitization** capabilities
 - ✅ **Backup and recovery** systems
 

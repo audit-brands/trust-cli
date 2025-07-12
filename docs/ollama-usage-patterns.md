@@ -18,6 +18,7 @@
 ### 1. Code Analysis and Review
 
 #### Pattern: Automated Code Review
+
 ```bash
 # Analyze a single file
 trust "Review this TypeScript file for potential issues" < src/components/UserProfile.tsx
@@ -30,6 +31,7 @@ git diff main..feature-branch | trust "Review these code changes for best practi
 ```
 
 #### Pattern: Architecture Documentation
+
 ```bash
 # Generate architecture overview
 trust "Analyze the project structure and create an architecture diagram" \
@@ -47,6 +49,7 @@ trust "Generate documentation for all React components" \
 ### 2. Development Assistance
 
 #### Pattern: Interactive Development
+
 ```bash
 # Start interactive session for development
 trust interactive --model qwen2.5:3b
@@ -60,6 +63,7 @@ trust interactive --model qwen2.5:3b
 ```
 
 #### Pattern: Test Generation
+
 ```bash
 # Generate unit tests
 trust "Create comprehensive unit tests for this utility function" < utils/dateHelper.js
@@ -76,6 +80,7 @@ trust "Generate realistic test data for user profiles" \
 ### 3. Documentation Generation
 
 #### Pattern: API Documentation
+
 ```bash
 # Generate OpenAPI specification
 trust "Create OpenAPI spec from these route handlers" \
@@ -92,6 +97,7 @@ git log --oneline --since="1 month ago" | \
 ```
 
 #### Pattern: Technical Writing
+
 ```bash
 # Generate architectural decision records
 trust "Create an ADR for migrating from REST to GraphQL" \
@@ -109,6 +115,7 @@ trust "Create user guide for this React component library" \
 ### 4. Data Processing and Analysis
 
 #### Pattern: Log Analysis
+
 ```bash
 # Analyze application logs
 trust "Analyze these logs for error patterns" < logs/application.log
@@ -123,6 +130,7 @@ trust "Review these access logs for suspicious activity" \
 ```
 
 #### Pattern: Configuration Management
+
 ```bash
 # Validate configurations
 trust "Check this Kubernetes YAML for best practices" < k8s/deployment.yaml
@@ -141,6 +149,7 @@ trust "Generate Docker Compose file for this development environment" \
 ### 1. Local Development Setup
 
 #### Pattern: Project Initialization
+
 ```bash
 #!/bin/bash
 # setup-ollama-dev.sh
@@ -166,6 +175,7 @@ echo "✅ Ollama development environment ready!"
 ```
 
 #### Pattern: IDE Integration
+
 ```json
 // .vscode/tasks.json
 {
@@ -177,8 +187,10 @@ echo "✅ Ollama development environment ready!"
       "command": "trust",
       "args": [
         "Analyze this file for potential improvements",
-        "--file", "${file}",
-        "--backend", "ollama"
+        "--file",
+        "${file}",
+        "--backend",
+        "ollama"
       ],
       "group": "build",
       "presentation": {
@@ -193,9 +205,12 @@ echo "✅ Ollama development environment ready!"
       "command": "trust",
       "args": [
         "Generate unit tests for this file",
-        "--file", "${file}",
-        "--backend", "ollama",
-        "--output", "${fileDirname}/${fileBasenameNoExtension}.test.${fileExtname}"
+        "--file",
+        "${file}",
+        "--backend",
+        "ollama",
+        "--output",
+        "${fileDirname}/${fileBasenameNoExtension}.test.${fileExtname}"
       ]
     }
   ]
@@ -205,6 +220,7 @@ echo "✅ Ollama development environment ready!"
 ### 2. Continuous Integration Patterns
 
 #### Pattern: CI/CD Integration
+
 ```yaml
 # .github/workflows/ai-review.yml
 name: AI Code Review
@@ -216,46 +232,47 @@ on:
 jobs:
   ai-review:
     runs-on: ubuntu-latest
-    
+
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Setup Ollama
-      run: |
-        curl -fsSL https://ollama.ai/install.sh | sh
-        ollama serve &
-        sleep 10
-        ollama pull qwen2.5:1.5b
-    
-    - name: Install Trust CLI
-      run: npm install -g @trust-cli/cli
-    
-    - name: AI Code Review
-      run: |
-        git diff origin/main..HEAD > changes.diff
-        trust "Review these changes for security, performance, and best practices" \
-          --input changes.diff \
-          --backend ollama \
-          --format markdown > ai-review.md
-    
-    - name: Comment PR
-      uses: actions/github-script@v7
-      with:
-        script: |
-          const fs = require('fs');
-          const review = fs.readFileSync('ai-review.md', 'utf8');
-          
-          github.rest.issues.createComment({
-            issue_number: context.issue.number,
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            body: `## AI Code Review\n\n${review}`
-          });
+      - uses: actions/checkout@v4
+
+      - name: Setup Ollama
+        run: |
+          curl -fsSL https://ollama.ai/install.sh | sh
+          ollama serve &
+          sleep 10
+          ollama pull qwen2.5:1.5b
+
+      - name: Install Trust CLI
+        run: npm install -g @trust-cli/cli
+
+      - name: AI Code Review
+        run: |
+          git diff origin/main..HEAD > changes.diff
+          trust "Review these changes for security, performance, and best practices" \
+            --input changes.diff \
+            --backend ollama \
+            --format markdown > ai-review.md
+
+      - name: Comment PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const review = fs.readFileSync('ai-review.md', 'utf8');
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## AI Code Review\n\n${review}`
+            });
 ```
 
 ### 3. Development Automation
 
 #### Pattern: Git Hooks Integration
+
 ```bash
 #!/bin/sh
 # .git/hooks/pre-commit
@@ -274,17 +291,17 @@ fi
 # Check each staged file
 for FILE in $STAGED_FILES; do
   echo "Checking $FILE..."
-  
+
   # Run AI analysis
   RESULT=$(trust "Quick code review for potential issues" \
     --file "$FILE" \
     --backend ollama \
     --timeout 30 \
     --format json)
-  
+
   # Parse result and check for critical issues
   CRITICAL=$(echo "$RESULT" | jq -r '.criticalIssues // 0')
-  
+
   if [ "$CRITICAL" -gt 0 ]; then
     echo "❌ Critical issues found in $FILE"
     echo "$RESULT" | jq -r '.issues[]'
@@ -301,6 +318,7 @@ exit 0
 ### 1. Model Selection Strategies
 
 #### Pattern: Dynamic Model Selection
+
 ```typescript
 class SmartModelSelector {
   private readonly modelCapabilities = {
@@ -308,20 +326,20 @@ class SmartModelSelector {
       maxComplexity: 3,
       speedScore: 10,
       memoryUsage: 2048,
-      bestFor: ['simple_queries', 'quick_analysis', 'basic_coding']
+      bestFor: ['simple_queries', 'quick_analysis', 'basic_coding'],
     },
     'qwen2.5:3b': {
       maxComplexity: 7,
       speedScore: 7,
       memoryUsage: 4096,
-      bestFor: ['code_review', 'documentation', 'complex_analysis']
+      bestFor: ['code_review', 'documentation', 'complex_analysis'],
     },
     'qwen2.5:7b': {
       maxComplexity: 10,
       speedScore: 4,
       memoryUsage: 8192,
-      bestFor: ['architecture_design', 'complex_reasoning', 'research']
-    }
+      bestFor: ['architecture_design', 'complex_reasoning', 'research'],
+    },
   };
 
   selectModel(prompt: string, context: TaskContext): string {
@@ -334,9 +352,10 @@ class SmartModelSelector {
     }
 
     const suitableModels = Object.entries(this.modelCapabilities)
-      .filter(([_, caps]) => 
-        caps.maxComplexity >= complexity &&
-        caps.memoryUsage <= availableMemory
+      .filter(
+        ([_, caps]) =>
+          caps.maxComplexity >= complexity &&
+          caps.memoryUsage <= availableMemory,
       )
       .sort((a, b) => {
         if (urgency === 'high') {
@@ -353,8 +372,10 @@ class SmartModelSelector {
 
     // Analyze prompt characteristics
     if (prompt.length > 500) complexity += 1;
-    if (prompt.includes('analyze') || prompt.includes('review')) complexity += 2;
-    if (prompt.includes('architecture') || prompt.includes('design')) complexity += 3;
+    if (prompt.includes('analyze') || prompt.includes('review'))
+      complexity += 2;
+    if (prompt.includes('architecture') || prompt.includes('design'))
+      complexity += 3;
     if (context.files && context.files.length > 5) complexity += 2;
     if (context.tools && context.tools.length > 3) complexity += 1;
 
@@ -364,6 +385,7 @@ class SmartModelSelector {
 ```
 
 #### Pattern: Resource-Aware Configuration
+
 ```typescript
 interface ResourceConfig {
   totalRAM: number;
@@ -377,17 +399,19 @@ class ResourceOptimizer {
     const config: OllamaConfig = {
       baseUrl: 'http://localhost:11434/v1',
       timeout: 60000,
-      keepAlive: '5m'
+      keepAlive: '5m',
     };
 
     // Adjust concurrency based on available cores
     config.concurrency = Math.max(1, Math.floor(resources.availableCores / 2));
 
     // Select model based on available RAM
-    if (resources.totalRAM >= 16384) { // 16GB+
+    if (resources.totalRAM >= 16384) {
+      // 16GB+
       config.model = 'qwen2.5:7b';
       config.keepAlive = '15m'; // Keep larger models loaded longer
-    } else if (resources.totalRAM >= 8192) { // 8GB+
+    } else if (resources.totalRAM >= 8192) {
+      // 8GB+
       config.model = 'qwen2.5:3b';
       config.keepAlive = '10m';
     } else {
@@ -408,6 +432,7 @@ class ResourceOptimizer {
 ### 2. Caching Strategies
 
 #### Pattern: Response Caching
+
 ```typescript
 interface CacheEntry {
   response: string;
@@ -435,18 +460,18 @@ class ResponseCache {
   }
 
   async set(
-    prompt: string, 
-    response: string, 
-    context?: any, 
-    ttl: number = this.DEFAULT_TTL
+    prompt: string,
+    response: string,
+    context?: any,
+    ttl: number = this.DEFAULT_TTL,
   ): Promise<void> {
     const key = this.generateKey(prompt, context);
-    
+
     this.cache.set(key, {
       response,
       timestamp: Date.now(),
       ttl,
-      hash: key
+      hash: key,
     });
 
     // Cleanup old entries periodically
@@ -475,6 +500,7 @@ class ResponseCache {
 ### 3. Connection Optimization
 
 #### Pattern: Connection Pooling
+
 ```typescript
 class ConnectionPool {
   private connections: Connection[] = [];
@@ -485,7 +511,7 @@ class ConnectionPool {
   constructor(config: { maxSize: number; minSize: number }) {
     this.maxSize = config.maxSize;
     this.minSize = config.minSize;
-    
+
     // Pre-warm connections
     this.preWarmConnections();
   }
@@ -493,8 +519,8 @@ class ConnectionPool {
   async acquire(): Promise<Connection> {
     // Try to get an existing connection
     const connection = this.connections.pop();
-    
-    if (connection && await this.validateConnection(connection)) {
+
+    if (connection && (await this.validateConnection(connection))) {
       this.activeConnections++;
       return connection;
     }
@@ -512,7 +538,7 @@ class ConnectionPool {
 
   async release(connection: Connection): Promise<void> {
     this.activeConnections--;
-    
+
     if (await this.validateConnection(connection)) {
       this.connections.push(connection);
     } else {
@@ -527,14 +553,18 @@ class ConnectionPool {
 
   private async preWarmConnections(): Promise<void> {
     const needed = this.minSize - this.connections.length;
-    
-    const promises = Array(needed).fill(null).map(() => 
-      this.createConnection().then(conn => {
-        this.connections.push(conn);
-      }).catch(error => {
-        console.warn('Failed to pre-warm connection:', error);
-      })
-    );
+
+    const promises = Array(needed)
+      .fill(null)
+      .map(() =>
+        this.createConnection()
+          .then((conn) => {
+            this.connections.push(conn);
+          })
+          .catch((error) => {
+            console.warn('Failed to pre-warm connection:', error);
+          }),
+      );
 
     await Promise.allSettled(promises);
   }
@@ -546,6 +576,7 @@ class ConnectionPool {
 ### 1. Docker Deployment
 
 #### Pattern: Multi-Stage Docker Build
+
 ```dockerfile
 # Dockerfile.ollama-trust
 FROM ollama/ollama:latest as ollama-base
@@ -587,6 +618,7 @@ CMD ["serve"]
 ```
 
 #### Pattern: Docker Compose for Development
+
 ```yaml
 # docker-compose.yml
 version: '3.8'
@@ -597,8 +629,8 @@ services:
       context: .
       dockerfile: Dockerfile.ollama-trust
     ports:
-      - "11434:11434"
-      - "8080:8080"
+      - '11434:11434'
+      - '8080:8080'
     volumes:
       - ollama_data:/root/.ollama
       - ./models:/models
@@ -606,7 +638,7 @@ services:
       - OLLAMA_HOST=0.0.0.0
       - TRUST_OLLAMA_ENABLED=true
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      test: ['CMD', 'curl', '-f', 'http://localhost:11434/api/tags']
       interval: 30s
       timeout: 10s
       retries: 5
@@ -619,7 +651,7 @@ services:
       context: .
       dockerfile: Dockerfile.trust-api
     ports:
-      - "3000:3000"
+      - '3000:3000'
     environment:
       - OLLAMA_BASE_URL=http://ollama:11434/v1
       - TRUST_API_PORT=3000
@@ -635,6 +667,7 @@ volumes:
 ### 2. Kubernetes Deployment
 
 #### Pattern: Kubernetes Manifests
+
 ```yaml
 # k8s/ollama-deployment.yaml
 apiVersion: apps/v1
@@ -654,54 +687,54 @@ spec:
         app: ollama-trust
     spec:
       containers:
-      - name: ollama
-        image: ollama/ollama:latest
-        ports:
-        - containerPort: 11434
-        resources:
-          requests:
-            memory: "4Gi"
-            cpu: "1"
-          limits:
-            memory: "8Gi"
-            cpu: "2"
-        volumeMounts:
-        - name: models-storage
-          mountPath: /root/.ollama
-        livenessProbe:
-          httpGet:
-            path: /api/tags
-            port: 11434
-          initialDelaySeconds: 30
-          periodSeconds: 30
-        readinessProbe:
-          httpGet:
-            path: /api/tags
-            port: 11434
-          initialDelaySeconds: 10
-          periodSeconds: 5
-      
-      - name: trust-api
-        image: trust-cli/api:latest
-        ports:
-        - containerPort: 8080
-        env:
-        - name: OLLAMA_BASE_URL
-          value: "http://localhost:11434/v1"
-        - name: TRUST_API_PORT
-          value: "8080"
-        resources:
-          requests:
-            memory: "512Mi"
-            cpu: "0.5"
-          limits:
-            memory: "1Gi"
-            cpu: "1"
-      
+        - name: ollama
+          image: ollama/ollama:latest
+          ports:
+            - containerPort: 11434
+          resources:
+            requests:
+              memory: '4Gi'
+              cpu: '1'
+            limits:
+              memory: '8Gi'
+              cpu: '2'
+          volumeMounts:
+            - name: models-storage
+              mountPath: /root/.ollama
+          livenessProbe:
+            httpGet:
+              path: /api/tags
+              port: 11434
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /api/tags
+              port: 11434
+            initialDelaySeconds: 10
+            periodSeconds: 5
+
+        - name: trust-api
+          image: trust-cli/api:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: OLLAMA_BASE_URL
+              value: 'http://localhost:11434/v1'
+            - name: TRUST_API_PORT
+              value: '8080'
+          resources:
+            requests:
+              memory: '512Mi'
+              cpu: '0.5'
+            limits:
+              memory: '1Gi'
+              cpu: '1'
+
       volumes:
-      - name: models-storage
-        persistentVolumeClaim:
-          claimName: ollama-models-pvc
+        - name: models-storage
+          persistentVolumeClaim:
+            claimName: ollama-models-pvc
 
 ---
 apiVersion: v1
@@ -712,20 +745,21 @@ spec:
   selector:
     app: ollama-trust
   ports:
-  - name: ollama
-    protocol: TCP
-    port: 11434
-    targetPort: 11434
-  - name: api
-    protocol: TCP
-    port: 8080
-    targetPort: 8080
+    - name: ollama
+      protocol: TCP
+      port: 11434
+      targetPort: 11434
+    - name: api
+      protocol: TCP
+      port: 8080
+      targetPort: 8080
   type: LoadBalancer
 ```
 
 ### 3. Production Configuration
 
 #### Pattern: Environment-Specific Configuration
+
 ```yaml
 # config/production.yaml
 api:
@@ -734,11 +768,11 @@ api:
   cors:
     enabled: true
     origins: ${CORS_ORIGINS}
-  
+
   rateLimit:
     requests: ${RATE_LIMIT_REQUESTS:-100}
     window: ${RATE_LIMIT_WINDOW:-60000}
-  
+
   authentication:
     enabled: ${AUTH_ENABLED:-true}
     provider: ${AUTH_PROVIDER:-jwt}
@@ -749,14 +783,14 @@ ollama:
   timeout: ${OLLAMA_TIMEOUT:-60000}
   concurrency: ${OLLAMA_CONCURRENCY:-4}
   keepAlive: ${OLLAMA_KEEP_ALIVE:-10m}
-  
+
   models:
     default: ${DEFAULT_MODEL:-qwen2.5:3b}
     available:
       - qwen2.5:1.5b
       - qwen2.5:3b
       - qwen2.5:7b
-  
+
   fallback:
     enabled: ${FALLBACK_ENABLED:-true}
     timeout: ${FALLBACK_TIMEOUT:-30000}
@@ -766,7 +800,7 @@ monitoring:
   enabled: ${MONITORING_ENABLED:-true}
   metricsPort: ${METRICS_PORT:-9090}
   healthCheckPath: ${HEALTH_CHECK_PATH:-/health}
-  
+
   logging:
     level: ${LOG_LEVEL:-info}
     format: ${LOG_FORMAT:-json}
@@ -777,7 +811,7 @@ security:
     enabled: true
     maxPromptLength: ${MAX_PROMPT_LENGTH:-10000}
     sanitizeInput: true
-  
+
   rateLimiting:
     enabled: true
     perUser: ${RATE_LIMIT_PER_USER:-10}
@@ -789,6 +823,7 @@ security:
 ### 1. Health Monitoring
 
 #### Pattern: Comprehensive Health Checks
+
 ```typescript
 class HealthMonitor {
   private checks: HealthCheck[] = [
@@ -797,55 +832,55 @@ class HealthMonitor {
       check: this.checkOllamaConnection.bind(this),
       interval: 30000,
       timeout: 5000,
-      critical: true
+      critical: true,
     },
     {
       name: 'model-availability',
       check: this.checkModelAvailability.bind(this),
       interval: 60000,
       timeout: 10000,
-      critical: true
+      critical: true,
     },
     {
       name: 'memory-usage',
       check: this.checkMemoryUsage.bind(this),
       interval: 15000,
       timeout: 1000,
-      critical: false
+      critical: false,
     },
     {
       name: 'response-time',
       check: this.checkResponseTime.bind(this),
       interval: 120000,
       timeout: 30000,
-      critical: false
-    }
+      critical: false,
+    },
   ];
 
   async checkOllamaConnection(): Promise<HealthResult> {
     try {
       const response = await fetch('http://localhost:11434/api/tags', {
-        timeout: 5000
+        timeout: 5000,
       });
-      
+
       if (response.ok) {
         return {
           healthy: true,
           message: 'Ollama service is responsive',
-          timestamp: Date.now()
+          timestamp: Date.now(),
         };
       } else {
         return {
           healthy: false,
           message: `Ollama returned status ${response.status}`,
-          timestamp: Date.now()
+          timestamp: Date.now(),
         };
       }
     } catch (error) {
       return {
         healthy: false,
         message: `Failed to connect to Ollama: ${error.message}`,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       };
     }
   }
@@ -854,32 +889,32 @@ class HealthMonitor {
     try {
       const response = await this.ollamaClient.listModels();
       const requiredModels = ['qwen2.5:1.5b', 'qwen2.5:3b'];
-      const availableModels = response.models.map(m => m.name);
-      
+      const availableModels = response.models.map((m) => m.name);
+
       const missingModels = requiredModels.filter(
-        model => !availableModels.includes(model)
+        (model) => !availableModels.includes(model),
       );
-      
+
       if (missingModels.length === 0) {
         return {
           healthy: true,
           message: 'All required models are available',
           details: { availableModels },
-          timestamp: Date.now()
+          timestamp: Date.now(),
         };
       } else {
         return {
           healthy: false,
           message: `Missing required models: ${missingModels.join(', ')}`,
           details: { availableModels, missingModels },
-          timestamp: Date.now()
+          timestamp: Date.now(),
         };
       }
     } catch (error) {
       return {
         healthy: false,
         message: `Failed to check model availability: ${error.message}`,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       };
     }
   }
@@ -889,56 +924,51 @@ class HealthMonitor {
 ### 2. Performance Monitoring
 
 #### Pattern: Metrics Collection
+
 ```typescript
 class MetricsCollector {
   private prometheus = require('prom-client');
-  
+
   private metrics = {
     requestsTotal: new this.prometheus.Counter({
       name: 'ollama_requests_total',
       help: 'Total number of requests to Ollama',
-      labelNames: ['model', 'status', 'endpoint']
+      labelNames: ['model', 'status', 'endpoint'],
     }),
-    
+
     requestDuration: new this.prometheus.Histogram({
       name: 'ollama_request_duration_seconds',
       help: 'Duration of Ollama requests',
       labelNames: ['model', 'endpoint'],
-      buckets: [0.1, 0.5, 1, 2, 5, 10, 30]
+      buckets: [0.1, 0.5, 1, 2, 5, 10, 30],
     }),
-    
+
     modelMemoryUsage: new this.prometheus.Gauge({
       name: 'ollama_model_memory_bytes',
       help: 'Memory usage of loaded models',
-      labelNames: ['model']
+      labelNames: ['model'],
     }),
-    
+
     activeConnections: new this.prometheus.Gauge({
       name: 'ollama_active_connections',
-      help: 'Number of active connections to Ollama'
-    })
+      help: 'Number of active connections to Ollama',
+    }),
   };
 
   recordRequest(model: string, endpoint: string, status: string): void {
-    this.metrics.requestsTotal
-      .labels(model, status, endpoint)
-      .inc();
+    this.metrics.requestsTotal.labels(model, status, endpoint).inc();
   }
 
   recordRequestDuration(
-    model: string, 
-    endpoint: string, 
-    duration: number
+    model: string,
+    endpoint: string,
+    duration: number,
   ): void {
-    this.metrics.requestDuration
-      .labels(model, endpoint)
-      .observe(duration);
+    this.metrics.requestDuration.labels(model, endpoint).observe(duration);
   }
 
   updateModelMemoryUsage(model: string, memoryBytes: number): void {
-    this.metrics.modelMemoryUsage
-      .labels(model)
-      .set(memoryBytes);
+    this.metrics.modelMemoryUsage.labels(model).set(memoryBytes);
   }
 
   updateActiveConnections(count: number): void {
@@ -954,6 +984,7 @@ class MetricsCollector {
 ### 3. Automated Maintenance
 
 #### Pattern: Model Update Automation
+
 ```bash
 #!/bin/bash
 # scripts/update-models.sh
@@ -985,16 +1016,16 @@ check_model_updates() {
   local model="$1"
   local current_digest
   local latest_digest
-  
+
   log "Checking updates for model: $model"
-  
+
   # Get current model digest
   current_digest=$(ollama show "$model" --modelfile | grep -E '^FROM' | awk '{print $2}' | cut -d: -f2)
-  
+
   # Pull latest and get digest
   ollama pull "$model" > /dev/null 2>&1
   latest_digest=$(ollama show "$model" --modelfile | grep -E '^FROM' | awk '{print $2}' | cut -d: -f2)
-  
+
   if [ "$current_digest" != "$latest_digest" ]; then
     log "Model $model updated from $current_digest to $latest_digest"
     return 0
@@ -1006,20 +1037,20 @@ check_model_updates() {
 
 main() {
   log "Starting model update check"
-  
+
   updated_models=()
-  
+
   for model in "${MODELS[@]}"; do
     if check_model_updates "$model"; then
       updated_models+=("$model")
     fi
   done
-  
+
   if [ ${#updated_models[@]} -gt 0 ]; then
     message="Models updated: ${updated_models[*]}"
     log "$message"
     notify "$message"
-    
+
     # Restart Trust CLI services if running in production
     if systemctl is-active --quiet trust-cli; then
       log "Restarting Trust CLI service"
@@ -1028,7 +1059,7 @@ main() {
   else
     log "No model updates available"
   fi
-  
+
   log "Model update check completed"
 }
 

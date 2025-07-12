@@ -31,7 +31,7 @@ export class ModelDownloader {
 
   async downloadModel(
     model: TrustModelConfig,
-    onProgress?: (progress: DownloadProgress) => void
+    onProgress?: (progress: DownloadProgress) => void,
   ): Promise<string> {
     if (!model.downloadUrl) {
       throw new Error(`No download URL provided for model ${model.name}`);
@@ -63,13 +63,22 @@ export class ModelDownloader {
       // For now, create a placeholder implementation
       // In production, this would download from Hugging Face
       const isHuggingFaceUrl = model.downloadUrl.includes('huggingface.co');
-      
-      if (isHuggingFaceUrl) {
-        return await this.downloadFromHuggingFace(model, tempPath, finalPath, onProgress);
-      } else {
-        return await this.downloadFromUrl(model.downloadUrl, tempPath, finalPath, onProgress);
-      }
 
+      if (isHuggingFaceUrl) {
+        return await this.downloadFromHuggingFace(
+          model,
+          tempPath,
+          finalPath,
+          onProgress,
+        );
+      } else {
+        return await this.downloadFromUrl(
+          model.downloadUrl,
+          tempPath,
+          finalPath,
+          onProgress,
+        );
+      }
     } catch (error) {
       // Clean up temp file on error
       try {
@@ -85,22 +94,23 @@ export class ModelDownloader {
     model: TrustModelConfig,
     tempPath: string,
     finalPath: string,
-    onProgress?: (progress: DownloadProgress) => void
+    onProgress?: (progress: DownloadProgress) => void,
   ): Promise<string> {
     // Convert Hugging Face blob URL to direct download URL
     const downloadUrl = this.getHuggingFaceDownloadUrl(model.downloadUrl!);
-    
+
     console.log(`🚀 Starting download of ${model.name}...`);
-    
+
     return new Promise((resolve, reject) => {
       const file = createWriteStream(tempPath);
       const startTime = Date.now();
       const downloaded = 0;
 
       const headers: any = {
-        'User-Agent': 'TrustCLI/0.1.0 (https://github.com/audit-brands/trust-cli)',
-        'Accept': '*/*',
-        'Accept-Encoding': 'identity'
+        'User-Agent':
+          'TrustCLI/0.1.0 (https://github.com/audit-brands/trust-cli)',
+        Accept: '*/*',
+        'Accept-Encoding': 'identity',
       };
 
       // Add HF token if available
@@ -110,7 +120,17 @@ export class ModelDownloader {
 
       const options = { headers };
 
-      this.makeRequest(downloadUrl, options, file, tempPath, finalPath, startTime, onProgress, resolve, reject);
+      this.makeRequest(
+        downloadUrl,
+        options,
+        file,
+        tempPath,
+        finalPath,
+        startTime,
+        onProgress,
+        resolve,
+        reject,
+      );
     });
   }
 
@@ -123,28 +143,52 @@ export class ModelDownloader {
     startTime: number,
     onProgress?: (progress: DownloadProgress) => void,
     resolve?: (value: string) => void,
-    reject?: (reason: any) => void
+    reject?: (reason: any) => void,
   ) {
     const parsedUrl = new URL(url);
     const client = parsedUrl.protocol === 'https:' ? https : http;
 
     const request = client.get(url, options, (response) => {
       // Handle redirects
-      if (response.statusCode === 301 || response.statusCode === 302 || response.statusCode === 307 || response.statusCode === 308) {
+      if (
+        response.statusCode === 301 ||
+        response.statusCode === 302 ||
+        response.statusCode === 307 ||
+        response.statusCode === 308
+      ) {
         const redirectUrl = response.headers.location;
         if (redirectUrl) {
           // Handle relative URLs by resolving against the original URL
-          const absoluteRedirectUrl = redirectUrl.startsWith('http') 
-            ? redirectUrl 
+          const absoluteRedirectUrl = redirectUrl.startsWith('http')
+            ? redirectUrl
             : new URL(redirectUrl, url).toString();
-          
+
           // Make recursive call with redirect URL
-          this.makeRequest(absoluteRedirectUrl, options, file, tempPath, finalPath, startTime, onProgress, resolve, reject);
+          this.makeRequest(
+            absoluteRedirectUrl,
+            options,
+            file,
+            tempPath,
+            finalPath,
+            startTime,
+            onProgress,
+            resolve,
+            reject,
+          );
           return;
         }
       }
 
-      this.handleDownloadResponse(response, file, tempPath, finalPath, startTime, onProgress, resolve, reject);
+      this.handleDownloadResponse(
+        response,
+        file,
+        tempPath,
+        finalPath,
+        startTime,
+        onProgress,
+        resolve,
+        reject,
+      );
     });
 
     request.on('error', (error) => {
@@ -162,7 +206,7 @@ export class ModelDownloader {
     startTime: number,
     onProgress?: (progress: DownloadProgress) => void,
     resolve?: (value: string) => void,
-    reject?: (reason: any) => void
+    reject?: (reason: any) => void,
   ) {
     const total = parseInt(response.headers['content-length'] || '0', 10);
     let downloaded = 0;
@@ -170,24 +214,26 @@ export class ModelDownloader {
     if (response.statusCode !== 200) {
       file.close();
       fs.unlink(tempPath).catch(() => {});
-      reject?.(new Error(`HTTP ${response.statusCode}: ${response.statusMessage}`));
+      reject?.(
+        new Error(`HTTP ${response.statusCode}: ${response.statusMessage}`),
+      );
       return;
     }
 
     response.on('data', (chunk: Buffer) => {
       downloaded += chunk.length;
-      
+
       if (onProgress && total > 0) {
         const elapsed = (Date.now() - startTime) / 1000;
         const speed = downloaded / elapsed;
         const eta = (total - downloaded) / speed;
-        
+
         onProgress({
           downloaded,
           total,
           percentage: (downloaded / total) * 100,
           speed,
-          eta
+          eta,
         });
       }
     });
@@ -198,7 +244,9 @@ export class ModelDownloader {
       file.close();
       try {
         await fs.rename(tempPath, finalPath);
-        console.log(`\n✅ Successfully downloaded ${finalPath.split('/').pop()}`);
+        console.log(
+          `\n✅ Successfully downloaded ${finalPath.split('/').pop()}`,
+        );
         console.log(`📁 Location: ${finalPath}`);
         console.log(`📊 Size: ${this.formatFileSize(downloaded)}`);
         resolve?.(finalPath);
@@ -217,16 +265,18 @@ export class ModelDownloader {
     // Convert from blob URL to direct download URL
     // Example: https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF/blob/main/qwen2.5-1.5b-instruct-q8_0.gguf
     // To: https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF/resolve/main/qwen2.5-1.5b-instruct-q8_0.gguf?download=true
-    
+
     if (blobUrl.includes('/blob/')) {
       return blobUrl.replace('/blob/', '/resolve/') + '?download=true';
     }
-    
+
     // If it's already a resolve URL, just add download parameter
     if (blobUrl.includes('/resolve/')) {
-      return blobUrl.includes('?') ? blobUrl + '&download=true' : blobUrl + '?download=true';
+      return blobUrl.includes('?')
+        ? blobUrl + '&download=true'
+        : blobUrl + '?download=true';
     }
-    
+
     return blobUrl;
   }
 
@@ -234,62 +284,63 @@ export class ModelDownloader {
     url: string,
     tempPath: string,
     finalPath: string,
-    onProgress?: (progress: DownloadProgress) => void
+    onProgress?: (progress: DownloadProgress) => void,
   ): Promise<string> {
     return new Promise((resolve, reject) => {
       const file = createWriteStream(tempPath);
       const startTime = Date.now();
       let downloaded = 0;
 
-      https.get(url, (response) => {
-        const total = parseInt(response.headers['content-length'] || '0', 10);
+      https
+        .get(url, (response) => {
+          const total = parseInt(response.headers['content-length'] || '0', 10);
 
-        response.on('data', (chunk) => {
-          downloaded += chunk.length;
-          
-          if (onProgress && total > 0) {
-            const elapsed = (Date.now() - startTime) / 1000;
-            const speed = downloaded / elapsed;
-            const eta = (total - downloaded) / speed;
-            
-            onProgress({
-              downloaded,
-              total,
-              percentage: (downloaded / total) * 100,
-              speed,
-              eta
-            });
-          }
-        });
+          response.on('data', (chunk) => {
+            downloaded += chunk.length;
 
-        response.pipe(file);
+            if (onProgress && total > 0) {
+              const elapsed = (Date.now() - startTime) / 1000;
+              const speed = downloaded / elapsed;
+              const eta = (total - downloaded) / speed;
 
-        file.on('finish', async () => {
-          file.close();
-          try {
-            await fs.rename(tempPath, finalPath);
-            resolve(finalPath);
-          } catch (error) {
+              onProgress({
+                downloaded,
+                total,
+                percentage: (downloaded / total) * 100,
+                speed,
+                eta,
+              });
+            }
+          });
+
+          response.pipe(file);
+
+          file.on('finish', async () => {
+            file.close();
+            try {
+              await fs.rename(tempPath, finalPath);
+              resolve(finalPath);
+            } catch (error) {
+              reject(error);
+            }
+          });
+
+          file.on('error', (error) => {
+            fs.unlink(tempPath);
             reject(error);
-          }
-        });
-
-        file.on('error', (error) => {
+          });
+        })
+        .on('error', (error) => {
           fs.unlink(tempPath);
           reject(error);
         });
-
-      }).on('error', (error) => {
-        fs.unlink(tempPath);
-        reject(error);
-      });
     });
   }
 
   private getEstimatedModelSize(model: TrustModelConfig): number {
     // Estimate model size based on parameters and quantization
     const parameterCount = this.parseParameterCount(model.parameters || '1B');
-    
+
     let bytesPerParam: number;
     switch (model.quantization) {
       case 'Q4_K_M':
@@ -308,7 +359,7 @@ export class ModelDownloader {
       default:
         bytesPerParam = 1;
     }
-    
+
     // Add overhead for model structure
     return Math.floor(parameterCount * bytesPerParam * 1.1);
   }
@@ -316,29 +367,32 @@ export class ModelDownloader {
   private parseParameterCount(paramString: string): number {
     const match = paramString.match(/^(\d+(?:\.\d+)?)([BMK])$/i);
     if (!match) return 1_000_000_000; // Default 1B
-    
+
     const value = parseFloat(match[1]);
     const unit = match[2].toUpperCase();
-    
+
     switch (unit) {
-      case 'K': return value * 1_000;
-      case 'M': return value * 1_000_000;
-      case 'B': return value * 1_000_000_000;
-      default: return value;
+      case 'K':
+        return value * 1_000;
+      case 'M':
+        return value * 1_000_000;
+      case 'B':
+        return value * 1_000_000_000;
+      default:
+        return value;
     }
   }
-
 
   private formatFileSize(bytes: number): string {
     const units = ['B', 'KB', 'MB', 'GB'];
     let size = bytes;
     let unitIndex = 0;
-    
+
     while (size >= 1024 && unitIndex < units.length - 1) {
       size /= 1024;
       unitIndex++;
     }
-    
+
     return `${size.toFixed(1)} ${units[unitIndex]}`;
   }
 

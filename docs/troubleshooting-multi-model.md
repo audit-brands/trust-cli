@@ -7,6 +7,7 @@
 **Symptoms**: Trust CLI can't find any working AI backend
 
 **Diagnosis**:
+
 ```bash
 # Check backend status
 trust status
@@ -20,6 +21,7 @@ ollama list       # Ollama
 ```
 
 **Solutions**:
+
 ```bash
 # Option 1: Quick Ollama setup
 curl -fsSL https://ollama.ai/install.sh | sh
@@ -39,6 +41,7 @@ trust auth login --provider google
 **Symptoms**: Trust CLI doesn't detect running Ollama instance
 
 **Diagnosis**:
+
 ```bash
 # Check if Ollama is running
 curl http://localhost:11434/api/tags
@@ -49,6 +52,7 @@ brew services list | grep ollama  # macOS
 ```
 
 **Solutions**:
+
 ```bash
 # Start Ollama service
 ollama serve
@@ -71,6 +75,7 @@ curl -X POST http://localhost:11434/api/generate -d '{
 **Symptoms**: Downloaded models not appearing or loading
 
 **Diagnosis**:
+
 ```bash
 # Check downloaded models
 trust model list
@@ -83,6 +88,7 @@ trust model verify
 ```
 
 **Solutions**:
+
 ```bash
 # Re-download model
 trust model download qwen2.5-1.5b-instruct
@@ -103,6 +109,7 @@ trust config set ai.huggingface.enabled true
 **Symptoms**: Trust CLI not falling back to next available backend
 
 **Diagnosis**:
+
 ```bash
 # Check fallback configuration
 trust config get ai.enableFallback
@@ -115,6 +122,7 @@ trust  # Test Ollama
 ```
 
 **Solutions**:
+
 ```bash
 # Enable fallback
 trust config set ai.enableFallback true
@@ -132,6 +140,7 @@ trust config set ai.cloud.enabled true
 **Symptoms**: "Request timed out" errors, especially with Ollama
 
 **Diagnosis**:
+
 ```bash
 # Check current timeout settings
 trust config get ai.ollama.timeout
@@ -141,6 +150,7 @@ trust perf watch
 ```
 
 **Solutions**:
+
 ```bash
 # Increase timeout for slower hardware
 trust config set ai.ollama.timeout 300000  # 5 minutes
@@ -157,6 +167,7 @@ trust perf optimize
 **Symptoms**: Configuration not being saved or applied
 
 **Diagnosis**:
+
 ```bash
 # Check configuration file
 cat ~/.trustcli/config.json
@@ -166,6 +177,7 @@ ls -la ~/.trustcli/
 ```
 
 **Solutions**:
+
 ```bash
 # Reset configuration
 trust config reset
@@ -184,6 +196,7 @@ chmod 644 ~/.trustcli/config.json
 **Symptoms**: Models not downloading or switching properly
 
 **Diagnosis**:
+
 ```bash
 # Check model status
 trust model status
@@ -196,6 +209,7 @@ df -h ~/.trustcli/models/
 ```
 
 **Solutions**:
+
 ```bash
 # Clear download cache
 rm -rf ~/.trustcli/models/.tmp/
@@ -212,6 +226,7 @@ trust model verify qwen2.5-1.5b-instruct
 **Symptoms**: Slow responses, high CPU/memory usage
 
 **Diagnosis**:
+
 ```bash
 # Check system performance
 trust perf status
@@ -224,6 +239,7 @@ trust status
 ```
 
 **Solutions**:
+
 ```bash
 # Switch to smaller model
 ollama pull qwen2.5:1.5b  # Instead of 7b
@@ -239,6 +255,7 @@ trust config set ai.ollama.maxToolCalls 2
 ## 🚨 Emergency Recovery
 
 ### Complete Reset
+
 ```bash
 # Stop all Trust CLI processes
 pkill -f trust
@@ -255,6 +272,7 @@ trust  # Will create new config with defaults
 ```
 
 ### Diagnostic Information
+
 ```bash
 # Gather system information
 trust --version
@@ -275,6 +293,7 @@ df -h ~/.trustcli/
 ## 🔧 Advanced Troubleshooting
 
 ### Debug Mode
+
 ```bash
 # Enable debug logging
 export DEBUG=trust-cli:*
@@ -285,6 +304,7 @@ tail -f ~/.trustcli/logs/trust-cli.log
 ```
 
 ### Network Issues
+
 ```bash
 # Test Ollama connectivity
 curl -v http://localhost:11434/api/tags
@@ -298,6 +318,7 @@ echo $HTTPS_PROXY
 ```
 
 ### File System Issues
+
 ```bash
 # Check permissions
 ls -la ~/.trustcli/
@@ -313,13 +334,16 @@ fsck ~/.trustcli/  # Linux
 ## 📞 Getting Help
 
 ### Before Reporting Issues
+
 1. Try the emergency recovery steps
 2. Gather diagnostic information
 3. Check known issues in README.md
 4. Search existing GitHub issues
 
 ### Reporting Issues
+
 Include this information:
+
 - Trust CLI version: `trust --version`
 - Node.js version: `node --version`
 - Operating system: `uname -a`
@@ -328,6 +352,7 @@ Include this information:
 - Steps to reproduce: Minimal example
 
 ### Community Support
+
 - GitHub Issues: Report bugs and feature requests
 - GitHub Discussions: Ask questions and share tips
 - Documentation: Check docs/ directory

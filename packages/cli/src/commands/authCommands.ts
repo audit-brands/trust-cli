@@ -28,7 +28,7 @@ interface AuthConfig {
 export class AuthCommandHandler {
   async handle(args: AuthCommandArgs): Promise<void> {
     await this.ensureConfigDir();
-    
+
     switch (args.action) {
       case 'login':
         await this.handleLogin(args);
@@ -51,8 +51,16 @@ export class AuthCommandHandler {
 
   private async handleLogin(args: AuthCommandArgs): Promise<void> {
     if (!args.hfToken) {
-      console.error(chalk.red('❌ No token provided. Use: trust auth login --hf-token YOUR_TOKEN'));
-      console.log(chalk.gray('\nGet your token from: https://huggingface.co/settings/tokens'));
+      console.error(
+        chalk.red(
+          '❌ No token provided. Use: trust auth login --hf-token YOUR_TOKEN',
+        ),
+      );
+      console.log(
+        chalk.gray(
+          '\nGet your token from: https://huggingface.co/settings/tokens',
+        ),
+      );
       process.exit(1);
     }
 
@@ -62,18 +70,26 @@ export class AuthCommandHandler {
       // Validate token format (basic check)
       if (!args.hfToken.startsWith('hf_') || args.hfToken.length < 20) {
         spinner.fail('Invalid token format');
-        console.error(chalk.red('Token should start with "hf_" and be at least 20 characters'));
+        console.error(
+          chalk.red(
+            'Token should start with "hf_" and be at least 20 characters',
+          ),
+        );
         process.exit(1);
       }
 
       const authConfig: AuthConfig = {
         huggingfaceToken: args.hfToken,
         createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
       };
 
-      await fs.writeFile(AUTH_CONFIG_FILE, JSON.stringify(authConfig, null, 2), 'utf-8');
-      
+      await fs.writeFile(
+        AUTH_CONFIG_FILE,
+        JSON.stringify(authConfig, null, 2),
+        'utf-8',
+      );
+
       // Set secure permissions (readable only by owner)
       await fs.chmod(AUTH_CONFIG_FILE, 0o600);
 
@@ -113,18 +129,30 @@ export class AuthCommandHandler {
   private async handleStatus(): Promise<void> {
     try {
       const authConfig = await this.loadAuthConfig();
-      
+
       if (!authConfig || !authConfig.huggingfaceToken) {
         console.log(chalk.yellow('⚠️  No authentication configured'));
         console.log(chalk.gray('\nTo authenticate, run:'));
         console.log('  trust auth login --hf-token YOUR_TOKEN');
-        console.log(chalk.gray('\nGet your token from: https://huggingface.co/settings/tokens'));
+        console.log(
+          chalk.gray(
+            '\nGet your token from: https://huggingface.co/settings/tokens',
+          ),
+        );
         return;
       }
 
       console.log(chalk.green('✅ Hugging Face authentication active'));
-      console.log(chalk.gray(`Token: hf_${'*'.repeat(authConfig.huggingfaceToken.length - 7)}...`));
-      console.log(chalk.gray(`Configured: ${new Date(authConfig.createdAt!).toLocaleString()}`));
+      console.log(
+        chalk.gray(
+          `Token: hf_${'*'.repeat(authConfig.huggingfaceToken.length - 7)}...`,
+        ),
+      );
+      console.log(
+        chalk.gray(
+          `Configured: ${new Date(authConfig.createdAt!).toLocaleString()}`,
+        ),
+      );
       console.log('\n' + chalk.blue('Available restricted models:'));
       console.log('  • llama-3.2-3b-instruct');
       console.log('  • llama-3.1-8b-instruct');

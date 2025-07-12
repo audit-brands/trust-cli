@@ -21,21 +21,20 @@ vi.mock('crypto');
 
 // Mock the core function that uses os.homedir()
 vi.mock('@trust-cli/trust-cli-core', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@trust-cli/trust-cli-core')>();
+  const actual =
+    await importOriginal<typeof import('@trust-cli/trust-cli-core')>();
   return {
     ...actual,
-    getProjectTempDir: (projectRoot: string) => {
-      const path = require('path');
+    getProjectTempDir: (_projectRoot: string) =>
       // Return the expected mocked hash instead of calculating it
-      return path.join('/test/home', '.gemini', 'tmp', 'mocked_hash');
-    },
+      path.join('/test/home', '.gemini', 'tmp', 'mocked_hash'),
   };
 });
 
 // Import after mocks are set up
 import { useShellHistory } from './useShellHistory.js';
 import * as fs from 'fs/promises';
-import * as os from 'os';
+import * as _os from 'os';
 import * as crypto from 'crypto';
 
 const MOCKED_PROJECT_ROOT = '/test/project';
@@ -52,7 +51,6 @@ const MOCKED_HISTORY_FILE = path.join(MOCKED_HISTORY_DIR, 'shell_history');
 
 describe('useShellHistory', () => {
   const mockedFs = vi.mocked(fs);
-  const mockedOs = vi.mocked(os);
   const mockedCrypto = vi.mocked(crypto);
 
   beforeEach(() => {
@@ -74,12 +72,12 @@ describe('useShellHistory', () => {
     mockedFs.readFile.mockResolvedValue('cmd1\ncmd2');
     const { result } = renderHook(() => useShellHistory(MOCKED_PROJECT_ROOT));
 
-    await waitFor(() => {
+    await waitFor(() =>
       expect(mockedFs.readFile).toHaveBeenCalledWith(
         MOCKED_HISTORY_FILE,
         'utf-8',
-      );
-    });
+      ),
+    );
 
     let command: string | null = null;
     act(() => {

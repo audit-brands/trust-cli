@@ -21,15 +21,31 @@ describe('WebSearchTool', () => {
 
   describe('validateToolParams', () => {
     it('should accept valid search queries', () => {
-      expect(webSearchTool.validateToolParams({ query: 'latest Node.js documentation' })).toBeNull();
-      expect(webSearchTool.validateToolParams({ query: 'weather in San Francisco' })).toBeNull();
-      expect(webSearchTool.validateToolParams({ query: 'how to use React hooks' })).toBeNull();
-      expect(webSearchTool.validateToolParams({ query: 'current stock price of AAPL' })).toBeNull();
+      expect(
+        webSearchTool.validateToolParams({
+          query: 'latest Node.js documentation',
+        }),
+      ).toBeNull();
+      expect(
+        webSearchTool.validateToolParams({ query: 'weather in San Francisco' }),
+      ).toBeNull();
+      expect(
+        webSearchTool.validateToolParams({ query: 'how to use React hooks' }),
+      ).toBeNull();
+      expect(
+        webSearchTool.validateToolParams({
+          query: 'current stock price of AAPL',
+        }),
+      ).toBeNull();
     });
 
     it('should reject empty queries', () => {
-      expect(webSearchTool.validateToolParams({ query: '' })).toContain('cannot be empty');
-      expect(webSearchTool.validateToolParams({ query: '   ' })).toContain('cannot be empty');
+      expect(webSearchTool.validateToolParams({ query: '' })).toContain(
+        'cannot be empty',
+      );
+      expect(webSearchTool.validateToolParams({ query: '   ' })).toContain(
+        'cannot be empty',
+      );
     });
 
     describe('arithmetic filtering', () => {
@@ -44,9 +60,11 @@ describe('WebSearchTool', () => {
           '100 / 25',
         ];
 
-        testCases.forEach(query => {
+        testCases.forEach((query) => {
           const result = webSearchTool.validateToolParams({ query });
-          expect(result).toContain('Web search is not needed for basic arithmetic');
+          expect(result).toContain(
+            'Web search is not needed for basic arithmetic',
+          );
         });
       });
 
@@ -61,9 +79,11 @@ describe('WebSearchTool', () => {
           'CALCULATE 25 + 75',
         ];
 
-        testCases.forEach(query => {
+        testCases.forEach((query) => {
           const result = webSearchTool.validateToolParams({ query });
-          expect(result).toContain('Web search is not needed for basic arithmetic');
+          expect(result).toContain(
+            'Web search is not needed for basic arithmetic',
+          );
         });
       });
     });
@@ -78,9 +98,11 @@ describe('WebSearchTool', () => {
           'is 7 a prime',
         ];
 
-        testCases.forEach(query => {
+        testCases.forEach((query) => {
           const result = webSearchTool.validateToolParams({ query });
-          expect(result).toContain('Web search is not needed for basic number properties');
+          expect(result).toContain(
+            'Web search is not needed for basic number properties',
+          );
         });
       });
 
@@ -93,9 +115,11 @@ describe('WebSearchTool', () => {
           'is 22 even',
         ];
 
-        testCases.forEach(query => {
+        testCases.forEach((query) => {
           const result = webSearchTool.validateToolParams({ query });
-          expect(result).toContain('Web search is not needed for basic number properties');
+          expect(result).toContain(
+            'Web search is not needed for basic number properties',
+          );
         });
       });
     });
@@ -109,7 +133,7 @@ describe('WebSearchTool', () => {
         'what is the value of pi to 100 digits',
       ];
 
-      validQueries.forEach(query => {
+      validQueries.forEach((query) => {
         expect(webSearchTool.validateToolParams({ query })).toBeNull();
       });
     });
@@ -118,7 +142,9 @@ describe('WebSearchTool', () => {
   describe('tool description', () => {
     it('should include clear guidance on when to use the tool', () => {
       expect(webSearchTool.description).toContain('DO NOT use this tool for');
-      expect(webSearchTool.description).toContain('basic arithmetic/calculations');
+      expect(webSearchTool.description).toContain(
+        'basic arithmetic/calculations',
+      );
       expect(webSearchTool.description).toContain('simple logic questions');
     });
   });

@@ -9,7 +9,13 @@ import { LogitBiasConfig } from './types.js';
 /**
  * JSON parsing context for contextual bias application
  */
-export type JsonContext = 'object' | 'array' | 'string' | 'value' | 'key' | 'root';
+export type JsonContext =
+  | 'object'
+  | 'array'
+  | 'string'
+  | 'value'
+  | 'key'
+  | 'root';
 
 /**
  * Common JSON structural tokens that should be biased for better JSON generation
@@ -23,12 +29,12 @@ export const JSON_STRUCTURAL_TOKENS = {
   QUOTE: '"',
   COLON: ':',
   COMMA: ',',
-  
+
   // Common values
   TRUE: 'true',
   FALSE: 'false',
   NULL: 'null',
-  
+
   // Number patterns (simplified)
   ZERO: '0',
   ONE: '1',
@@ -55,8 +61,10 @@ export const JSON_INVALID_TOKENS = [
   '\\r', // Unescaped carriage returns
   '=', // Assignment operators
   ';', // Statement terminators
-  '(', ')', // Function calls
-  '<', '>', // XML/HTML tags
+  '(',
+  ')', // Function calls
+  '<',
+  '>', // XML/HTML tags
 ] as const;
 
 /**
@@ -78,16 +86,16 @@ export class LogitBiasManager {
     // This is a simplified tokenizer mapping for demonstration
     // In a real implementation, this would interface with the actual model tokenizer
     let tokenId = 0;
-    
+
     // Add JSON structural tokens
-    Object.values(JSON_STRUCTURAL_TOKENS).forEach(token => {
+    Object.values(JSON_STRUCTURAL_TOKENS).forEach((token) => {
       this.tokenizer.set(token, tokenId);
       this.reverseTokenizer.set(tokenId, token);
       tokenId++;
     });
-    
+
     // Add invalid tokens
-    JSON_INVALID_TOKENS.forEach(token => {
+    JSON_INVALID_TOKENS.forEach((token) => {
       this.tokenizer.set(token, tokenId);
       this.reverseTokenizer.set(tokenId, token);
       tokenId++;
@@ -129,12 +137,12 @@ export class LogitBiasManager {
    * Apply JSON structural biases
    */
   private applyJsonStructuralBias(
-    bias: Record<number, number>, 
-    jsonBias: NonNullable<LogitBiasConfig['jsonBias']>
+    bias: Record<number, number>,
+    jsonBias: NonNullable<LogitBiasConfig['jsonBias']>,
   ): void {
     if (jsonBias.boostStructural) {
       // Boost structural tokens to encourage proper JSON formatting
-      Object.values(JSON_STRUCTURAL_TOKENS).forEach(token => {
+      Object.values(JSON_STRUCTURAL_TOKENS).forEach((token) => {
         const tokenId = this.tokenizer.get(token);
         if (tokenId !== undefined) {
           bias[tokenId] = (bias[tokenId] || 0) + 10; // Moderate boost
@@ -144,7 +152,7 @@ export class LogitBiasManager {
 
     if (jsonBias.suppressInvalid) {
       // Suppress tokens that commonly break JSON
-      JSON_INVALID_TOKENS.forEach(token => {
+      JSON_INVALID_TOKENS.forEach((token) => {
         const tokenId = this.tokenizer.get(token);
         if (tokenId !== undefined) {
           bias[tokenId] = (bias[tokenId] || 0) - 20; // Strong suppression
@@ -167,9 +175,9 @@ export class LogitBiasManager {
    * Generate contextual bias based on current JSON parsing state
    */
   generateContextualBias(
-    config: LogitBiasConfig, 
+    config: LogitBiasConfig,
     context: JsonContext,
-    currentText: string
+    currentText: string,
   ): Record<number, number> {
     const bias: Record<number, number> = {};
 
@@ -215,7 +223,10 @@ export class LogitBiasManager {
   /**
    * Apply structural biases based on JSON context
    */
-  private applyContextualStructuralBias(bias: Record<number, number>, context: JsonContext): void {
+  private applyContextualStructuralBias(
+    bias: Record<number, number>,
+    context: JsonContext,
+  ): void {
     switch (context) {
       case 'object':
         // Boost quotes (for keys) and colons
@@ -225,7 +236,7 @@ export class LogitBiasManager {
         this.adjustTokenBias(bias, JSON_STRUCTURAL_TOKENS.OPEN_BRACKET, -15);
         this.adjustTokenBias(bias, JSON_STRUCTURAL_TOKENS.CLOSE_BRACKET, -15);
         break;
-        
+
       case 'array':
         // Boost array brackets and commas
         this.adjustTokenBias(bias, JSON_STRUCTURAL_TOKENS.OPEN_BRACKET, 5);
@@ -234,10 +245,10 @@ export class LogitBiasManager {
         // Suppress object colons
         this.adjustTokenBias(bias, JSON_STRUCTURAL_TOKENS.COLON, -15);
         break;
-        
+
       case 'string':
         // Suppress all structural tokens except closing quote
-        Object.values(JSON_STRUCTURAL_TOKENS).forEach(token => {
+        Object.values(JSON_STRUCTURAL_TOKENS).forEach((token) => {
           if (token !== JSON_STRUCTURAL_TOKENS.QUOTE) {
             this.adjustTokenBias(bias, token, -10);
           }
@@ -249,7 +260,11 @@ export class LogitBiasManager {
   /**
    * Adjust bias for a specific token
    */
-  private adjustTokenBias(bias: Record<number, number>, token: string, adjustment: number): void {
+  private adjustTokenBias(
+    bias: Record<number, number>,
+    token: string,
+    adjustment: number,
+  ): void {
     const tokenId = this.tokenizer.get(token);
     if (tokenId !== undefined) {
       bias[tokenId] = this.clampBias((bias[tokenId] || 0) + adjustment);
@@ -269,36 +284,36 @@ export class LogitBiasManager {
   detectJsonContext(text: string): JsonContext {
     // Simple context detection based on text analysis
     const trimmed = text.trim();
-    
+
     if (!trimmed) return 'root';
-    
+
     // Track nested structures to find the most recent context
     const stack: JsonContext[] = [];
     let inString = false;
     let escaped = false;
-    
+
     for (let i = 0; i < trimmed.length; i++) {
       const char = trimmed[i];
-      
+
       if (escaped) {
         escaped = false;
         continue;
       }
-      
+
       if (char === '\\') {
         escaped = true;
         continue;
       }
-      
+
       if (char === '"') {
         inString = !inString;
         continue;
       }
-      
+
       if (inString) {
         continue;
       }
-      
+
       if (char === '{') {
         stack.push('object');
       } else if (char === '}') {
@@ -313,38 +328,40 @@ export class LogitBiasManager {
         }
       }
     }
-    
+
     if (inString) return 'string';
     if (stack.length > 0) return stack[stack.length - 1];
-    
+
     return 'value';
   }
 
   /**
    * Create a preset logit bias configuration for common JSON generation scenarios
    */
-  static createJsonPreset(level: 'light' | 'moderate' | 'aggressive' = 'moderate'): LogitBiasConfig {
+  static createJsonPreset(
+    level: 'light' | 'moderate' | 'aggressive' = 'moderate',
+  ): LogitBiasConfig {
     const baseConfig: LogitBiasConfig = {
       jsonBias: {
         boostStructural: true,
         suppressInvalid: true,
       },
     };
-    
+
     switch (level) {
       case 'light':
         baseConfig.jsonBias!.valueBias = {
-          'true': 2,
-          'false': 2,
-          'null': 2,
+          true: 2,
+          false: 2,
+          null: 2,
         };
         break;
-        
+
       case 'moderate':
         baseConfig.jsonBias!.valueBias = {
-          'true': 5,
-          'false': 5,
-          'null': 5,
+          true: 5,
+          false: 5,
+          null: 5,
         };
         baseConfig.contextualBias = {
           inObject: { ':': 8, ',': 5 },
@@ -352,18 +369,18 @@ export class LogitBiasManager {
           inString: { '"': 10 },
         };
         break;
-        
+
       case 'aggressive':
         baseConfig.jsonBias!.valueBias = {
-          'true': 10,
-          'false': 10,
-          'null': 10,
+          true: 10,
+          false: 10,
+          null: 10,
         };
         baseConfig.contextualBias = {
           inObject: { ':': 15, ',': 10, '}': 8 },
           inArray: { ',': 15, ']': 10 },
           inString: { '"': 20 },
-          inValue: { 'true': 8, 'false': 8, 'null': 8 },
+          inValue: { true: 8, false: 8, null: 8 },
         };
         // Aggressively suppress invalid tokens
         baseConfig.stringBias = {
@@ -376,7 +393,7 @@ export class LogitBiasManager {
         };
         break;
     }
-    
+
     return baseConfig;
   }
 }

@@ -42,7 +42,9 @@ async function testOllamaIntegration() {
     console.log('📊 Model Info:');
     console.log(`  Model: ${modelInfo.model}`);
     console.log(`  Connected: ${modelInfo.connected}`);
-    console.log(`  Available Models: ${modelInfo.availableModels.join(', ')}\n`);
+    console.log(
+      `  Available Models: ${modelInfo.availableModels.join(', ')}\n`,
+    );
 
     // Test basic content generation
     console.log('💬 Testing basic content generation...');
@@ -51,11 +53,13 @@ async function testOllamaIntegration() {
       contents: [
         {
           role: 'user',
-          parts: [{ text: 'Hello! Can you tell me what the current directory is?' }],
+          parts: [
+            { text: 'Hello! Can you tell me what the current directory is?' },
+          ],
         },
       ],
     });
-    
+
     console.log('Response:', basicResponse.text);
     if (basicResponse.functionCalls && basicResponse.functionCalls.length > 0) {
       console.log('Function calls made:');
@@ -72,11 +76,15 @@ async function testOllamaIntegration() {
       contents: [
         {
           role: 'user',
-          parts: [{ text: 'List the files in the current directory and read the package.json file' }],
+          parts: [
+            {
+              text: 'List the files in the current directory and read the package.json file',
+            },
+          ],
         },
       ],
     });
-    
+
     console.log('Response:', fileResponse.text);
     if (fileResponse.functionCalls && fileResponse.functionCalls.length > 0) {
       console.log('Function calls made:');
@@ -95,19 +103,23 @@ async function testOllamaIntegration() {
     const toolNames = toolRegistry2.getToolNames();
     console.log(`🔧 Available tools: ${toolNames.join(', ')}`);
 
-    console.log('\n✅ All tests passed! Ollama integration is working correctly.');
-
+    console.log(
+      '\n✅ All tests passed! Ollama integration is working correctly.',
+    );
   } catch (error) {
     console.error('❌ Test failed:', error);
-    
-    if (error instanceof Error && error.message.includes('Ollama is not running')) {
+
+    if (
+      error instanceof Error &&
+      error.message.includes('Ollama is not running')
+    ) {
       console.log('\n💡 To fix this issue:');
       console.log('1. Install Ollama: https://ollama.ai/download');
       console.log('2. Start Ollama: ollama serve');
       console.log('3. Pull a model: ollama pull qwen2.5:7b');
       console.log('4. Run this test again');
     }
-    
+
     process.exit(1);
   }
 }

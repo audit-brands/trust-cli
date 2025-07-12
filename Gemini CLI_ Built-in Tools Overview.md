@@ -7,36 +7,34 @@ The Gemini CLI provides a suite of built-in tools designed to enhance productivi
 ### Core Tools and Commands
 
 - **File Operations**
-    - **ReadFile**: Read the contents of a file.
-    - **WriteFile**: Write content to a file.
-    - **Edit**: Edit files using natural language instructions.
-    - **FindFiles**: Search for files matching a pattern.
-    - **ReadFolder**: List or read contents of a folder.
-    - **ReadManyFiles**: Read multiple files at once.
+  - **ReadFile**: Read the contents of a file.
+  - **WriteFile**: Write content to a file.
+  - **Edit**: Edit files using natural language instructions.
+  - **FindFiles**: Search for files matching a pattern.
+  - **ReadFolder**: List or read contents of a folder.
+  - **ReadManyFiles**: Read multiple files at once.
 - **Terminal \& Shell Integration**
-    - **Shell**: Run shell commands directly from the CLI.
-    - **Terminal**: Interact with the terminal environment via the agent.
+  - **Shell**: Run shell commands directly from the CLI.
+  - **Terminal**: Interact with the terminal environment via the agent.
 - **Memory and State**
-    - **SaveMemory**: Store information in the agent's memory for later use.
-    - **/memory**: Command to access or manipulate the agent's memory.
+  - **SaveMemory**: Store information in the agent's memory for later use.
+  - **/memory**: Command to access or manipulate the agent's memory.
 - **Search \& Web Integration**
-    - **GoogleSearch or Search**: Perform real-time web searches to ground responses with up-to-date information.
-    - **WebFetch**: Fetch and process web content for use in prompts or workflows.
+  - **GoogleSearch or Search**: Perform real-time web searches to ground responses with up-to-date information.
+  - **WebFetch**: Fetch and process web content for use in prompts or workflows.
 - **Statistics and Agent Management**
-    - **/stats**: Show usage statistics and quotas.
-    - **/tools**: List all available tools and their descriptions.
-    - **/mcp**: Manage Model Context Protocol (MCP) servers and integrations.
-
+  - **/stats**: Show usage statistics and quotas.
+  - **/tools**: List all available tools and their descriptions.
+  - **/mcp**: Manage Model Context Protocol (MCP) servers and integrations.
 
 ### Advanced Features
 
 - **Yolo Mode**: Enables the agent to run commands autonomously for complex tasks.
 - **Custom Extensions**: Support for user-defined tools and extensions via the MCP protocol, allowing integration with external services (e.g., JIRA, custom test libraries).
 - **Code Understanding \& Test Generation**
-    - Explain code, generate summaries, and create tests (e.g., pytest cases) using natural language.
+  - Explain code, generate summaries, and create tests (e.g., pytest cases) using natural language.
 - **Documentation Support**
-    - Generate structured markdown documentation, changelogs, and GitHub issue replies.
-
+  - Generate structured markdown documentation, changelogs, and GitHub issue replies.
 
 ### Example Use Cases
 
@@ -47,31 +45,29 @@ The Gemini CLI provides a suite of built-in tools designed to enhance productivi
 - Fetching real-time web information for research or validation.
 - Automating repetitive development tasks.
 
-
 ### Extensibility
 
 Gemini CLI is designed to be extensible, allowing developers to add or disable tools as needed and to personalize their workflow through configuration files and custom tool integrations[^1][^2][^3][^4].
 
 **Summary Table: Gemini CLI Tools**
 
-
-| Tool/Command | Description |
-| :-- | :-- |
-| ReadFile | Reads file contents |
-| WriteFile | Writes content to a file |
-| Edit | Edits files via natural language |
-| FindFiles | Searches for files |
-| ReadFolder | Reads folder contents |
-| ReadManyFiles | Reads multiple files |
-| Shell/Terminal | Executes shell commands |
-| SaveMemory | Stores information in agent memory |
-| /memory | Accesses or manipulates agent memory |
-| GoogleSearch | Performs web searches |
-| WebFetch | Fetches web content |
-| /stats | Shows usage statistics |
-| /tools | Lists available tools |
-| /mcp | Manages MCP servers and integrations |
-| Yolo Mode | Autonomous command execution |
+| Tool/Command   | Description                          |
+| :------------- | :----------------------------------- |
+| ReadFile       | Reads file contents                  |
+| WriteFile      | Writes content to a file             |
+| Edit           | Edits files via natural language     |
+| FindFiles      | Searches for files                   |
+| ReadFolder     | Reads folder contents                |
+| ReadManyFiles  | Reads multiple files                 |
+| Shell/Terminal | Executes shell commands              |
+| SaveMemory     | Stores information in agent memory   |
+| /memory        | Accesses or manipulates agent memory |
+| GoogleSearch   | Performs web searches                |
+| WebFetch       | Fetches web content                  |
+| /stats         | Shows usage statistics               |
+| /tools         | Lists available tools                |
+| /mcp           | Manages MCP servers and integrations |
+| Yolo Mode      | Autonomous command execution         |
 
 These tools make Gemini CLI a powerful and flexible AI assistant for developers, supporting a wide range of coding, automation, and research workflows directly from the command line[^1][^2][^3][^4].
 
@@ -112,4 +108,3 @@ These tools make Gemini CLI a powerful and flexible AI assistant for developers,
 [^17]: https://github.com/google-gemini/gemini-cli-action
 
 [^18]: https://www.youtube.com/watch?v=xqvprnPocHs
-

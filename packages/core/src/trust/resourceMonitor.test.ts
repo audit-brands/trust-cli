@@ -5,7 +5,11 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { ResourceMonitor, SystemResources, ResourceOptimization } from './resourceMonitor.js';
+import {
+  ResourceMonitor,
+  SystemResources,
+  ResourceOptimization,
+} from './resourceMonitor.js';
 import { TrustConfiguration } from '../config/trustConfig.js';
 
 // Mock os module
@@ -73,7 +77,7 @@ describe('ResourceMonitor', () => {
 
     it('should detect system resources correctly', async () => {
       const resources = await monitor.getSystemResources();
-      
+
       expect(resources).toMatchObject({
         cpu: {
           cores: 8,
@@ -105,7 +109,7 @@ describe('ResourceMonitor', () => {
     it('should cache resources for performance', async () => {
       const resources1 = await monitor.getSystemResources();
       const resources2 = await monitor.getSystemResources();
-      
+
       // Should return the same object reference (cached)
       expect(resources1).toBe(resources2);
     });
@@ -113,7 +117,7 @@ describe('ResourceMonitor', () => {
     it('should force refresh when requested', async () => {
       const resources1 = await monitor.getSystemResources();
       const resources2 = await monitor.getSystemResources(true);
-      
+
       // Should detect new resources
       expect(resources1).not.toBe(resources2);
       expect(resources2.cpu.cores).toBe(8);
@@ -132,11 +136,11 @@ describe('ResourceMonitor', () => {
     it('should detect NVIDIA GPU when available', async () => {
       const { execSync } = await import('child_process');
       vi.mocked(execSync).mockReturnValue(
-        'NVIDIA GeForce RTX 3080, 10240, 2048, 45, 65\n'
+        'NVIDIA GeForce RTX 3080, 10240, 2048, 45, 65\n',
       );
 
       const resources = await monitor.getSystemResources(true);
-      
+
       expect(resources.gpu).toHaveLength(1);
       expect(resources.gpu![0]).toMatchObject({
         name: 'NVIDIA GeForce RTX 3080',
@@ -155,14 +159,16 @@ describe('ResourceMonitor', () => {
 
     it('should generate optimization suggestions', async () => {
       const optimizations = await monitor.analyzeAndOptimize();
-      
+
       expect(optimizations).toBeInstanceOf(Array);
       expect(optimizations.length).toBeGreaterThan(0);
-      
+
       const firstOpt = optimizations[0];
       expect(firstOpt).toMatchObject({
         type: expect.stringMatching(/^(warning|suggestion|critical)$/),
-        category: expect.stringMatching(/^(memory|cpu|disk|gpu|network|general)$/),
+        category: expect.stringMatching(
+          /^(memory|cpu|disk|gpu|network|general)$/,
+        ),
         title: expect.any(String),
         description: expect.any(String),
         impact: expect.stringMatching(/^(low|medium|high)$/),
@@ -174,11 +180,11 @@ describe('ResourceMonitor', () => {
 
     it('should prioritize optimizations correctly', async () => {
       const optimizations = await monitor.analyzeAndOptimize();
-      
+
       // Should be sorted by priority (highest first)
       for (let i = 0; i < optimizations.length - 1; i++) {
         expect(optimizations[i].priority).toBeGreaterThanOrEqual(
-          optimizations[i + 1].priority
+          optimizations[i + 1].priority,
         );
       }
     });
@@ -190,11 +196,15 @@ describe('ResourceMonitor', () => {
       vi.mocked(os.freemem).mockReturnValue(1 * 1024 * 1024 * 1024); // 1GB free (93.75% used)
 
       const optimizations = await monitor.analyzeAndOptimize();
-      
-      const memoryOptimizations = optimizations.filter(opt => opt.category === 'memory');
+
+      const memoryOptimizations = optimizations.filter(
+        (opt) => opt.category === 'memory',
+      );
       expect(memoryOptimizations.length).toBeGreaterThan(0);
-      
-      const criticalMemory = memoryOptimizations.find(opt => opt.type === 'critical');
+
+      const criticalMemory = memoryOptimizations.find(
+        (opt) => opt.type === 'critical',
+      );
       expect(criticalMemory).toBeDefined();
       expect(criticalMemory!.title).toContain('Critical Memory Usage');
     });
@@ -207,9 +217,11 @@ describe('ResourceMonitor', () => {
       vi.mocked(os.loadavg).mockReturnValue([1.0, 1.0, 1.0]); // Low load
 
       const optimizations = await monitor.analyzeAndOptimize();
-      
-      const excellentMemory = optimizations.find(opt => 
-        opt.title.includes('Excellent Memory') || opt.title.includes('Optimally')
+
+      const excellentMemory = optimizations.find(
+        (opt) =>
+          opt.title.includes('Excellent Memory') ||
+          opt.title.includes('Optimally'),
       );
       expect(excellentMemory).toBeDefined();
     });
@@ -220,12 +232,15 @@ describe('ResourceMonitor', () => {
       vi.mocked(os.loadavg).mockReturnValue([7.5, 7.2, 7.0]); // High load for 8 cores
 
       const optimizations = await monitor.analyzeAndOptimize();
-      
-      const cpuOptimizations = optimizations.filter(opt => opt.category === 'cpu');
+
+      const cpuOptimizations = optimizations.filter(
+        (opt) => opt.category === 'cpu',
+      );
       expect(cpuOptimizations.length).toBeGreaterThan(0);
-      
-      const highCPU = cpuOptimizations.find(opt => 
-        opt.title.includes('Critical CPU') || opt.title.includes('High CPU')
+
+      const highCPU = cpuOptimizations.find(
+        (opt) =>
+          opt.title.includes('Critical CPU') || opt.title.includes('High CPU'),
       );
       expect(highCPU).toBeDefined();
     });
@@ -233,15 +248,19 @@ describe('ResourceMonitor', () => {
     it('should suggest GPU optimizations when available', async () => {
       const { execSync } = await import('child_process');
       vi.mocked(execSync).mockReturnValue(
-        'NVIDIA GeForce RTX 4090, 24576, 1024, 30, 70\n'
+        'NVIDIA GeForce RTX 4090, 24576, 1024, 30, 70\n',
       );
 
       const optimizations = await monitor.analyzeAndOptimize();
-      
-      const gpuOptimizations = optimizations.filter(opt => opt.category === 'gpu');
+
+      const gpuOptimizations = optimizations.filter(
+        (opt) => opt.category === 'gpu',
+      );
       expect(gpuOptimizations.length).toBeGreaterThan(0);
-      
-      const highEndGPU = gpuOptimizations.find(opt => opt.title.includes('High-End GPU'));
+
+      const highEndGPU = gpuOptimizations.find((opt) =>
+        opt.title.includes('High-End GPU'),
+      );
       expect(highEndGPU).toBeDefined();
     });
   });
@@ -253,7 +272,7 @@ describe('ResourceMonitor', () => {
 
     it('should generate comprehensive resource report', async () => {
       const report = await monitor.generateResourceReport();
-      
+
       expect(report).toContain('System Resource Report');
       expect(report).toContain('CPU Information');
       expect(report).toContain('Memory Information');
@@ -264,7 +283,7 @@ describe('ResourceMonitor', () => {
 
     it('should include optimization suggestions in report', async () => {
       const report = await monitor.generateResourceReport();
-      
+
       // Should include at least one optimization suggestion
       expect(report).toMatch(/(Critical Issues|Warnings|Suggestions)/);
     });
@@ -272,11 +291,11 @@ describe('ResourceMonitor', () => {
     it('should show GPU information when available', async () => {
       const { execSync } = await import('child_process');
       vi.mocked(execSync).mockReturnValue(
-        'NVIDIA GeForce RTX 3080, 10240, 2048, 45, 65\n'
+        'NVIDIA GeForce RTX 3080, 10240, 2048, 45, 65\n',
       );
 
       const report = await monitor.generateResourceReport(true);
-      
+
       expect(report).toContain('GPU Information');
       expect(report).toContain('NVIDIA GeForce RTX 3080');
     });
@@ -289,15 +308,17 @@ describe('ResourceMonitor', () => {
 
     it('should provide model recommendations based on system resources', async () => {
       const recommendations = await monitor.getModelRecommendationsForSystem();
-      
+
       expect(recommendations).toMatchObject({
         recommended: expect.any(Array),
         discouraged: expect.any(Array),
         reasoning: expect.any(String),
       });
-      
+
       expect(recommendations.recommended.length).toBeGreaterThan(0);
-      expect(recommendations.reasoning).toContain('Based on your system resources');
+      expect(recommendations.reasoning).toContain(
+        'Based on your system resources',
+      );
     });
 
     it('should recommend large models for high-memory systems', async () => {
@@ -306,12 +327,12 @@ describe('ResourceMonitor', () => {
       vi.mocked(os.freemem).mockReturnValue(20 * 1024 * 1024 * 1024); // 20GB free
 
       const recommendations = await monitor.getModelRecommendationsForSystem();
-      
+
       expect(recommendations.recommended).toEqual(
         expect.arrayContaining([
           expect.stringMatching(/Large models/),
           expect.stringMatching(/Unquantized/),
-        ])
+        ]),
       );
     });
 
@@ -321,34 +342,32 @@ describe('ResourceMonitor', () => {
       vi.mocked(os.freemem).mockReturnValue(2 * 1024 * 1024 * 1024); // 2GB free
 
       const recommendations = await monitor.getModelRecommendationsForSystem();
-      
+
       // With 2GB available RAM, it should recommend tiny models
       expect(recommendations.recommended).toEqual(
         expect.arrayContaining([
           expect.stringMatching(/Tiny models/),
           expect.stringMatching(/Maximum quantization/),
-        ])
+        ]),
       );
       expect(recommendations.discouraged).toEqual(
-        expect.arrayContaining([
-          expect.stringMatching(/larger than 3B/),
-        ])
+        expect.arrayContaining([expect.stringMatching(/larger than 3B/)]),
       );
     });
 
     it('should recommend GPU acceleration for high-end GPUs', async () => {
       const { execSync } = await import('child_process');
       vi.mocked(execSync).mockReturnValue(
-        'NVIDIA GeForce RTX 4090, 24576, 1024, 30, 70\n'
+        'NVIDIA GeForce RTX 4090, 24576, 1024, 30, 70\n',
       );
 
       const recommendations = await monitor.getModelRecommendationsForSystem();
-      
+
       expect(recommendations.recommended).toEqual(
         expect.arrayContaining([
           expect.stringMatching(/GPU-accelerated/),
           expect.stringMatching(/CUDA/),
-        ])
+        ]),
       );
     });
 
@@ -359,12 +378,12 @@ describe('ResourceMonitor', () => {
       });
 
       const recommendations = await monitor.getModelRecommendationsForSystem();
-      
+
       expect(recommendations.recommended).toEqual(
         expect.arrayContaining([
           expect.stringMatching(/CPU-optimized/),
           expect.stringMatching(/GGUF/),
-        ])
+        ]),
       );
     });
   });
@@ -379,7 +398,7 @@ describe('ResourceMonitor', () => {
       vi.mocked(fs.readFile).mockRejectedValue(new Error('File not found'));
 
       const resources = await monitor.getSystemResources(true);
-      
+
       expect(resources.memory.swapTotal).toBe(0);
       expect(resources.memory.swapUsed).toBe(0);
     });
@@ -391,7 +410,7 @@ describe('ResourceMonitor', () => {
       });
 
       const resources = await monitor.getSystemResources(true);
-      
+
       expect(resources.disk.totalSpace).toBeGreaterThan(0);
       expect(resources.disk.availableSpace).toBeGreaterThan(0);
     });
@@ -401,7 +420,7 @@ describe('ResourceMonitor', () => {
       vi.mocked(execSync).mockReturnValue('Invalid GPU data\n');
 
       const resources = await monitor.getSystemResources(true);
-      
+
       expect(resources.gpu).toBeUndefined();
     });
 
@@ -410,7 +429,7 @@ describe('ResourceMonitor', () => {
       vi.mocked(os.cpus).mockReturnValue([]);
 
       const resources = await monitor.getSystemResources(true);
-      
+
       expect(resources.cpu.cores).toBe(0);
       expect(resources.cpu.model).toBe('Unknown');
     });

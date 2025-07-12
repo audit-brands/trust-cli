@@ -70,39 +70,65 @@ export class TrustSchemaEnforcement {
   /**
    * Generate structured output with schema enforcement
    */
-  async generateStructured(request: StructuredRequest): Promise<ValidationResult> {
-    const { prompt, schema, format = 'json', options = {}, maxRetries = 3, validationStrict = true } = request;
-    
+  async generateStructured(
+    request: StructuredRequest,
+  ): Promise<ValidationResult> {
+    const {
+      prompt,
+      schema,
+      format = 'json',
+      options = {},
+      maxRetries = 3,
+      validationStrict = true,
+    } = request;
+
     // Enhance prompt with schema information
     let enhancedPrompt = this.createSchemaPrompt(prompt, schema, format);
-    
+
     let lastError = '';
     let rawResponse = '';
-    
+
     for (let attempt = 0; attempt < maxRetries; attempt++) {
       try {
         // Prepare generation options with logit bias for JSON
-        const generationOptions = this.prepareGenerationOptions(options, format, attempt);
-        
+        const generationOptions = this.prepareGenerationOptions(
+          options,
+          format,
+          attempt,
+        );
+
         // Generate response
-        rawResponse = await this.client.generateText(enhancedPrompt, generationOptions);
-        
+        rawResponse = await this.client.generateText(
+          enhancedPrompt,
+          generationOptions,
+        );
+
         // Extract and validate based on format
-        const validationResult = this.validateAndExtract(rawResponse, schema, validationStrict, format);
-        
+        const validationResult = this.validateAndExtract(
+          rawResponse,
+          schema,
+          validationStrict,
+          format,
+        );
+
         if (validationResult.valid) {
           return validationResult;
         }
-        
+
         // If validation failed, prepare for retry
         lastError = validationResult.errors.join(', ');
-        
+
         if (attempt < maxRetries - 1) {
           // Enhance prompt with error feedback for retry
-          const errorPrompt = this.createRetryPrompt(prompt, schema, validationResult.errors, rawResponse, format);
+          const errorPrompt = this.createRetryPrompt(
+            prompt,
+            schema,
+            validationResult.errors,
+            rawResponse,
+            format,
+          );
           enhancedPrompt = errorPrompt;
         }
-        
       } catch (error) {
         lastError = String(error);
         if (attempt === maxRetries - 1) {
@@ -114,7 +140,7 @@ export class TrustSchemaEnforcement {
         }
       }
     }
-    
+
     return {
       valid: false,
       errors: [`Failed after ${maxRetries} attempts. Last error: ${lastError}`],
@@ -127,10 +153,10 @@ export class TrustSchemaEnforcement {
    */
   validateJSON(data: any, schema: JSONSchema): ValidationResult {
     const errors: string[] = [];
-    
+
     try {
       this.validateValue(data, schema, '', errors);
-      
+
       return {
         valid: errors.length === 0,
         data: errors.length === 0 ? data : undefined,
@@ -149,7 +175,10 @@ export class TrustSchemaEnforcement {
   /**
    * Generate schema-aware prompts for common patterns
    */
-  createPatternPrompts(): Record<string, (userPrompt: string, format?: OutputFormat) => string> {
+  createPatternPrompts(): Record<
+    string,
+    (userPrompt: string, format?: OutputFormat) => string
+  > {
     return {
       list: (userPrompt: string, format: OutputFormat = 'json') => {
         switch (format) {
@@ -161,7 +190,7 @@ export class TrustSchemaEnforcement {
             return `${userPrompt}\n\nPlease respond with a JSON array of strings.`;
         }
       },
-      
+
       keyValue: (userPrompt: string, format: OutputFormat = 'json') => {
         switch (format) {
           case 'xml':
@@ -172,7 +201,7 @@ export class TrustSchemaEnforcement {
             return `${userPrompt}\n\nPlease respond with a JSON object containing key-value pairs.`;
         }
       },
-      
+
       structured: (userPrompt: string, format: OutputFormat = 'json') => {
         switch (format) {
           case 'xml':
@@ -183,7 +212,7 @@ export class TrustSchemaEnforcement {
             return `${userPrompt}\n\nPlease respond with a well-structured JSON object.`;
         }
       },
-      
+
       analysis: (userPrompt: string, format: OutputFormat = 'json') => {
         switch (format) {
           case 'xml':
@@ -194,7 +223,7 @@ export class TrustSchemaEnforcement {
             return `${userPrompt}\n\nPlease respond with a JSON object containing your analysis with clear categories and findings.`;
         }
       },
-      
+
       summary: (userPrompt: string, format: OutputFormat = 'json') => {
         switch (format) {
           case 'xml':
@@ -218,12 +247,12 @@ export class TrustSchemaEnforcement {
         items: { type: 'string' },
         description: 'An array of strings',
       },
-      
+
       keyValuePairs: {
         type: 'object',
         description: 'Key-value pairs as an object',
       },
-      
+
       codeAnalysis: {
         type: 'object',
         properties: {
@@ -256,7 +285,7 @@ export class TrustSchemaEnforcement {
         },
         required: ['summary', 'issues', 'suggestions'],
       },
-      
+
       taskBreakdown: {
         type: 'object',
         properties: {
@@ -284,7 +313,7 @@ export class TrustSchemaEnforcement {
         },
         required: ['title', 'tasks'],
       },
-      
+
       documentSummary: {
         type: 'object',
         properties: {
@@ -316,84 +345,108 @@ export class TrustSchemaEnforcement {
     };
   }
 
-  private createSchemaPrompt(userPrompt: string, schema: JSONSchema, format: OutputFormat = 'json'): string {
+  private createSchemaPrompt(
+    userPrompt: string,
+    schema: JSONSchema,
+    format: OutputFormat = 'json',
+  ): string {
     let prompt = userPrompt;
-    
+
     switch (format) {
       case 'json':
-        prompt += '\n\nIMPORTANT: Please respond with valid JSON that matches this exact schema:\n';
+        prompt +=
+          '\n\nIMPORTANT: Please respond with valid JSON that matches this exact schema:\n';
         prompt += JSON.stringify(schema, null, 2);
-        prompt += '\n\nYour response must be pure JSON with no additional text or explanations.';
-        prompt += '\nEnsure all required fields are included and data types match the schema.';
-        
+        prompt +=
+          '\n\nYour response must be pure JSON with no additional text or explanations.';
+        prompt +=
+          '\nEnsure all required fields are included and data types match the schema.';
+
         if (schema.examples && schema.examples.length > 0) {
           prompt += '\n\nExample format:\n';
           prompt += JSON.stringify(schema.examples[0], null, 2);
         }
         break;
-        
+
       case 'xml':
-        prompt += '\n\nIMPORTANT: Please respond with valid XML that matches this schema structure:\n';
+        prompt +=
+          '\n\nIMPORTANT: Please respond with valid XML that matches this schema structure:\n';
         prompt += this.generateXMLExample(schema);
-        prompt += '\n\nYour response must be well-formed XML with no additional text or explanations.';
-        prompt += '\nEnsure all required elements are included and follow the XML structure.';
+        prompt +=
+          '\n\nYour response must be well-formed XML with no additional text or explanations.';
+        prompt +=
+          '\nEnsure all required elements are included and follow the XML structure.';
         prompt += '\nUse appropriate XML tags and nesting based on the schema.';
         break;
-        
+
       case 'kv':
-        prompt += '\n\nIMPORTANT: Please respond with key-value pairs that match this schema:\n';
+        prompt +=
+          '\n\nIMPORTANT: Please respond with key-value pairs that match this schema:\n';
         prompt += this.generateKVExample(schema);
-        prompt += '\n\nYour response must be in key-value format with no additional text or explanations.';
-        prompt += '\nUse the format: key=value (one per line for simple values)';
+        prompt +=
+          '\n\nYour response must be in key-value format with no additional text or explanations.';
+        prompt +=
+          '\nUse the format: key=value (one per line for simple values)';
         prompt += '\nFor nested objects, use dot notation: parent.child=value';
         prompt += '\nFor arrays, use indexed notation: items[0]=value';
         break;
     }
-    
+
     return prompt;
   }
 
   private createRetryPrompt(
-    originalPrompt: string, 
-    schema: JSONSchema, 
-    errors: string[], 
+    originalPrompt: string,
+    schema: JSONSchema,
+    errors: string[],
     previousResponse: string,
-    format: OutputFormat = 'json'
+    format: OutputFormat = 'json',
   ): string {
     let prompt = originalPrompt;
-    
+
     prompt += '\n\nThe previous response had validation errors:\n';
     for (const error of errors) {
       prompt += `- ${error}\n`;
     }
-    
+
     prompt += '\nPrevious response:\n';
     prompt += previousResponse;
-    
+
     switch (format) {
       case 'json':
-        prompt += '\n\nPlease provide a corrected JSON response that matches this schema:\n';
+        prompt +=
+          '\n\nPlease provide a corrected JSON response that matches this schema:\n';
         prompt += JSON.stringify(schema, null, 2);
-        prompt += '\n\nYour response must be pure JSON with no additional text.';
+        prompt +=
+          '\n\nYour response must be pure JSON with no additional text.';
         break;
-        
+
       case 'xml':
-        prompt += '\n\nPlease provide a corrected XML response that matches this schema:\n';
+        prompt +=
+          '\n\nPlease provide a corrected XML response that matches this schema:\n';
         prompt += this.generateXMLExample(schema);
-        prompt += '\n\nYour response must be well-formed XML with no additional text.';
+        prompt +=
+          '\n\nYour response must be well-formed XML with no additional text.';
         break;
-        
+
       case 'kv':
-        prompt += '\n\nPlease provide a corrected key-value response that matches this schema:\n';
+        prompt +=
+          '\n\nPlease provide a corrected key-value response that matches this schema:\n';
         prompt += this.generateKVExample(schema);
-        prompt += '\n\nYour response must be in key-value format with no additional text.';
+        prompt +=
+          '\n\nYour response must be in key-value format with no additional text.';
         break;
     }
-    
+
     return prompt;
   }
 
-  private validateAndExtract(response: string, schema: JSONSchema, strict: boolean, format: OutputFormat = 'json'): ValidationResult {
+  private validateAndExtract(
+    response: string,
+    schema: JSONSchema,
+    strict: boolean,
+    format: OutputFormat = 'json',
+  ): ValidationResult {
     switch (format) {
       case 'json':
         return this.validateAndExtractJSON(response, schema, strict);
@@ -410,10 +463,14 @@ export class TrustSchemaEnforcement {
     }
   }
 
-  private validateAndExtractJSON(response: string, schema: JSONSchema, strict: boolean): ValidationResult {
+  private validateAndExtractJSON(
+    response: string,
+    schema: JSONSchema,
+    strict: boolean,
+  ): ValidationResult {
     // Try to extract JSON from response
     const jsonMatch = this.extractJSON(response);
-    
+
     if (!jsonMatch) {
       return {
         valid: false,
@@ -421,7 +478,7 @@ export class TrustSchemaEnforcement {
         rawResponse: response,
       };
     }
-    
+
     try {
       const data = JSON.parse(jsonMatch);
       return this.validateJSON(data, schema);
@@ -434,10 +491,14 @@ export class TrustSchemaEnforcement {
     }
   }
 
-  private validateAndExtractXML(response: string, schema: JSONSchema, strict: boolean): ValidationResult {
+  private validateAndExtractXML(
+    response: string,
+    schema: JSONSchema,
+    strict: boolean,
+  ): ValidationResult {
     // Try to extract XML from response
     const xmlMatch = this.extractXML(response);
-    
+
     if (!xmlMatch) {
       return {
         valid: false,
@@ -445,7 +506,7 @@ export class TrustSchemaEnforcement {
         rawResponse: response,
       };
     }
-    
+
     try {
       const data = this.parseXMLToJSON(xmlMatch);
       return this.validateJSON(data, schema);
@@ -458,10 +519,14 @@ export class TrustSchemaEnforcement {
     }
   }
 
-  private validateAndExtractKV(response: string, schema: JSONSchema, strict: boolean): ValidationResult {
+  private validateAndExtractKV(
+    response: string,
+    schema: JSONSchema,
+    strict: boolean,
+  ): ValidationResult {
     // Try to extract key-value pairs from response
     const kvMatch = this.extractKV(response);
-    
+
     if (!kvMatch) {
       return {
         valid: false,
@@ -469,7 +534,7 @@ export class TrustSchemaEnforcement {
         rawResponse: response,
       };
     }
-    
+
     try {
       const data = this.parseKVToJSON(kvMatch);
       return this.validateJSON(data, schema);
@@ -485,12 +550,12 @@ export class TrustSchemaEnforcement {
   private extractJSON(text: string): string | null {
     // Try to find JSON in various formats
     const patterns = [
-      /```json\s*([\s\S]*?)\s*```/i,  // JSON code blocks
-      /```\s*([\s\S]*?)\s*```/,       // Generic code blocks
-      /{[\s\S]*}/,                      // JSON objects
-      /\[[\s\S]*\]/,                  // JSON arrays
+      /```json\s*([\s\S]*?)\s*```/i, // JSON code blocks
+      /```\s*([\s\S]*?)\s*```/, // Generic code blocks
+      /{[\s\S]*}/, // JSON objects
+      /\[[\s\S]*\]/, // JSON arrays
     ];
-    
+
     for (const pattern of patterns) {
       const match = text.match(pattern);
       if (match) {
@@ -503,17 +568,22 @@ export class TrustSchemaEnforcement {
         }
       }
     }
-    
+
     return null;
   }
 
-  private validateValue(value: any, schema: JSONSchema, path: string, errors: string[]): void {
+  private validateValue(
+    value: any,
+    schema: JSONSchema,
+    path: string,
+    errors: string[],
+  ): void {
     // Type validation
     if (!this.validateType(value, schema.type)) {
       errors.push(`${path}: Expected ${schema.type}, got ${typeof value}`);
       return;
     }
-    
+
     // Specific type validations
     switch (schema.type) {
       case 'object':
@@ -529,17 +599,21 @@ export class TrustSchemaEnforcement {
         this.validateNumber(value, schema, path, errors);
         break;
     }
-    
+
     // Enum validation
     if (schema.enum && !schema.enum.includes(value)) {
-      errors.push(`${path}: Value must be one of ${JSON.stringify(schema.enum)}`);
+      errors.push(
+        `${path}: Value must be one of ${JSON.stringify(schema.enum)}`,
+      );
     }
   }
 
   private validateType(value: any, expectedType: string): boolean {
     switch (expectedType) {
       case 'object':
-        return typeof value === 'object' && value !== null && !Array.isArray(value);
+        return (
+          typeof value === 'object' && value !== null && !Array.isArray(value)
+        );
       case 'array':
         return Array.isArray(value);
       case 'string':
@@ -555,7 +629,12 @@ export class TrustSchemaEnforcement {
     }
   }
 
-  private validateObject(obj: any, schema: JSONSchema, path: string, errors: string[]): void {
+  private validateObject(
+    obj: any,
+    schema: JSONSchema,
+    path: string,
+    errors: string[],
+  ): void {
     if (schema.required) {
       for (const required of schema.required) {
         if (!(required in obj)) {
@@ -563,7 +642,7 @@ export class TrustSchemaEnforcement {
         }
       }
     }
-    
+
     if (schema.properties) {
       for (const [key, value] of Object.entries(obj)) {
         const propSchema = schema.properties[key];
@@ -574,7 +653,12 @@ export class TrustSchemaEnforcement {
     }
   }
 
-  private validateArray(arr: any[], schema: JSONSchema, path: string, errors: string[]): void {
+  private validateArray(
+    arr: any[],
+    schema: JSONSchema,
+    path: string,
+    errors: string[],
+  ): void {
     if (schema.items) {
       arr.forEach((item, index) => {
         this.validateValue(item, schema.items!, `${path}[${index}]`, errors);
@@ -582,15 +666,20 @@ export class TrustSchemaEnforcement {
     }
   }
 
-  private validateString(str: string, schema: JSONSchema, path: string, errors: string[]): void {
+  private validateString(
+    str: string,
+    schema: JSONSchema,
+    path: string,
+    errors: string[],
+  ): void {
     if (schema.minLength !== undefined && str.length < schema.minLength) {
       errors.push(`${path}: String too short (min: ${schema.minLength})`);
     }
-    
+
     if (schema.maxLength !== undefined && str.length > schema.maxLength) {
       errors.push(`${path}: String too long (max: ${schema.maxLength})`);
     }
-    
+
     if (schema.pattern) {
       const regex = new RegExp(schema.pattern);
       if (!regex.test(str)) {
@@ -599,11 +688,16 @@ export class TrustSchemaEnforcement {
     }
   }
 
-  private validateNumber(num: number, schema: JSONSchema, path: string, errors: string[]): void {
+  private validateNumber(
+    num: number,
+    schema: JSONSchema,
+    path: string,
+    errors: string[],
+  ): void {
     if (schema.minimum !== undefined && num < schema.minimum) {
       errors.push(`${path}: Number too small (min: ${schema.minimum})`);
     }
-    
+
     if (schema.maximum !== undefined && num > schema.maximum) {
       errors.push(`${path}: Number too large (max: ${schema.maximum})`);
     }
@@ -662,7 +756,7 @@ export class TrustSchemaEnforcement {
       if (value === null || value === undefined) {
         return `<${key}></${key}>`;
       }
-      
+
       if (typeof value === 'object' && !Array.isArray(value)) {
         let xml = `<${key}>`;
         for (const [k, v] of Object.entries(value)) {
@@ -671,14 +765,16 @@ export class TrustSchemaEnforcement {
         xml += `</${key}>`;
         return xml;
       }
-      
+
       if (Array.isArray(value)) {
-        return value.map(item => convertValue(item, key.replace(/s$/, ''))).join('');
+        return value
+          .map((item) => convertValue(item, key.replace(/s$/, '')))
+          .join('');
       }
-      
+
       return `<${key}>${String(value)}</${key}>`;
     };
-    
+
     return convertValue(obj, rootName);
   }
 
@@ -687,32 +783,32 @@ export class TrustSchemaEnforcement {
    */
   private convertJSONToKV(obj: any, prefix: string = ''): string {
     const lines: string[] = [];
-    
+
     const convertValue = (value: any, key: string): void => {
       const fullKey = prefix ? `${prefix}.${key}` : key;
-      
+
       if (value === null || value === undefined) {
         lines.push(`${fullKey}=`);
         return;
       }
-      
+
       if (typeof value === 'object' && !Array.isArray(value)) {
         for (const [k, v] of Object.entries(value)) {
           convertValue(v, `${fullKey}.${k}`);
         }
         return;
       }
-      
+
       if (Array.isArray(value)) {
         value.forEach((item, index) => {
           convertValue(item, `${fullKey}[${index}]`);
         });
         return;
       }
-      
+
       lines.push(`${fullKey}=${String(value)}`);
     };
-    
+
     if (typeof obj === 'object' && !Array.isArray(obj)) {
       for (const [key, value] of Object.entries(obj)) {
         convertValue(value, key);
@@ -720,7 +816,7 @@ export class TrustSchemaEnforcement {
     } else {
       lines.push(`value=${String(obj)}`);
     }
-    
+
     return lines.join('\n');
   }
 
@@ -729,24 +825,24 @@ export class TrustSchemaEnforcement {
    */
   private extractXML(text: string): string | null {
     const patterns = [
-      /```xml\s*([\s\S]*?)\s*```/i,  // XML code blocks (has capture group)
-      /```\s*([\s\S]*?)\s*```/,       // Generic code blocks (has capture group)
-      /<[^>]+>[\s\S]*<\/[^>]+>/,        // XML tags (no capture group)
+      /```xml\s*([\s\S]*?)\s*```/i, // XML code blocks (has capture group)
+      /```\s*([\s\S]*?)\s*```/, // Generic code blocks (has capture group)
+      /<[^>]+>[\s\S]*<\/[^>]+>/, // XML tags (no capture group)
     ];
-    
+
     for (let i = 0; i < patterns.length; i++) {
       const pattern = patterns[i];
       const match = text.match(pattern);
       if (match) {
         // For patterns with capture groups (first two), use match[1]
         // For patterns without capture groups (third), use match[0]
-        const candidate = i < 2 ? (match[1] || match[0]) : match[0];
+        const candidate = i < 2 ? match[1] || match[0] : match[0];
         if (this.isValidXML(candidate.trim())) {
           return candidate.trim();
         }
       }
     }
-    
+
     return null;
   }
 
@@ -755,10 +851,10 @@ export class TrustSchemaEnforcement {
    */
   private extractKV(text: string): string | null {
     const patterns = [
-      /```kv\s*([\s\S]*?)\s*```/i,     // KV code blocks (has capture group)
-      /```\s*([\s\S]*?)\s*```/,        // Generic code blocks (has capture group)
+      /```kv\s*([\s\S]*?)\s*```/i, // KV code blocks (has capture group)
+      /```\s*([\s\S]*?)\s*```/, // Generic code blocks (has capture group)
     ];
-    
+
     // Try code block patterns first
     for (let i = 0; i < patterns.length; i++) {
       const pattern = patterns[i];
@@ -770,16 +866,18 @@ export class TrustSchemaEnforcement {
         }
       }
     }
-    
+
     // If no code blocks found, try to extract key-value lines directly
-    const kvLines = text.split('\n').filter(line => /^[\w\.\[\]]+\s*=.*$/.test(line.trim()));
+    const kvLines = text
+      .split('\n')
+      .filter((line) => /^[\w\.\[\]]+\s*=.*$/.test(line.trim()));
     if (kvLines.length > 0) {
       const kvContent = kvLines.join('\n');
       if (this.isValidKV(kvContent)) {
         return kvContent;
       }
     }
-    
+
     return null;
   }
 
@@ -801,8 +899,8 @@ export class TrustSchemaEnforcement {
    * Simple KV validation
    */
   private isValidKV(kv: string): boolean {
-    const lines = kv.split('\n').filter(line => line.trim());
-    return lines.length > 0 && lines.every(line => line.includes('='));
+    const lines = kv.split('\n').filter((line) => line.trim());
+    return lines.length > 0 && lines.every((line) => line.includes('='));
   }
 
   /**
@@ -811,19 +909,19 @@ export class TrustSchemaEnforcement {
   private parseXMLToJSON(xml: string): any {
     // This is a simplified XML parser - in production, you'd want a proper XML parser
     const result: any = {};
-    
+
     // Remove XML declaration if present
     xml = xml.replace(/<\?xml[^>]*\?>/g, '');
-    
+
     // Simple tag extraction
     const tagRegex = /<(\w+)>([^<]*)<\/\1>/g;
     let match;
-    
+
     while ((match = tagRegex.exec(xml)) !== null) {
       const [, tagName, content] = match;
       result[tagName] = this.parseValue(content);
     }
-    
+
     return result;
   }
 
@@ -832,18 +930,18 @@ export class TrustSchemaEnforcement {
    */
   private parseKVToJSON(kv: string): any {
     const result: any = {};
-    
-    const lines = kv.split('\n').filter(line => line.trim());
-    
+
+    const lines = kv.split('\n').filter((line) => line.trim());
+
     for (const line of lines) {
       const [key, ...valueParts] = line.split('=');
       const value = valueParts.join('=');
-      
+
       if (key && value !== undefined) {
         this.setNestedValue(result, key.trim(), value.trim());
       }
     }
-    
+
     return result;
   }
 
@@ -853,10 +951,10 @@ export class TrustSchemaEnforcement {
   private setNestedValue(obj: any, path: string, value: string): void {
     const keys = path.split('.');
     let current = obj;
-    
+
     for (let i = 0; i < keys.length - 1; i++) {
       const key = keys[i];
-      
+
       // Handle array notation
       const arrayMatch = key.match(/^([^\[]+)\[(\d+)\]$/);
       if (arrayMatch) {
@@ -875,10 +973,10 @@ export class TrustSchemaEnforcement {
         current = current[key];
       }
     }
-    
+
     const lastKey = keys[keys.length - 1];
     const arrayMatch = lastKey.match(/^([^\[]+)\[(\d+)\]$/);
-    
+
     if (arrayMatch) {
       const [, arrayKey, index] = arrayMatch;
       if (!current[arrayKey]) {
@@ -905,14 +1003,17 @@ export class TrustSchemaEnforcement {
    * Prepare generation options with appropriate logit bias for the target format
    */
   private prepareGenerationOptions(
-    baseOptions: GenerationOptions, 
-    format: OutputFormat, 
-    attemptNumber: number
+    baseOptions: GenerationOptions,
+    format: OutputFormat,
+    attemptNumber: number,
   ): GenerationOptions {
     const options: GenerationOptions = {
       ...baseOptions,
       // Reduce creativity for structure - more aggressive on retries
-      temperature: Math.max(0.1, (baseOptions.temperature || 0.7) * (0.8 - attemptNumber * 0.1)),
+      temperature: Math.max(
+        0.1,
+        (baseOptions.temperature || 0.7) * (0.8 - attemptNumber * 0.1),
+      ),
     };
 
     // Apply logit bias for JSON format to improve structure adherence
@@ -939,7 +1040,9 @@ export class TrustSchemaEnforcement {
   /**
    * Get default JSON generation configuration with logit bias
    */
-  static getDefaultJsonConfig(level: 'light' | 'moderate' | 'aggressive' = 'moderate'): GenerationOptions {
+  static getDefaultJsonConfig(
+    level: 'light' | 'moderate' | 'aggressive' = 'moderate',
+  ): GenerationOptions {
     return {
       temperature: 0.3,
       topP: 0.9,

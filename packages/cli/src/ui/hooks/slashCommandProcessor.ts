@@ -837,23 +837,24 @@ export const useSlashCommandProcessor = (
         action: async (_mainCommand, subCommand, _args) => {
           const handler = await import('../../commands/statusCommands.js');
           const statusHandler = new handler.StatusCommandHandler();
-          
+
           // Capture console output
-          const originalLog = console.log;
+          const _originalLog = console.log;
           let output = '';
           console.log = (...args) => {
             output += args.join(' ') + '\n';
           };
-          
+
           try {
             await statusHandler.handleCommand({
-              action: subCommand as 'show' | 'backend' | 'model' | 'all' || 'all',
-              verbose: _args === 'verbose' || _args === '--verbose'
+              action:
+                (subCommand as 'show' | 'backend' | 'model' | 'all') || 'all',
+              verbose: _args === 'verbose' || _args === '--verbose',
             });
           } finally {
-            console.log = originalLog;
+            console.log = _originalLog;
           }
-          
+
           addMessage({
             type: MessageType.INFO,
             content: output.trim(),
@@ -863,95 +864,107 @@ export const useSlashCommandProcessor = (
       },
       {
         name: 'backend',
-        description: 'manage AI backend configuration. Usage: /backend <list|switch|test>',
+        description:
+          'manage AI backend configuration. Usage: /backend <list|switch|test>',
         action: async (_mainCommand, subCommand, args) => {
           const handler = await import('../../commands/configCommands.js');
           const configHandler = new handler.ConfigCommandHandler();
-          
+
           // Capture console output
-          const originalLog = console.log;
-          const originalError = console.error;
-          let output = '';
+          const _originalLog = console.log;
+          const _originalError = console.error;
+          let _output = '';
           console.log = (...args) => {
-            output += args.join(' ') + '\n';
+            _output += args.join(' ') + '\n';
           };
           console.error = (...args) => {
-            output += args.join(' ') + '\n';
+            _output += args.join(' ') + '\n';
           };
-          
+
           try {
             let commandArgs: any;
-            
+
             if (!subCommand || subCommand === 'show' || subCommand === 'list') {
               // Show backend status - use status command for this
-              const statusHandler = await import('../../commands/statusCommands.js');
+              const statusHandler = await import(
+                '../../commands/statusCommands.js'
+              );
               const statusCmd = new statusHandler.StatusCommandHandler();
-              await statusCmd.handleCommand({ action: 'backend', verbose: false });
+              await statusCmd.handleCommand({
+                action: 'backend',
+                verbose: false,
+              });
             } else if (subCommand === 'switch' && args) {
               // Switch to specified backend
               const backend = args.trim();
               if (!['ollama', 'huggingface', 'cloud'].includes(backend)) {
-                throw new Error(`Invalid backend: ${backend}. Valid options: ollama, huggingface, cloud`);
+                throw new Error(
+                  `Invalid backend: ${backend}. Valid options: ollama, huggingface, cloud`,
+                );
               }
               commandArgs = {
                 action: 'backend',
-                backend: backend as 'ollama' | 'huggingface' | 'cloud'
+                backend: backend as 'ollama' | 'huggingface' | 'cloud',
               };
               await configHandler.handleCommand(commandArgs);
             } else {
               throw new Error('Usage: /backend [show|switch] [backend-name]');
             }
           } catch (error) {
-            output += `Error: ${error instanceof Error ? error.message : String(error)}\n`;
+            _output += `Error: ${error instanceof Error ? error.message : String(error)}\n`;
           } finally {
-            console.log = originalLog;
-            console.error = originalError;
+            console.log = _originalLog;
+            console.error = _originalError;
           }
-          
+
           addMessage({
-            type: output.includes('Error:') ? MessageType.ERROR : MessageType.INFO,
-            content: output.trim(),
+            type: _output.includes('Error:')
+              ? MessageType.ERROR
+              : MessageType.INFO,
+            content: _output.trim(),
             timestamp: new Date(),
           });
         },
       },
       {
         name: 'openaudit',
-        description: 'open audit management. Usage: /openaudit <new|list|report> [options]',
+        description:
+          'open audit management. Usage: /openaudit <new|list|report> [options]',
         action: async (_mainCommand, subCommand, args) => {
           if (!subCommand) {
             addMessage({
               type: MessageType.ERROR,
-              content: 'Missing command\nUsage: /openaudit <new|list|report> [options]',
+              content:
+                'Missing command\nUsage: /openaudit <new|list|report> [options]',
               timestamp: new Date(),
             });
             return;
           }
-          
+
           try {
             const handler = await import('../../commands/openauditCommands.js');
             const openAuditHandler = new handler.OpenAuditCommandHandler();
-            
+
             // Capture console output
-            const originalLog = console.log;
-            const originalError = console.error;
-            let output = '';
+            const _originalLog = console.log;
+            const _originalError = console.error;
+            let _output = '';
             console.log = (...args) => {
-              output += args.join(' ') + '\n';
+              _output += args.join(' ') + '\n';
             };
             console.error = (...args) => {
-              output += args.join(' ') + '\n';
+              _output += args.join(' ') + '\n';
             };
-            
+
             const commandArgs: any = {
-              action: subCommand
+              action: subCommand,
             };
-            
+
             // Parse arguments for different subcommands
             if (subCommand === 'new' && args) {
               // Parse args like "name:TestAudit type:soc2"
               const argPairs = args.split(/\s+/);
-              argPairs.forEach(pair => {
+              argPairs.forEach((pair) => {
                 const [key, value] = pair.split(':');
                 if (key && value) {
                   commandArgs[key] = value;
@@ -964,114 +977,137 @@ export const useSlashCommandProcessor = (
                 commandArgs.output = argParts[2];
               }
             }
-            
+
             await openAuditHandler.handleCommand(commandArgs);
           } catch (error) {
-            output += `Error: ${error instanceof Error ? error.message : String(error)}\n`;
+            _output += `Error: ${error instanceof Error ? error.message : String(error)}\n`;
           } finally {
-            console.log = originalLog;
-            console.error = originalError;
+            console.log = _originalLog;
+            console.error = _originalError;
           }
-          
+
           addMessage({
-            type: output.includes('Error:') ? MessageType.ERROR : MessageType.INFO,
-            content: output.trim(),
+            type: _output.includes('Error:')
+              ? MessageType.ERROR
+              : MessageType.INFO,
+            content: _output.trim(),
             timestamp: new Date(),
           });
         },
       },
       {
         name: 'privacy',
-        description: 'manage privacy settings. Usage: /privacy <status|switch|list|info> [mode]',
+        description:
+          'manage privacy settings. Usage: /privacy <status|switch|list|info> [mode]',
         action: async (_mainCommand, subCommand, args) => {
           if (subCommand === undefined) {
             // If no subcommand, show the privacy notice dialog
             openPrivacyNotice();
             return;
           }
-          
+
           const handler = await import('../../commands/privacyCommands.js');
           const privacyHandler = new handler.PrivacyCommandHandler();
-          
+
           // Capture console output
-          const originalLog = console.log;
-          const originalError = console.error;
-          let output = '';
+          const _originalLog = console.log;
+          const _originalError = console.error;
+          let _output = '';
           console.log = (...args) => {
-            output += args.join(' ') + '\n';
+            _output += args.join(' ') + '\n';
           };
           console.error = (...args) => {
-            output += args.join(' ') + '\n';
+            _output += args.join(' ') + '\n';
           };
-          
+
           try {
             const commandArgs: any = {
               action: subCommand,
-              verbose: args === '--verbose' || args === 'verbose'
+              verbose: args === '--verbose' || args === 'verbose',
             };
-            
+
             if (subCommand === 'switch' && args && !args.startsWith('--')) {
-              commandArgs.mode = args.split(/\s+/)[0] as 'strict' | 'moderate' | 'open';
-            } else if (subCommand === 'info' && args && !args.startsWith('--')) {
-              commandArgs.mode = args.split(/\s+/)[0] as 'strict' | 'moderate' | 'open';
+              commandArgs.mode = args.split(/\s+/)[0] as
+                | 'strict'
+                | 'moderate'
+                | 'open';
+            } else if (
+              subCommand === 'info' &&
+              args &&
+              !args.startsWith('--')
+            ) {
+              commandArgs.mode = args.split(/\s+/)[0] as
+                | 'strict'
+                | 'moderate'
+                | 'open';
             }
-            
+
             await privacyHandler.handleCommand(commandArgs);
           } catch (error) {
-            output += `Error: ${error instanceof Error ? error.message : String(error)}\n`;
+            _output += `Error: ${error instanceof Error ? error.message : String(error)}\n`;
           } finally {
-            console.log = originalLog;
-            console.error = originalError;
+            console.log = _originalLog;
+            console.error = _originalError;
           }
-          
+
           addMessage({
-            type: output.includes('Error:') ? MessageType.ERROR : MessageType.INFO,
-            content: output.trim(),
+            type: _output.includes('Error:')
+              ? MessageType.ERROR
+              : MessageType.INFO,
+            content: _output.trim(),
             timestamp: new Date(),
           });
         },
       },
       {
         name: 'model',
-        description: 'manage AI models. Usage: /model <list|download|verify|info> [model-name]',
+        description:
+          'manage AI models. Usage: /model <list|download|verify|info> [model-name]',
         action: async (_mainCommand, subCommand, args) => {
           try {
             const handler = await import('../../commands/modelCommands.js');
             const modelHandler = new handler.ModelCommandHandler();
-            
+
             // Capture console output
-            const originalLog = console.log;
-            const originalError = console.error;
-            let output = '';
+            const _originalLog = console.log;
+            const _originalError = console.error;
+            let _output = '';
             console.log = (...args) => {
-              output += args.join(' ') + '\n';
+              _output += args.join(' ') + '\n';
             };
             console.error = (...args) => {
-              output += args.join(' ') + '\n';
+              _output += args.join(' ') + '\n';
             };
-            
+
             try {
               const commandArgs: any = {
-                action: subCommand || 'list'
+                action: subCommand || 'list',
               };
-              
-              if ((subCommand === 'download' || subCommand === 'verify' || subCommand === 'info') && args) {
+
+              if (
+                (subCommand === 'download' ||
+                  subCommand === 'verify' ||
+                  subCommand === 'info') &&
+                args
+              ) {
                 commandArgs.model = args.trim();
               } else if (subCommand === 'list' && args === '--verbose') {
                 commandArgs.verbose = true;
               }
-              
+
               await modelHandler.handleCommand(commandArgs);
             } catch (error) {
-              output += `Error: ${error instanceof Error ? error.message : String(error)}\n`;
+              _output += `Error: ${error instanceof Error ? error.message : String(error)}\n`;
             } finally {
-              console.log = originalLog;
-              console.error = originalError;
+              console.log = _originalLog;
+              console.error = _originalError;
             }
-            
+
             addMessage({
-              type: output.includes('Error:') ? MessageType.ERROR : MessageType.INFO,
-              content: output.trim(),
+              type: _output.includes('Error:')
+                ? MessageType.ERROR
+                : MessageType.INFO,
+              content: _output.trim(),
               timestamp: new Date(),
             });
           } catch (importError) {
@@ -1085,28 +1121,29 @@ export const useSlashCommandProcessor = (
       },
       {
         name: 'config',
-        description: 'manage configuration. Usage: /config <show|get|set> [key] [value]',
+        description:
+          'manage configuration. Usage: /config <show|get|set> [key] [value]',
         action: async (_mainCommand, subCommand, args) => {
           try {
             const handler = await import('../../commands/configCommands.js');
             const configHandler = new handler.ConfigCommandHandler();
-            
+
             // Capture console output
-            const originalLog = console.log;
-            const originalError = console.error;
-            let output = '';
+            const _originalLog = console.log;
+            const _originalError = console.error;
+            let _output = '';
             console.log = (...args) => {
-              output += args.join(' ') + '\n';
+              _output += args.join(' ') + '\n';
             };
             console.error = (...args) => {
-              output += args.join(' ') + '\n';
+              _output += args.join(' ') + '\n';
             };
-            
+
             try {
               const commandArgs: any = {
-                action: subCommand || 'show'
+                action: subCommand || 'show',
               };
-              
+
               if (subCommand === 'get' && args) {
                 commandArgs.key = args.trim();
               } else if (subCommand === 'set' && args) {
@@ -1116,18 +1153,20 @@ export const useSlashCommandProcessor = (
               } else if (subCommand === 'show' && args === '--verbose') {
                 commandArgs.verbose = true;
               }
-              
+
               await configHandler.handleCommand(commandArgs);
             } catch (error) {
-              output += `Error: ${error instanceof Error ? error.message : String(error)}\n`;
+              _output += `Error: ${error instanceof Error ? error.message : String(error)}\n`;
             } finally {
-              console.log = originalLog;
-              console.error = originalError;
+              console.log = _originalLog;
+              console.error = _originalError;
             }
-            
+
             addMessage({
-              type: output.includes('Error:') ? MessageType.ERROR : MessageType.INFO,
-              content: output.trim(),
+              type: _output.includes('Error:')
+                ? MessageType.ERROR
+                : MessageType.INFO,
+              content: _output.trim(),
               timestamp: new Date(),
             });
           } catch (importError) {
@@ -1143,15 +1182,27 @@ export const useSlashCommandProcessor = (
         name: 'model-enhanced',
         description: 'unified model management across all backends',
         subCommands: [
-          { name: 'list-all', description: 'List all available models from all backends' },
-          { name: 'discover', description: 'Discover models from all backends' },
+          {
+            name: 'list-all',
+            description: 'List all available models from all backends',
+          },
+          {
+            name: 'discover',
+            description: 'Discover models from all backends',
+          },
           { name: 'filter', description: 'Filter models based on criteria' },
           { name: 'recommend', description: 'Get model recommendations' },
           { name: 'backends', description: 'Show backend information' },
-          { name: 'smart-default', description: 'Get intelligent default model' },
+          {
+            name: 'smart-default',
+            description: 'Get intelligent default model',
+          },
           { name: 'smart-recommend', description: 'Get smart recommendations' },
           { name: 'routing-info', description: 'Show routing information' },
-          { name: 'transparency', description: 'Show transparency information' },
+          {
+            name: 'transparency',
+            description: 'Show transparency information',
+          },
           { name: 'auto-select', description: 'Auto-select best model' },
           { name: 'resource-check', description: 'Check system resources' },
           { name: 'optimize', description: 'Optimize model selection' },
@@ -1160,23 +1211,25 @@ export const useSlashCommandProcessor = (
         ],
         action: async (_mainCommand, subCommand, args) => {
           try {
-            const handler = await import('../../commands/enhancedModelCommands.js');
-            
+            const handler = await import(
+              '../../commands/enhancedModelCommands.js'
+            );
+
             // Capture console output
-            const originalLog = console.log;
-            const originalError = console.error;
-            let output = '';
+            const _originalLog = console.log;
+            const _originalError = console.error;
+            let _output = '';
             console.log = (...args) => {
-              output += args.join(' ') + '\n';
+              _output += args.join(' ') + '\n';
             };
             console.error = (...args) => {
-              output += args.join(' ') + '\n';
+              _output += args.join(' ') + '\n';
             };
-            
+
             const commandArgs: any = {
-              action: subCommand || 'list-all'
+              action: subCommand || 'list-all',
             };
-            
+
             // Parse arguments based on subcommand
             if (args) {
               const argParts = args.split(/\s+/);
@@ -1184,7 +1237,7 @@ export const useSlashCommandProcessor = (
                 if (arg === '--task' && argParts[index + 1]) {
                   commandArgs.task = argParts[index + 1];
                 } else if (arg === '--ram-limit' && argParts[index + 1]) {
-                  commandArgs.ramLimit = parseInt(argParts[index + 1]);
+                  commandArgs.ramLimit = parseInt(argParts[index + 1], 10);
                 } else if (arg === '--backend' && argParts[index + 1]) {
                   commandArgs.backend = argParts[index + 1];
                 } else if (arg === '--verbose') {
@@ -1192,12 +1245,12 @@ export const useSlashCommandProcessor = (
                 }
               });
             }
-            
+
             await handler.handleEnhancedModelCommand(commandArgs);
-            
+
             addMessage({
               type: MessageType.INFO,
-              content: output.trim(),
+              content: _output.trim(),
               timestamp: new Date(),
             });
           } catch (error) {

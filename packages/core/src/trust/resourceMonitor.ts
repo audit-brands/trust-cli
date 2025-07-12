@@ -32,13 +32,13 @@ export interface SystemResources {
     usedSpace: number; // GB
     ioLoad: number; // 0-100 percentage
   };
-  gpu?: {
+  gpu?: Array<{
     name: string;
     memoryTotal: number; // GB
     memoryUsed: number; // GB
     utilization: number; // 0-100 percentage
     temperature?: number; // Celsius
-  }[];
+  }>;
   network: {
     downloadSpeed: number; // Mbps
     uploadSpeed: number; // Mbps
@@ -85,18 +85,20 @@ export class ResourceMonitor {
    */
   async getSystemResources(forceRefresh = false): Promise<SystemResources> {
     const now = Date.now();
-    
-    if (!forceRefresh && 
-        this.lastResourceCheck && 
-        this.lastCheckTime && 
-        (now - this.lastCheckTime) < this.cacheTimeoutMs) {
+
+    if (
+      !forceRefresh &&
+      this.lastResourceCheck &&
+      this.lastCheckTime &&
+      now - this.lastCheckTime < this.cacheTimeoutMs
+    ) {
       return this.lastResourceCheck;
     }
 
     const resources = await this.detectSystemResources();
     this.lastResourceCheck = resources;
     this.lastCheckTime = now;
-    
+
     return resources;
   }
 
@@ -129,7 +131,7 @@ export class ResourceMonitor {
     const cpus = os.cpus();
     const arch = os.arch();
     const loadavg = os.loadavg();
-    
+
     // Calculate current load percentage (simplified)
     const currentLoad = Math.min(100, (loadavg[0] / cpus.length) * 100);
 
@@ -164,11 +166,11 @@ export class ResourceMonitor {
     }
 
     return {
-      totalRAM: Math.round((totalBytes / (1024 ** 3)) * 10) / 10,
-      availableRAM: Math.round((freeBytes / (1024 ** 3)) * 10) / 10,
-      usedRAM: Math.round((usedBytes / (1024 ** 3)) * 10) / 10,
-      swapTotal: Math.round((swapTotal / (1024 ** 3)) * 10) / 10,
-      swapUsed: Math.round((swapUsed / (1024 ** 3)) * 10) / 10,
+      totalRAM: Math.round((totalBytes / 1024 ** 3) * 10) / 10,
+      availableRAM: Math.round((freeBytes / 1024 ** 3) * 10) / 10,
+      usedRAM: Math.round((usedBytes / 1024 ** 3) * 10) / 10,
+      swapTotal: Math.round((swapTotal / 1024 ** 3) * 10) / 10,
+      swapUsed: Math.round((swapUsed / 1024 ** 3) * 10) / 10,
     };
   }
 
@@ -179,10 +181,10 @@ export class ResourceMonitor {
     try {
       const meminfo = await fs.readFile('/proc/meminfo', 'utf8');
       const lines = meminfo.split('\n');
-      
+
       let swapTotal = 0;
       let swapFree = 0;
-      
+
       for (const line of lines) {
         if (line.startsWith('SwapTotal:')) {
           swapTotal = parseInt(line.split(/\s+/)[1]) * 1024; // Convert kB to bytes
@@ -190,7 +192,7 @@ export class ResourceMonitor {
           swapFree = parseInt(line.split(/\s+/)[1]) * 1024; // Convert kB to bytes
         }
       }
-      
+
       return {
         total: swapTotal,
         used: swapTotal - swapFree,
@@ -206,20 +208,23 @@ export class ResourceMonitor {
   private async getDiskInfo(): Promise<SystemResources['disk']> {
     try {
       // For cross-platform compatibility, check current working directory
-      const stats = await fs.statvfs?.(process.cwd()) || null;
-      
+      const stats = (await fs.statvfs?.(process.cwd())) || null;
+
       if (stats) {
         const blockSize = stats.bavail;
         const totalBlocks = stats.blocks;
         const freeBlocks = stats.bavail;
         const usedBlocks = totalBlocks - freeBlocks;
-        
+
         const bytesPerBlock = stats.frsize || stats.bsize || 4096;
-        
+
         return {
-          totalSpace: Math.round((totalBlocks * bytesPerBlock / (1024 ** 3)) * 10) / 10,
-          availableSpace: Math.round((freeBlocks * bytesPerBlock / (1024 ** 3)) * 10) / 10,
-          usedSpace: Math.round((usedBlocks * bytesPerBlock / (1024 ** 3)) * 10) / 10,
+          totalSpace:
+            Math.round(((totalBlocks * bytesPerBlock) / 1024 ** 3) * 10) / 10,
+          availableSpace:
+            Math.round(((freeBlocks * bytesPerBlock) / 1024 ** 3) * 10) / 10,
+          usedSpace:
+            Math.round(((usedBlocks * bytesPerBlock) / 1024 ** 3) * 10) / 10,
           ioLoad: 0, // Would need platform-specific implementation
         };
       }
@@ -241,35 +246,35 @@ export class ResourceMonitor {
    */
   private async getGPUInfo(): Promise<SystemResources['gpu']> {
     const gpus: SystemResources['gpu'] = [];
-    
+
     try {
       // Try nvidia-smi for NVIDIA GPUs
       const { execSync } = await import('child_process');
-      
+
       const nvidiaSmi = execSync(
         'nvidia-smi --query-gpu=name,memory.total,memory.used,utilization.gpu,temperature.gpu --format=csv,noheader,nounits',
-        { encoding: 'utf8', timeout: 5000 }
+        { encoding: 'utf8', timeout: 5000 },
       );
-      
+
       const lines = nvidiaSmi.trim().split('\n');
       for (const line of lines) {
         const [name, memTotal, memUsed, util, temp] = line.split(', ');
-        
+
         // Validate that we have valid numeric data
         const memTotalNum = parseFloat(memTotal);
         const memUsedNum = parseFloat(memUsed);
         const utilNum = parseInt(util);
         const tempNum = parseFloat(temp);
-        
+
         if (isNaN(memTotalNum) || isNaN(memUsedNum) || isNaN(utilNum)) {
           // Skip invalid GPU data
           continue;
         }
-        
+
         gpus.push({
           name: name.trim(),
-          memoryTotal: Math.round(memTotalNum / 1024 * 10) / 10, // Convert MB to GB
-          memoryUsed: Math.round(memUsedNum / 1024 * 10) / 10,
+          memoryTotal: Math.round((memTotalNum / 1024) * 10) / 10, // Convert MB to GB
+          memoryUsed: Math.round((memUsedNum / 1024) * 10) / 10,
           utilization: utilNum,
           temperature: isNaN(tempNum) ? undefined : tempNum,
         });
@@ -288,7 +293,7 @@ export class ResourceMonitor {
     // Simplified network info - would need platform-specific implementation for real data
     return {
       downloadSpeed: 100, // Mbps - placeholder
-      uploadSpeed: 50, // Mbps - placeholder  
+      uploadSpeed: 50, // Mbps - placeholder
       latency: 20, // ms - placeholder
     };
   }
@@ -302,21 +307,21 @@ export class ResourceMonitor {
 
     // Memory analysis
     optimizations.push(...this.analyzeMemory(resources.memory));
-    
+
     // CPU analysis
     optimizations.push(...this.analyzeCPU(resources.cpu));
-    
+
     // Disk analysis
     optimizations.push(...this.analyzeDisk(resources.disk));
-    
+
     // GPU analysis
     if (resources.gpu) {
       optimizations.push(...this.analyzeGPU(resources.gpu));
     }
-    
+
     // Network analysis
     optimizations.push(...this.analyzeNetwork(resources.network));
-    
+
     // General system analysis
     optimizations.push(...this.analyzeGeneralSystem(resources));
 
@@ -327,7 +332,9 @@ export class ResourceMonitor {
   /**
    * Analyze memory usage and suggest optimizations
    */
-  private analyzeMemory(memory: SystemResources['memory']): ResourceOptimization[] {
+  private analyzeMemory(
+    memory: SystemResources['memory'],
+  ): ResourceOptimization[] {
     const optimizations: ResourceOptimization[] = [];
     const memoryUsagePercent = (memory.usedRAM / memory.totalRAM) * 100;
 
@@ -344,9 +351,9 @@ export class ResourceMonitor {
           'Consider using smaller models (1.5B-3B parameters)',
           'Enable model quantization to reduce memory usage',
           'Use swap file if available',
-          'Restart Trust CLI to clear memory leaks'
+          'Restart Trust CLI to clear memory leaks',
         ],
-        priority: 9
+        priority: 9,
       });
     } else if (memoryUsagePercent > 70) {
       optimizations.push({
@@ -359,9 +366,9 @@ export class ResourceMonitor {
         actions: [
           'Prefer models under 7B parameters',
           'Enable GGUF quantization (Q4_K_M or Q5_K_M)',
-          'Monitor memory usage with: trust status --resources'
+          'Monitor memory usage with: trust status --resources',
         ],
-        priority: 6
+        priority: 6,
       });
     } else if (memory.availableRAM > 16) {
       optimizations.push({
@@ -374,9 +381,9 @@ export class ResourceMonitor {
         actions: [
           'Consider 13B+ parameter models for better performance',
           'Enable multiple concurrent model sessions',
-          'Use unquantized models for best quality'
+          'Use unquantized models for best quality',
         ],
-        priority: 3
+        priority: 3,
       });
     }
 
@@ -391,9 +398,9 @@ export class ResourceMonitor {
         actions: [
           'Free up RAM by closing applications',
           'Use smaller models to reduce memory pressure',
-          'Consider adding more physical RAM'
+          'Consider adding more physical RAM',
         ],
-        priority: 7
+        priority: 7,
       });
     }
 
@@ -418,9 +425,9 @@ export class ResourceMonitor {
           'Close CPU-intensive applications',
           'Reduce model context length',
           'Use CPU-optimized models (GGUF format)',
-          'Consider using smaller models'
+          'Consider using smaller models',
         ],
-        priority: 8
+        priority: 8,
       });
     } else if (cpu.currentLoad > 70) {
       optimizations.push({
@@ -433,9 +440,9 @@ export class ResourceMonitor {
         actions: [
           'Monitor CPU usage during model inference',
           'Use models optimized for your CPU architecture',
-          'Consider reducing batch size for generation'
+          'Consider reducing batch size for generation',
         ],
-        priority: 5
+        priority: 5,
       });
     }
 
@@ -450,9 +457,9 @@ export class ResourceMonitor {
         actions: [
           'Enable parallel processing in Ollama',
           'Use multiple model sessions concurrently',
-          'Consider CPU-only inference for smaller models'
+          'Consider CPU-only inference for smaller models',
         ],
-        priority: 2
+        priority: 2,
       });
     }
 
@@ -478,9 +485,9 @@ export class ResourceMonitor {
           'Remove unused models with: ollama rm <model>',
           'Clear model cache and temporary files',
           'Move models to external storage',
-          'Use smaller quantized models'
+          'Use smaller quantized models',
         ],
-        priority: 10
+        priority: 10,
       });
     } else if (diskUsagePercent > 80) {
       optimizations.push({
@@ -493,9 +500,9 @@ export class ResourceMonitor {
         actions: [
           'Review installed models: ollama list',
           'Remove unused models and cache files',
-          'Monitor disk space regularly'
+          'Monitor disk space regularly',
         ],
-        priority: 6
+        priority: 6,
       });
     }
 
@@ -510,9 +517,9 @@ export class ResourceMonitor {
         actions: [
           'Free up space before downloading new models',
           'Each model typically requires 2-15GB',
-          'Consider external storage for model files'
+          'Consider external storage for model files',
         ],
-        priority: 7
+        priority: 7,
       });
     }
 
@@ -522,7 +529,9 @@ export class ResourceMonitor {
   /**
    * Analyze GPU usage and suggest optimizations
    */
-  private analyzeGPU(gpus: NonNullable<SystemResources['gpu']>): ResourceOptimization[] {
+  private analyzeGPU(
+    gpus: NonNullable<SystemResources['gpu']>,
+  ): ResourceOptimization[] {
     const optimizations: ResourceOptimization[] = [];
 
     for (const gpu of gpus) {
@@ -540,9 +549,9 @@ export class ResourceMonitor {
             'Use smaller models or increase quantization',
             'Reduce context length and batch size',
             'Enable CPU fallback for large models',
-            'Close other GPU-accelerated applications'
+            'Close other GPU-accelerated applications',
           ],
-          priority: 9
+          priority: 9,
         });
       } else if (gpu.memoryTotal >= 8) {
         optimizations.push({
@@ -556,9 +565,9 @@ export class ResourceMonitor {
             'Enable GPU acceleration in Ollama',
             'Use larger unquantized models for best quality',
             'Consider 13B-70B parameter models',
-            'Enable mixed precision for better performance'
+            'Enable mixed precision for better performance',
           ],
-          priority: 1
+          priority: 1,
         });
       }
 
@@ -574,9 +583,9 @@ export class ResourceMonitor {
             'Improve GPU cooling and airflow',
             'Reduce model workload temporarily',
             'Monitor temperature during inference',
-            'Consider undervolting if temperatures persist'
+            'Consider undervolting if temperatures persist',
           ],
-          priority: 6
+          priority: 6,
         });
       }
     }
@@ -587,7 +596,9 @@ export class ResourceMonitor {
   /**
    * Analyze network and suggest optimizations
    */
-  private analyzeNetwork(network: SystemResources['network']): ResourceOptimization[] {
+  private analyzeNetwork(
+    network: SystemResources['network'],
+  ): ResourceOptimization[] {
     const optimizations: ResourceOptimization[] = [];
 
     if (network.downloadSpeed < 10) {
@@ -602,9 +613,9 @@ export class ResourceMonitor {
           'Download models during off-peak hours',
           'Use smaller models to reduce download time',
           'Consider offline model management',
-          'Check network connectivity and bandwidth'
+          'Check network connectivity and bandwidth',
         ],
-        priority: 4
+        priority: 4,
       });
     }
 
@@ -620,9 +631,9 @@ export class ResourceMonitor {
           'Prefer local models for better responsiveness',
           'Use cloud models only when necessary',
           'Consider local model fine-tuning',
-          'Check network stability'
+          'Check network stability',
         ],
-        priority: 2
+        priority: 2,
       });
     }
 
@@ -632,29 +643,34 @@ export class ResourceMonitor {
   /**
    * Analyze general system health and suggest optimizations
    */
-  private analyzeGeneralSystem(resources: SystemResources): ResourceOptimization[] {
+  private analyzeGeneralSystem(
+    resources: SystemResources,
+  ): ResourceOptimization[] {
     const optimizations: ResourceOptimization[] = [];
 
     // Check for balanced system
-    const memoryUsagePercent = (resources.memory.usedRAM / resources.memory.totalRAM) * 100;
-    const isSystemHealthy = memoryUsagePercent < 70 && 
-                           resources.cpu.currentLoad < 70 && 
-                           resources.disk.availableSpace > 20;
+    const memoryUsagePercent =
+      (resources.memory.usedRAM / resources.memory.totalRAM) * 100;
+    const isSystemHealthy =
+      memoryUsagePercent < 70 &&
+      resources.cpu.currentLoad < 70 &&
+      resources.disk.availableSpace > 20;
 
     if (isSystemHealthy) {
       optimizations.push({
         type: 'suggestion',
         category: 'general',
         title: 'System Running Optimally',
-        description: 'Your system has good resource availability across CPU, memory, and disk.',
+        description:
+          'Your system has good resource availability across CPU, memory, and disk.',
         impact: 'low',
         actionable: false,
         actions: [
           'System is well-optimized for AI workloads',
           'Consider trying larger models for better quality',
-          'Experiment with multiple concurrent sessions'
+          'Experiment with multiple concurrent sessions',
         ],
-        priority: 1
+        priority: 1,
       });
     }
 
@@ -664,16 +680,17 @@ export class ResourceMonitor {
         type: 'suggestion',
         category: 'general',
         title: 'Memory-Limited System',
-        description: 'High CPU core count but limited RAM. CPU-optimized models recommended.',
+        description:
+          'High CPU core count but limited RAM. CPU-optimized models recommended.',
         impact: 'medium',
         actionable: true,
         actions: [
           'Focus on CPU-optimized models (GGUF format)',
           'Use quantized models to reduce memory usage',
           'Consider RAM upgrade for better performance',
-          'Avoid large parameter models (>7B)'
+          'Avoid large parameter models (>7B)',
         ],
-        priority: 5
+        priority: 5,
       });
     }
 
@@ -742,10 +759,14 @@ export class ResourceMonitor {
     if (optimizations.length > 0) {
       report += `💡 Optimization Suggestions:\n`;
       report += '─'.repeat(30) + '\n';
-      
-      const criticalOpts = optimizations.filter(opt => opt.type === 'critical');
-      const warningOpts = optimizations.filter(opt => opt.type === 'warning');
-      const suggestionOpts = optimizations.filter(opt => opt.type === 'suggestion');
+
+      const criticalOpts = optimizations.filter(
+        (opt) => opt.type === 'critical',
+      );
+      const warningOpts = optimizations.filter((opt) => opt.type === 'warning');
+      const suggestionOpts = optimizations.filter(
+        (opt) => opt.type === 'suggestion',
+      );
 
       if (criticalOpts.length > 0) {
         report += '\n🔴 Critical Issues:\n';
@@ -774,11 +795,12 @@ export class ResourceMonitor {
         }
       }
     } else {
-      report += '✅ No optimization suggestions needed. System is running well!\n';
+      report +=
+        '✅ No optimization suggestions needed. System is running well!\n';
     }
 
     report += '\n📋 Report generated at: ' + new Date().toISOString();
-    
+
     return report;
   }
 
@@ -793,7 +815,7 @@ export class ResourceMonitor {
     const resources = await this.getSystemResources();
     const recommended: string[] = [];
     const discouraged: string[] = [];
-    
+
     let reasoning = 'Based on your system resources: ';
 
     // Memory-based recommendations

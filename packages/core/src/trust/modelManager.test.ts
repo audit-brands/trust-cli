@@ -4,7 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { describe, it, expect, beforeEach, vi, type MockedFunction } from 'vitest';
+import {
+  describe,
+  it,
+  expect,
+  beforeEach,
+  vi,
+  type MockedFunction,
+} from 'vitest';
 import { TrustModelManagerImpl } from './modelManager.js';
 import { TrustModelConfig } from './types.js';
 import * as fs from 'fs/promises';
@@ -34,7 +41,9 @@ describe('TrustModelManager', () => {
 
       await modelManager.initialize();
 
-      expect(mockFs.mkdir).toHaveBeenCalledWith(testModelsDir, { recursive: true });
+      expect(mockFs.mkdir).toHaveBeenCalledWith(testModelsDir, {
+        recursive: true,
+      });
     });
 
     it('should scan existing models on initialization', async () => {
@@ -46,7 +55,9 @@ describe('TrustModelManager', () => {
       await modelManager.initialize();
 
       // Verify models directory is created
-      expect(mockFs.mkdir).toHaveBeenCalledWith(testModelsDir, { recursive: true });
+      expect(mockFs.mkdir).toHaveBeenCalledWith(testModelsDir, {
+        recursive: true,
+      });
       // Verify config is saved when not found
       expect(mockFs.writeFile).toHaveBeenCalled();
     });
@@ -71,7 +82,7 @@ describe('TrustModelManager', () => {
       await modelManager.initialize();
       const models = modelManager.listAvailableModels();
 
-      models.forEach(model => {
+      models.forEach((model) => {
         expect(model.trustScore).toBeGreaterThanOrEqual(1);
         expect(model.trustScore).toBeLessThanOrEqual(10);
       });
@@ -111,7 +122,9 @@ describe('TrustModelManager', () => {
 
       if (recommendation) {
         expect(typeof recommendation.ramRequirement).toBe('string');
-        const ramValue = parseInt(recommendation.ramRequirement.replace('GB', ''));
+        const ramValue = parseInt(
+          recommendation.ramRequirement.replace('GB', ''),
+        );
         expect(ramValue).toBeLessThanOrEqual(4);
       }
     });
@@ -142,7 +155,9 @@ describe('TrustModelManager', () => {
 
       await modelManager.initialize();
 
-      await expect(modelManager.switchModel('non-existent-model')).rejects.toThrow();
+      await expect(
+        modelManager.switchModel('non-existent-model'),
+      ).rejects.toThrow();
     });
   });
 
@@ -198,7 +213,8 @@ describe('TrustModelManager', () => {
       mockFs.readFile.mockRejectedValue(new Error('File not found'));
 
       await modelManager.initialize();
-      const result = await modelManager.verifyModelIntegrity('non-existent-model');
+      const result =
+        await modelManager.verifyModelIntegrity('non-existent-model');
 
       expect(result.valid).toBe(false);
       expect(result.message).toContain('not found');
@@ -213,11 +229,11 @@ describe('TrustModelManager', () => {
       mockFs.writeFile.mockResolvedValue(undefined);
 
       await modelManager.initialize();
-      
+
       // Use a real model name from the available models
       const models = modelManager.listAvailableModels();
       const modelName = models[0]?.name || 'phi-3.5-mini-instruct';
-      
+
       // Mock successful download (this will still fail without proper mocking, but tests the model lookup)
       await expect(modelManager.downloadModel(modelName)).rejects.toThrow();
     });
@@ -227,7 +243,7 @@ describe('TrustModelManager', () => {
       mockFs.readdir.mockResolvedValue([]);
 
       await modelManager.initialize();
-      
+
       // Test error handling for invalid model
       await expect(modelManager.downloadModel('')).rejects.toThrow();
     });
@@ -242,7 +258,9 @@ describe('TrustModelManager', () => {
       const models = modelManager.listAvailableModels();
       const targetModel = models[0];
 
-      await expect(modelManager.deleteModel(targetModel.name)).resolves.not.toThrow();
+      await expect(
+        modelManager.deleteModel(targetModel.name),
+      ).resolves.not.toThrow();
     });
 
     it('should throw error when deleting non-existent model', async () => {
@@ -251,7 +269,9 @@ describe('TrustModelManager', () => {
 
       await modelManager.initialize();
 
-      await expect(modelManager.deleteModel('non-existent-model')).rejects.toThrow();
+      await expect(
+        modelManager.deleteModel('non-existent-model'),
+      ).rejects.toThrow();
     });
   });
 
@@ -266,7 +286,7 @@ describe('TrustModelManager', () => {
         .mockResolvedValue(JSON.stringify({ currentModel: 'test-model' }));
 
       await modelManager.initialize();
-      
+
       // Configuration should be saved when not found
       expect(mockFs.writeFile).toHaveBeenCalled();
     });

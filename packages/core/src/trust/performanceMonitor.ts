@@ -63,23 +63,23 @@ export class PerformanceMonitor {
         total: totalMemory,
         used: totalMemory - freeMemory,
         free: freeMemory,
-        available: freeMemory
+        available: freeMemory,
       },
       nodeMemory: {
         heapUsed: nodeMemory.heapUsed,
         heapTotal: nodeMemory.heapTotal,
         external: nodeMemory.external,
-        rss: nodeMemory.rss
+        rss: nodeMemory.rss,
       },
       loadAverage: os.loadavg(),
       platform: os.platform(),
-      uptime: os.uptime()
+      uptime: os.uptime(),
     };
   }
 
   private getCPUUsage(): number {
     const cpus = os.cpus();
-    
+
     // Handle cases where CPU data is not available or properly mocked
     if (!cpus || cpus.length === 0) {
       return 0;
@@ -92,14 +92,14 @@ export class PerformanceMonitor {
       if (!cpu.times) {
         continue;
       }
-      
+
       for (const type in cpu.times) {
         const time = cpu.times[type as keyof typeof cpu.times];
         if (typeof time === 'number') {
           totalTick += time;
         }
       }
-      
+
       if (typeof cpu.times.idle === 'number') {
         totalIdle += cpu.times.idle;
       }
@@ -111,13 +111,13 @@ export class PerformanceMonitor {
 
     const idle = totalIdle / cpus.length;
     const total = totalTick / cpus.length;
-    
-    return 100 - ~~(100 * idle / total);
+
+    return 100 - ~~((100 * idle) / total);
   }
 
   recordInference(metrics: InferenceMetrics): void {
     this.inferenceHistory.push(metrics);
-    
+
     // Keep only the last N records
     if (this.inferenceHistory.length > this.maxHistorySize) {
       this.inferenceHistory.shift();
@@ -135,57 +135,58 @@ export class PerformanceMonitor {
         averageTokensPerSecond: 0,
         totalInferences: 0,
         averageInferenceTime: 0,
-        recentMetrics: []
+        recentMetrics: [],
       };
     }
 
     const totalTokensPerSecond = this.inferenceHistory.reduce(
-      (sum, metric) => sum + metric.tokensPerSecond, 
-      0
+      (sum, metric) => sum + metric.tokensPerSecond,
+      0,
     );
     const totalInferenceTime = this.inferenceHistory.reduce(
-      (sum, metric) => sum + metric.inferenceTime, 
-      0
+      (sum, metric) => sum + metric.inferenceTime,
+      0,
     );
 
     return {
-      averageTokensPerSecond: totalTokensPerSecond / this.inferenceHistory.length,
+      averageTokensPerSecond:
+        totalTokensPerSecond / this.inferenceHistory.length,
       totalInferences: this.inferenceHistory.length,
       averageInferenceTime: totalInferenceTime / this.inferenceHistory.length,
-      recentMetrics: this.inferenceHistory.slice(-10) // Last 10 inferences
+      recentMetrics: this.inferenceHistory.slice(-10), // Last 10 inferences
     };
   }
 
   formatSystemReport(): string {
     const metrics = this.getSystemMetrics();
     const stats = this.getInferenceStats();
-    
+
     let report = '\n🖥️  System Performance Report\n';
     report += '═'.repeat(50) + '\n\n';
-    
+
     // System Resources
     report += '💻 System Resources:\n';
     report += `   CPU Usage: ${metrics.cpuUsage.toFixed(1)}%\n`;
     report += `   Memory: ${this.formatBytes(metrics.memoryUsage.used)} / ${this.formatBytes(metrics.memoryUsage.total)} `;
     report += `(${((metrics.memoryUsage.used / metrics.memoryUsage.total) * 100).toFixed(1)}%)\n`;
-    report += `   Load Average: ${metrics.loadAverage.map(l => l.toFixed(2)).join(', ')}\n`;
+    report += `   Load Average: ${metrics.loadAverage.map((l) => l.toFixed(2)).join(', ')}\n`;
     report += `   Platform: ${metrics.platform}\n`;
     report += `   Uptime: ${this.formatDuration(metrics.uptime * 1000)}\n\n`;
-    
+
     // Node.js Memory
     report += '🟢 Node.js Memory:\n';
     report += `   Heap Used: ${this.formatBytes(metrics.nodeMemory.heapUsed)}\n`;
     report += `   Heap Total: ${this.formatBytes(metrics.nodeMemory.heapTotal)}\n`;
     report += `   RSS: ${this.formatBytes(metrics.nodeMemory.rss)}\n`;
     report += `   External: ${this.formatBytes(metrics.nodeMemory.external)}\n\n`;
-    
+
     // Inference Performance
     if (stats.totalInferences > 0) {
       report += '🚀 Inference Performance:\n';
       report += `   Total Inferences: ${stats.totalInferences}\n`;
       report += `   Average Speed: ${stats.averageTokensPerSecond.toFixed(1)} tokens/sec\n`;
       report += `   Average Time: ${stats.averageInferenceTime.toFixed(0)}ms\n`;
-      
+
       if (stats.recentMetrics.length > 0) {
         const lastMetric = stats.recentMetrics[stats.recentMetrics.length - 1];
         report += `   Last Model: ${lastMetric.modelName}\n`;
@@ -195,25 +196,31 @@ export class PerformanceMonitor {
       report += '🚀 Inference Performance:\n';
       report += '   No inference data available\n';
     }
-    
+
     return report;
   }
 
   formatCompactStatus(): string {
     const metrics = this.getSystemMetrics();
-    const memoryPercent = (metrics.memoryUsage.used / metrics.memoryUsage.total) * 100;
-    
-    return `CPU: ${metrics.cpuUsage.toFixed(0)}% | ` +
-           `MEM: ${memoryPercent.toFixed(0)}% | ` +
-           `HEAP: ${this.formatBytes(metrics.nodeMemory.heapUsed)}`;
+    const memoryPercent =
+      (metrics.memoryUsage.used / metrics.memoryUsage.total) * 100;
+
+    return (
+      `CPU: ${metrics.cpuUsage.toFixed(0)}% | ` +
+      `MEM: ${memoryPercent.toFixed(0)}% | ` +
+      `HEAP: ${this.formatBytes(metrics.nodeMemory.heapUsed)}`
+    );
   }
 
-  monitorResourceUsage(callback: (usage: ResourceUsage) => void, intervalMs = 1000): () => void {
+  monitorResourceUsage(
+    callback: (usage: ResourceUsage) => void,
+    intervalMs = 1000,
+  ): () => void {
     const interval = setInterval(() => {
       const metrics = this.getSystemMetrics();
       const usage: ResourceUsage = {
         cpuPercent: metrics.cpuUsage,
-        memoryMB: metrics.nodeMemory.rss / (1024 * 1024)
+        memoryMB: metrics.nodeMemory.rss / (1024 * 1024),
       };
       callback(usage);
     }, intervalMs);
@@ -225,12 +232,12 @@ export class PerformanceMonitor {
     const units = ['B', 'KB', 'MB', 'GB'];
     let size = bytes;
     let unitIndex = 0;
-    
+
     while (size >= 1024 && unitIndex < units.length - 1) {
       size /= 1024;
       unitIndex++;
     }
-    
+
     return `${size.toFixed(1)} ${units[unitIndex]}`;
   }
 
@@ -265,7 +272,7 @@ export class PerformanceMonitor {
 
     // Conservative RAM allocation (50% of available)
     const recommendedRAM = Math.floor(availableRAMGB * 0.5);
-    
+
     // Context size based on available memory
     let maxContextSize = 2048;
     if (recommendedRAM >= 8) maxContextSize = 8192;
@@ -286,7 +293,7 @@ export class PerformanceMonitor {
       recommendedRAM,
       maxContextSize,
       preferredQuantization,
-      estimatedSpeed
+      estimatedSpeed,
     };
   }
 }

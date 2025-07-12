@@ -13,7 +13,7 @@ const testCases = [
     description: 'Verify that Trust ASCII art is displayed instead of Gemini',
     check: (output) => {
       return output.includes('TRUST') && !output.includes('GEMINI');
-    }
+    },
   },
   {
     name: 'Test Window Title',
@@ -21,15 +21,18 @@ const testCases = [
     check: (output) => {
       // This would be harder to test in CI, but we can check for Trust-related text
       return true; // Skip this test for now
-    }
+    },
   },
   {
     name: 'Test About Dialog',
     description: 'Verify About dialog shows Trust CLI',
     check: (output) => {
-      return output.includes('About Trust CLI') && !output.includes('About Gemini CLI');
-    }
-  }
+      return (
+        output.includes('About Trust CLI') &&
+        !output.includes('About Gemini CLI')
+      );
+    },
+  },
 ];
 
 async function runTrustCLI(args = []) {
@@ -37,7 +40,7 @@ async function runTrustCLI(args = []) {
     const cliPath = path.join(process.cwd(), 'packages/cli/dist/index.js');
     const child = spawn('node', [cliPath, ...args], {
       stdio: ['pipe', 'pipe', 'pipe'],
-      env: { ...process.env, NODE_ENV: 'test' }
+      env: { ...process.env, NODE_ENV: 'test' },
     });
 
     let stdout = '';
@@ -81,17 +84,23 @@ async function main() {
     // Test basic startup
     console.log('📄 Testing CLI startup and branding...');
     const result = await runTrustCLI(['--help']);
-    
+
     console.log(`Exit code: ${result.code}`);
-    
+
     if (result.stdout) {
       console.log('\n📤 STDOUT:');
-      console.log(result.stdout.substring(0, 500) + (result.stdout.length > 500 ? '...' : ''));
+      console.log(
+        result.stdout.substring(0, 500) +
+          (result.stdout.length > 500 ? '...' : ''),
+      );
     }
-    
+
     if (result.stderr) {
       console.log('\n📤 STDERR:');
-      console.log(result.stderr.substring(0, 500) + (result.stderr.length > 500 ? '...' : ''));
+      console.log(
+        result.stderr.substring(0, 500) +
+          (result.stderr.length > 500 ? '...' : ''),
+      );
     }
 
     // Run test cases
@@ -101,7 +110,7 @@ async function main() {
     for (const testCase of testCases) {
       console.log(`\n🧪 ${testCase.name}`);
       console.log(`   ${testCase.description}`);
-      
+
       try {
         const passed = testCase.check(allOutput);
         if (passed) {
@@ -115,14 +124,15 @@ async function main() {
       }
     }
 
-    console.log(`\n📊 Results: ${passedTests}/${testCases.length} tests passed`);
-    
+    console.log(
+      `\n📊 Results: ${passedTests}/${testCases.length} tests passed`,
+    );
+
     if (passedTests === testCases.length) {
       console.log('🎉 All branding tests passed!');
     } else {
       console.log('⚠️  Some tests failed. Check the output above.');
     }
-
   } catch (error) {
     console.error('❌ Error running tests:', error);
     process.exit(1);

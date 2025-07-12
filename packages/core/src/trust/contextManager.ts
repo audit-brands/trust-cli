@@ -80,26 +80,41 @@ export class TrustContextManager {
    * Add directory contents recursively
    */
   async addDirectory(
-    dirPath: string, 
+    dirPath: string,
     options: {
       extensions?: string[];
       exclude?: string[];
       maxFiles?: number;
       importance?: number;
-    } = {}
+    } = {},
   ): Promise<ContextChunk[]> {
     const {
-      extensions = ['.ts', '.js', '.tsx', '.jsx', '.py', '.java', '.cpp', '.c', '.h'],
+      extensions = [
+        '.ts',
+        '.js',
+        '.tsx',
+        '.jsx',
+        '.py',
+        '.java',
+        '.cpp',
+        '.c',
+        '.h',
+      ],
       exclude = ['node_modules', '.git', 'dist', 'build', '.next'],
       maxFiles = 100,
       importance = 1.0,
     } = options;
 
     const chunks: ContextChunk[] = [];
-    
+
     try {
-      const files = await this.findFiles(dirPath, extensions, exclude, maxFiles);
-      
+      const files = await this.findFiles(
+        dirPath,
+        extensions,
+        exclude,
+        maxFiles,
+      );
+
       for (const file of files) {
         try {
           const chunk = await this.addFile(file, importance);
@@ -108,7 +123,6 @@ export class TrustContextManager {
           console.warn(`Failed to add file ${file}:`, error);
         }
       }
-      
     } catch (error) {
       throw new Error(`Failed to read directory ${dirPath}: ${error}`);
     }
@@ -121,10 +135,10 @@ export class TrustContextManager {
    */
   getOptimizedContext(query: string, targetTokens?: number): string {
     const target = targetTokens || Math.floor(this.maxContextSize * 0.8); // Reserve 20% for response
-    
+
     // Score chunks based on relevance to query
     const scoredChunks = Array.from(this.chunks.values())
-      .map(chunk => ({
+      .map((chunk) => ({
         chunk,
         score: this.calculateRelevanceScore(chunk, query),
       }))
@@ -153,7 +167,7 @@ export class TrustContextManager {
     // Format included chunks
     if (includedChunks.length > 0) {
       context = includedChunks
-        .map(chunk => this.formatChunkForContext(chunk.source, chunk.content))
+        .map((chunk) => this.formatChunkForContext(chunk.source, chunk.content))
         .join('\\n\\n---\\n\\n');
     }
 
@@ -164,18 +178,22 @@ export class TrustContextManager {
    * Create summary of multiple chunks
    */
   createSummary(chunkIds: string[], summaryId?: string): ContextSummary {
-    const chunks = chunkIds.map(id => this.chunks.get(id)).filter(Boolean) as ContextChunk[];
-    
+    const chunks = chunkIds
+      .map((id) => this.chunks.get(id))
+      .filter(Boolean) as ContextChunk[];
+
     if (chunks.length === 0) {
       throw new Error('No valid chunks found for summary');
     }
 
-    const combinedContent = chunks.map(c => c.content).join('\\n\\n');
-    const targetLength = Math.floor(combinedContent.length * this.compressionRatio);
-    
+    const combinedContent = chunks.map((c) => c.content).join('\\n\\n');
+    const targetLength = Math.floor(
+      combinedContent.length * this.compressionRatio,
+    );
+
     // Simple summary generation (in production, this would use a summarization model)
     const summary = this.generateTextSummary(combinedContent, targetLength);
-    
+
     const contextSummary: ContextSummary = {
       id: summaryId || this.generateSummaryId(),
       originalChunks: chunkIds,
@@ -200,8 +218,8 @@ export class TrustContextManager {
   } {
     const chunks = Array.from(this.chunks.values());
     const totalTokens = chunks.reduce((sum, c) => sum + c.tokenCount, 0);
-    const largestChunk = Math.max(...chunks.map(c => c.tokenCount), 0);
-    
+    const largestChunk = Math.max(...chunks.map((c) => c.tokenCount), 0);
+
     return {
       totalChunks: chunks.length,
       totalTokens,
@@ -220,34 +238,37 @@ export class TrustContextManager {
   }
 
   private async findFiles(
-    dirPath: string, 
-    extensions: string[], 
-    exclude: string[], 
-    maxFiles: number
+    dirPath: string,
+    extensions: string[],
+    exclude: string[],
+    maxFiles: number,
   ): Promise<string[]> {
     const files: string[] = [];
-    
+
     const processDir = async (currentPath: string): Promise<void> => {
       if (files.length >= maxFiles) return;
-      
+
       const entries = await fs.readdir(currentPath, { withFileTypes: true });
-      
+
       for (const entry of entries) {
         if (files.length >= maxFiles) break;
-        
+
         const fullPath = path.join(currentPath, entry.name);
-        
+
         if (entry.isDirectory()) {
-          const shouldExclude = exclude.some(pattern => 
-            entry.name.includes(pattern) || fullPath.includes(pattern)
+          const shouldExclude = exclude.some(
+            (pattern) =>
+              entry.name.includes(pattern) || fullPath.includes(pattern),
           );
-          
+
           if (!shouldExclude) {
             await processDir(fullPath);
           }
         } else if (entry.isFile()) {
-          const hasValidExtension = extensions.some(ext => entry.name.endsWith(ext));
-          
+          const hasValidExtension = extensions.some((ext) =>
+            entry.name.endsWith(ext),
+          );
+
           if (hasValidExtension) {
             files.push(fullPath);
           }
@@ -263,36 +284,43 @@ export class TrustContextManager {
     const queryLower = query.toLowerCase();
     const contentLower = chunk.content.toLowerCase();
     const sourceLower = chunk.source.toLowerCase();
-    
+
     let score = 0;
-    
+
     // Base importance score
     score += chunk.importance;
-    
+
     // Content relevance
     const queryWords = queryLower.split(/\\s+/);
     for (const word of queryWords) {
       if (word.length > 2) {
-        const contentMatches = (contentLower.match(new RegExp(word, 'g')) || []).length;
-        const sourceMatches = (sourceLower.match(new RegExp(word, 'g')) || []).length;
-        
+        const contentMatches = (contentLower.match(new RegExp(word, 'g')) || [])
+          .length;
+        const sourceMatches = (sourceLower.match(new RegExp(word, 'g')) || [])
+          .length;
+
         score += contentMatches * 0.1;
         score += sourceMatches * 0.5; // Source name matches are more important
       }
     }
-    
+
     // Recent content bonus
     const age = Date.now() - chunk.timestamp.getTime();
     const ageBonus = Math.max(0, 1 - age / (24 * 60 * 60 * 1000)); // Decay over 24 hours
     score += ageBonus * 0.5;
-    
+
     return score;
   }
 
-  private createChunkSummary(chunk: ContextChunk, maxTokens: number): ContextSummary {
-    const targetLength = Math.floor(chunk.content.length * (maxTokens / chunk.tokenCount));
+  private createChunkSummary(
+    chunk: ContextChunk,
+    maxTokens: number,
+  ): ContextSummary {
+    const targetLength = Math.floor(
+      chunk.content.length * (maxTokens / chunk.tokenCount),
+    );
     const summary = this.generateTextSummary(chunk.content, targetLength);
-    
+
     return {
       id: this.generateSummaryId(),
       originalChunks: [chunk.id],
@@ -305,41 +333,41 @@ export class TrustContextManager {
   private generateTextSummary(text: string, targetLength: number): string {
     // Simple extractive summarization
     // In production, this would use a proper summarization model
-    
-    const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 10);
-    
+
+    const sentences = text.split(/[.!?]+/).filter((s) => s.trim().length > 10);
+
     if (sentences.length <= 3) {
       return text;
     }
-    
+
     // Score sentences by position and length
     const scoredSentences = sentences.map((sentence, index) => {
       let score = 0;
-      
+
       // Position score (beginning and end are important)
       if (index < sentences.length * 0.2) score += 2;
       if (index > sentences.length * 0.8) score += 1;
-      
+
       // Length score (medium-length sentences preferred)
       const length = sentence.trim().length;
       if (length > 50 && length < 200) score += 1;
-      
+
       return { sentence: sentence.trim(), score, index };
     });
-    
+
     // Select top sentences up to target length
     scoredSentences.sort((a, b) => b.score - a.score);
-    
+
     let summary = '';
     let currentLength = 0;
-    
+
     for (const { sentence } of scoredSentences) {
       if (currentLength + sentence.length <= targetLength) {
         summary += sentence + '. ';
         currentLength += sentence.length + 2;
       }
     }
-    
+
     return summary.trim() || text.substring(0, targetLength);
   }
 

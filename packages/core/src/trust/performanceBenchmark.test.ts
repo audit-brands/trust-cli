@@ -28,7 +28,7 @@ describe('PerformanceBenchmark', () => {
       trustScore: 8.5,
       downloadUrl: 'https://example.com/fast.gguf',
       verificationHash: 'sha256:fast',
-      expectedSize: 1000000000
+      expectedSize: 1000000000,
     },
     {
       name: 'quality-model',
@@ -42,8 +42,8 @@ describe('PerformanceBenchmark', () => {
       trustScore: 9.5,
       downloadUrl: 'https://example.com/quality.gguf',
       verificationHash: 'sha256:quality',
-      expectedSize: 4000000000
-    }
+      expectedSize: 4000000000,
+    },
   ];
 
   beforeEach(() => {
@@ -55,26 +55,26 @@ describe('PerformanceBenchmark', () => {
         cpuUsage: 25,
         memoryUsage: {
           total: 16 * 1024 * 1024 * 1024, // 16GB
-          used: 6 * 1024 * 1024 * 1024,   // 6GB
-          free: 10 * 1024 * 1024 * 1024,  // 10GB
-          available: 10 * 1024 * 1024 * 1024
+          used: 6 * 1024 * 1024 * 1024, // 6GB
+          free: 10 * 1024 * 1024 * 1024, // 10GB
+          available: 10 * 1024 * 1024 * 1024,
         },
         nodeMemory: {
           heapUsed: 100 * 1024 * 1024,
           heapTotal: 200 * 1024 * 1024,
           external: 50 * 1024 * 1024,
-          rss: 300 * 1024 * 1024
+          rss: 300 * 1024 * 1024,
         },
         loadAverage: [1.0, 1.2, 1.5],
         platform: 'linux',
-        uptime: 123456
+        uptime: 123456,
       }),
       recordInference: vi.fn(),
       getInferenceStats: vi.fn(),
       formatSystemReport: vi.fn(),
       formatCompactStatus: vi.fn(),
       monitorResourceUsage: vi.fn(),
-      getOptimalModelSettings: vi.fn()
+      getOptimalModelSettings: vi.fn(),
     } as unknown as PerformanceMonitor;
 
     // Mock TrustModelManagerImpl
@@ -87,24 +87,32 @@ describe('PerformanceBenchmark', () => {
       verifyModel: vi.fn().mockResolvedValue(true),
       deleteModel: vi.fn().mockResolvedValue(undefined),
       getTrustRating: vi.fn().mockResolvedValue(9.0),
-      getRecommendedModel: vi.fn().mockReturnValue(sampleModels[0])
+      getRecommendedModel: vi.fn().mockReturnValue(sampleModels[0]),
     } as unknown as TrustModelManagerImpl;
 
-    benchmark = new PerformanceBenchmark(mockPerformanceMonitor, mockModelManager);
+    benchmark = new PerformanceBenchmark(
+      mockPerformanceMonitor,
+      mockModelManager,
+    );
   });
 
   describe('initialization', () => {
     it('should initialize with standard benchmark suites', () => {
       const suites = benchmark.getBenchmarkSuites();
-      
+
       expect(suites).toHaveLength(4);
-      expect(suites.map(s => s.id)).toEqual(['speed', 'quality', 'coding', 'reasoning']);
+      expect(suites.map((s) => s.id)).toEqual([
+        'speed',
+        'quality',
+        'coding',
+        'reasoning',
+      ]);
     });
 
     it('should create speed benchmark suite with appropriate tests', () => {
       const suites = benchmark.getBenchmarkSuites();
-      const speedSuite = suites.find(s => s.id === 'speed');
-      
+      const speedSuite = suites.find((s) => s.id === 'speed');
+
       expect(speedSuite).toBeDefined();
       expect(speedSuite!.name).toBe('Speed Benchmark');
       expect(speedSuite!.tests).toHaveLength(3);
@@ -115,8 +123,8 @@ describe('PerformanceBenchmark', () => {
 
     it('should create quality benchmark suite with appropriate tests', () => {
       const suites = benchmark.getBenchmarkSuites();
-      const qualitySuite = suites.find(s => s.id === 'quality');
-      
+      const qualitySuite = suites.find((s) => s.id === 'quality');
+
       expect(qualitySuite).toBeDefined();
       expect(qualitySuite!.name).toBe('Quality Benchmark');
       expect(qualitySuite!.tests).toHaveLength(3);
@@ -125,8 +133,8 @@ describe('PerformanceBenchmark', () => {
 
     it('should create coding benchmark suite with appropriate tests', () => {
       const suites = benchmark.getBenchmarkSuites();
-      const codingSuite = suites.find(s => s.id === 'coding');
-      
+      const codingSuite = suites.find((s) => s.id === 'coding');
+
       expect(codingSuite).toBeDefined();
       expect(codingSuite!.name).toBe('Coding Benchmark');
       expect(codingSuite!.tests).toHaveLength(3);
@@ -135,8 +143,8 @@ describe('PerformanceBenchmark', () => {
 
     it('should create reasoning benchmark suite with appropriate tests', () => {
       const suites = benchmark.getBenchmarkSuites();
-      const reasoningSuite = suites.find(s => s.id === 'reasoning');
-      
+      const reasoningSuite = suites.find((s) => s.id === 'reasoning');
+
       expect(reasoningSuite).toBeDefined();
       expect(reasoningSuite!.name).toBe('Reasoning Benchmark');
       expect(reasoningSuite!.tests).toHaveLength(3);
@@ -147,11 +155,11 @@ describe('PerformanceBenchmark', () => {
   describe('benchmark execution', () => {
     it('should run a complete benchmark suite', async () => {
       const progressUpdates: Array<{ status: string; progress: number }> = [];
-      
+
       const report = await benchmark.runBenchmarkSuite(
         'speed',
         ['fast-model', 'quality-model'],
-        (status, progress) => progressUpdates.push({ status, progress })
+        (status, progress) => progressUpdates.push({ status, progress }),
       );
 
       expect(report).toBeDefined();
@@ -167,7 +175,7 @@ describe('PerformanceBenchmark', () => {
 
       expect(report.models).toHaveLength(1);
       const summary = report.models[0];
-      
+
       expect(summary.modelName).toBe('fast-model');
       expect(summary.totalTests).toBe(3); // Speed suite has 3 tests
       expect(summary.successfulTests).toBeGreaterThan(0);
@@ -188,20 +196,29 @@ describe('PerformanceBenchmark', () => {
     }, 10000);
 
     it('should generate meaningful recommendations', async () => {
-      const report = await benchmark.runBenchmarkSuite('speed', ['fast-model', 'quality-model']);
+      const report = await benchmark.runBenchmarkSuite('speed', [
+        'fast-model',
+        'quality-model',
+      ]);
 
       expect(report.recommendations).toBeDefined();
       expect(report.recommendations.fastest).toBeTruthy();
       expect(report.recommendations.mostEfficient).toBeTruthy();
       expect(report.recommendations.bestOverall).toBeTruthy();
-      expect(['fast-model', 'quality-model']).toContain(report.recommendations.fastest);
+      expect(['fast-model', 'quality-model']).toContain(
+        report.recommendations.fastest,
+      );
     }, 10000);
 
     it('should handle benchmark errors gracefully', async () => {
       // Mock a model switch failure
-      mockModelManager.switchModel = vi.fn().mockRejectedValue(new Error('Model not found'));
+      mockModelManager.switchModel = vi
+        .fn()
+        .mockRejectedValue(new Error('Model not found'));
 
-      const report = await benchmark.runBenchmarkSuite('speed', ['nonexistent-model']);
+      const report = await benchmark.runBenchmarkSuite('speed', [
+        'nonexistent-model',
+      ]);
 
       expect(report.models).toHaveLength(1);
       const summary = report.models[0];
@@ -214,10 +231,10 @@ describe('PerformanceBenchmark', () => {
 
       const results = benchmark.getResults();
       expect(results.length).toBeGreaterThan(0);
-      
+
       const modelResults = benchmark.getResults('fast-model');
       expect(modelResults.length).toBe(3); // Speed suite has 3 tests
-      
+
       const testResults = benchmark.getResults(undefined, 'quick-response');
       expect(testResults.length).toBeGreaterThan(0);
     });
@@ -241,14 +258,22 @@ describe('PerformanceBenchmark', () => {
   describe('result analysis', () => {
     beforeEach(async () => {
       // Run a benchmark to populate results
-      await benchmark.runBenchmarkSuite('speed', ['fast-model', 'quality-model']);
+      await benchmark.runBenchmarkSuite('speed', [
+        'fast-model',
+        'quality-model',
+      ]);
     }, 15000);
 
     it('should calculate model efficiency correctly', async () => {
-      const report = await benchmark.runBenchmarkSuite('speed', ['fast-model', 'quality-model']);
+      const report = await benchmark.runBenchmarkSuite('speed', [
+        'fast-model',
+        'quality-model',
+      ]);
 
-      const fastModel = report.models.find(m => m.modelName === 'fast-model');
-      const qualityModel = report.models.find(m => m.modelName === 'quality-model');
+      const fastModel = report.models.find((m) => m.modelName === 'fast-model');
+      const qualityModel = report.models.find(
+        (m) => m.modelName === 'quality-model',
+      );
 
       expect(fastModel).toBeDefined();
       expect(qualityModel).toBeDefined();
@@ -268,7 +293,10 @@ describe('PerformanceBenchmark', () => {
     }, 10000);
 
     it('should calculate overall scores appropriately', async () => {
-      const report = await benchmark.runBenchmarkSuite('speed', ['fast-model', 'quality-model']);
+      const report = await benchmark.runBenchmarkSuite('speed', [
+        'fast-model',
+        'quality-model',
+      ]);
 
       for (const summary of report.models) {
         expect(summary.overallScore).toBeGreaterThanOrEqual(0);
@@ -281,7 +309,10 @@ describe('PerformanceBenchmark', () => {
 
   describe('report generation', () => {
     it('should generate formatted text report', async () => {
-      const report = await benchmark.runBenchmarkSuite('speed', ['fast-model', 'quality-model']);
+      const report = await benchmark.runBenchmarkSuite('speed', [
+        'fast-model',
+        'quality-model',
+      ]);
       const textReport = benchmark.generateTextReport(report);
 
       expect(textReport).toContain('Benchmark Report: Speed Benchmark');
@@ -313,7 +344,10 @@ describe('PerformanceBenchmark', () => {
     });
 
     it('should show model rankings in text report', async () => {
-      const report = await benchmark.runBenchmarkSuite('speed', ['fast-model', 'quality-model']);
+      const report = await benchmark.runBenchmarkSuite('speed', [
+        'fast-model',
+        'quality-model',
+      ]);
       const textReport = benchmark.generateTextReport(report);
 
       expect(textReport).toContain('🥇'); // Gold medal for first place
@@ -321,7 +355,10 @@ describe('PerformanceBenchmark', () => {
     }, 10000);
 
     it('should display recommendations in text report', async () => {
-      const report = await benchmark.runBenchmarkSuite('speed', ['fast-model', 'quality-model']);
+      const report = await benchmark.runBenchmarkSuite('speed', [
+        'fast-model',
+        'quality-model',
+      ]);
       const textReport = benchmark.generateTextReport(report);
 
       expect(textReport).toContain('🚀 Fastest:');
@@ -332,13 +369,20 @@ describe('PerformanceBenchmark', () => {
 
   describe('result management', () => {
     it('should filter results by model name', async () => {
-      await benchmark.runBenchmarkSuite('speed', ['fast-model', 'quality-model']);
+      await benchmark.runBenchmarkSuite('speed', [
+        'fast-model',
+        'quality-model',
+      ]);
 
       const fastModelResults = benchmark.getResults('fast-model');
       const qualityModelResults = benchmark.getResults('quality-model');
 
-      expect(fastModelResults.every(r => r.modelName === 'fast-model')).toBe(true);
-      expect(qualityModelResults.every(r => r.modelName === 'quality-model')).toBe(true);
+      expect(fastModelResults.every((r) => r.modelName === 'fast-model')).toBe(
+        true,
+      );
+      expect(
+        qualityModelResults.every((r) => r.modelName === 'quality-model'),
+      ).toBe(true);
       expect(fastModelResults.length).toBeGreaterThan(0);
       expect(qualityModelResults.length).toBeGreaterThan(0);
     }, 10000);
@@ -346,19 +390,24 @@ describe('PerformanceBenchmark', () => {
     it('should filter results by test ID', async () => {
       await benchmark.runBenchmarkSuite('speed', ['fast-model']);
 
-      const quickResponseResults = benchmark.getResults(undefined, 'quick-response');
-      
-      expect(quickResponseResults.every(r => r.testId === 'quick-response')).toBe(true);
+      const quickResponseResults = benchmark.getResults(
+        undefined,
+        'quick-response',
+      );
+
+      expect(
+        quickResponseResults.every((r) => r.testId === 'quick-response'),
+      ).toBe(true);
       expect(quickResponseResults.length).toBeGreaterThan(0);
     });
 
     it('should clear all results', async () => {
       await benchmark.runBenchmarkSuite('speed', ['fast-model']);
-      
+
       expect(benchmark.getResults().length).toBeGreaterThan(0);
-      
+
       benchmark.clearResults();
-      
+
       expect(benchmark.getResults().length).toBe(0);
     }, 10000);
   });
@@ -366,27 +415,31 @@ describe('PerformanceBenchmark', () => {
   describe('error handling', () => {
     it('should throw error for unknown benchmark suite', async () => {
       await expect(
-        benchmark.runBenchmarkSuite('unknown-suite', ['fast-model'])
+        benchmark.runBenchmarkSuite('unknown-suite', ['fast-model']),
       ).rejects.toThrow("Benchmark suite 'unknown-suite' not found");
     });
 
     it('should handle model switching failures', async () => {
-      mockModelManager.switchModel = vi.fn().mockRejectedValue(new Error('Model switch failed'));
+      mockModelManager.switchModel = vi
+        .fn()
+        .mockRejectedValue(new Error('Model switch failed'));
 
       const report = await benchmark.runBenchmarkSuite('speed', ['fast-model']);
-      
+
       expect(report.models[0].successfulTests).toBe(0);
       expect(report.models[0].reliability).toBe(0);
     });
 
     it('should record error details in failed tests', async () => {
-      mockModelManager.switchModel = vi.fn().mockRejectedValue(new Error('Model not available'));
+      mockModelManager.switchModel = vi
+        .fn()
+        .mockRejectedValue(new Error('Model not available'));
 
       await benchmark.runBenchmarkSuite('speed', ['fast-model']);
-      
+
       const results = benchmark.getResults('fast-model');
-      expect(results.every(r => !r.success)).toBe(true);
-      expect(results.every(r => r.error)).toBe(true);
+      expect(results.every((r) => !r.success)).toBe(true);
+      expect(results.every((r) => r.error)).toBe(true);
       expect(results[0].error).toContain('Model not available');
     });
   });

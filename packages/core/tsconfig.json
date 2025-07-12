@@ -8,7 +8,7 @@
   },
   "include": ["index.ts", "src/**/*.ts", "src/**/*.json"],
   "exclude": [
-    "node_modules", 
+    "node_modules",
     "dist",
     "src/trustos/integration.test.ts",
     "src/trustos/modelManager.test.ts",

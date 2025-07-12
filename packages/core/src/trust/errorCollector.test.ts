@@ -19,11 +19,11 @@ describe('ErrorCollector', () => {
     // Create temporary directory for testing
     tempDir = path.join(process.cwd(), 'test_temp');
     tempLogPath = path.join(tempDir, 'test_error_log.json');
-    
+
     if (!fs.existsSync(tempDir)) {
       fs.mkdirSync(tempDir, { recursive: true });
     }
-    
+
     errorCollector = new ErrorCollector(tempLogPath);
   });
 
@@ -48,7 +48,7 @@ describe('ErrorCollector', () => {
         responseTime: 1000,
         rawResponse: 'invalid response',
         parsedCalls: [],
-        errors: ['JSON parsing failed']
+        errors: ['JSON parsing failed'],
       };
 
       errorCollector.recordFailure(
@@ -59,7 +59,7 @@ describe('ErrorCollector', () => {
         'file_operations',
         'easy',
         'phi-3.5-mini',
-        0.7
+        0.7,
       );
 
       const analytics = errorCollector.getAnalytics();
@@ -72,21 +72,41 @@ describe('ErrorCollector', () => {
     it('should categorize different failure types correctly', () => {
       const testCases = [
         {
-          result: { validJson: false, correctTool: true, correctArgs: true, errors: [] },
-          expectedType: 'parse_error'
+          result: {
+            validJson: false,
+            correctTool: true,
+            correctArgs: true,
+            errors: [],
+          },
+          expectedType: 'parse_error',
         },
         {
-          result: { validJson: true, correctTool: false, correctArgs: true, errors: [] },
-          expectedType: 'wrong_tool'
+          result: {
+            validJson: true,
+            correctTool: false,
+            correctArgs: true,
+            errors: [],
+          },
+          expectedType: 'wrong_tool',
         },
         {
-          result: { validJson: true, correctTool: true, correctArgs: false, errors: [] },
-          expectedType: 'wrong_args'
+          result: {
+            validJson: true,
+            correctTool: true,
+            correctArgs: false,
+            errors: [],
+          },
+          expectedType: 'wrong_args',
         },
         {
-          result: { validJson: true, correctTool: true, correctArgs: true, errors: ['validation error'] },
-          expectedType: 'validation_error'
-        }
+          result: {
+            validJson: true,
+            correctTool: true,
+            correctArgs: true,
+            errors: ['validation error'],
+          },
+          expectedType: 'validation_error',
+        },
       ];
 
       testCases.forEach((testCase, index) => {
@@ -96,7 +116,7 @@ describe('ErrorCollector', () => {
           responseTime: 1000,
           rawResponse: 'test response',
           parsedCalls: [],
-          ...testCase.result
+          ...testCase.result,
         };
 
         errorCollector.recordFailure(
@@ -105,7 +125,7 @@ describe('ErrorCollector', () => {
           {},
           mockResult,
           'test',
-          'easy'
+          'easy',
         );
       });
 
@@ -127,7 +147,7 @@ describe('ErrorCollector', () => {
         responseTime: 1000,
         rawResponse: 'invalid response',
         parsedCalls: [],
-        errors: ['JSON parsing failed']
+        errors: ['JSON parsing failed'],
       };
 
       errorCollector.recordFailure(
@@ -136,15 +156,15 @@ describe('ErrorCollector', () => {
         {},
         mockResult,
         'test',
-        'easy'
+        'easy',
       );
 
       const errors = errorCollector.getErrorsByType('parse_error');
       expect(errors).toHaveLength(1);
-      
+
       const errorId = errors[0].id;
       errorCollector.recordRetry(errorId);
-      
+
       const updatedErrors = errorCollector.getErrorsByType('parse_error');
       expect(updatedErrors[0].retryCount).toBe(1);
     });
@@ -163,7 +183,7 @@ describe('ErrorCollector', () => {
           responseTime: 1000,
           rawResponse: 'invalid json',
           parsedCalls: [],
-          errors: ['JSON parsing failed']
+          errors: ['JSON parsing failed'],
         },
         {
           promptId: 'test_02',
@@ -174,7 +194,7 @@ describe('ErrorCollector', () => {
           responseTime: 1200,
           rawResponse: '{"tool": "wrong_tool"}',
           parsedCalls: [],
-          errors: ['Wrong tool called']
+          errors: ['Wrong tool called'],
         },
         {
           promptId: 'test_03',
@@ -185,8 +205,8 @@ describe('ErrorCollector', () => {
           responseTime: 800,
           rawResponse: 'another invalid response',
           parsedCalls: [],
-          errors: ['JSON parsing failed']
-        }
+          errors: ['JSON parsing failed'],
+        },
       ];
 
       mockResults.forEach((result, index) => {
@@ -196,14 +216,14 @@ describe('ErrorCollector', () => {
           {},
           result as EvaluationResult,
           index < 2 ? 'file_operations' : 'shell_commands',
-          index === 0 ? 'easy' : 'medium'
+          index === 0 ? 'easy' : 'medium',
         );
       });
     });
 
     it('should provide correct analytics', () => {
       const analytics = errorCollector.getAnalytics();
-      
+
       expect(analytics.totalErrors).toBe(3);
       expect(analytics.errorsByType.parse_error).toBe(2);
       expect(analytics.errorsByType.wrong_tool).toBe(1);
@@ -215,10 +235,10 @@ describe('ErrorCollector', () => {
 
     it('should identify common failure patterns', () => {
       const analytics = errorCollector.getAnalytics();
-      
+
       expect(analytics.commonFailures).toHaveLength(2);
-      const parseErrorPattern = analytics.commonFailures.find(p => 
-        p.pattern.includes('JSON parsing failed')
+      const parseErrorPattern = analytics.commonFailures.find((p) =>
+        p.pattern.includes('JSON parsing failed'),
       );
       expect(parseErrorPattern).toBeDefined();
       expect(parseErrorPattern?.count).toBe(2);
@@ -239,7 +259,7 @@ describe('ErrorCollector', () => {
     it('should filter recent errors', () => {
       const recentErrors = errorCollector.getRecentErrors(7);
       expect(recentErrors).toHaveLength(3);
-      
+
       const oldErrors = errorCollector.getRecentErrors(0);
       expect(oldErrors).toHaveLength(0);
     });
@@ -256,7 +276,7 @@ describe('ErrorCollector', () => {
         responseTime: 1000,
         rawResponse: 'invalid response',
         parsedCalls: [],
-        errors: ['JSON parsing failed']
+        errors: ['JSON parsing failed'],
       };
 
       errorCollector.recordFailure(
@@ -265,14 +285,14 @@ describe('ErrorCollector', () => {
         {},
         mockResult,
         'test',
-        'easy'
+        'easy',
       );
 
       expect(fs.existsSync(tempLogPath)).toBe(true);
-      
+
       const fileContent = fs.readFileSync(tempLogPath, 'utf8');
       const data = JSON.parse(fileContent);
-      
+
       expect(Array.isArray(data)).toBe(true);
       expect(data).toHaveLength(1);
       expect(data[0].prompt).toBe('Test prompt');
@@ -280,19 +300,21 @@ describe('ErrorCollector', () => {
 
     it('should load existing errors on initialization', () => {
       // Create a log file with existing data
-      const existingData = [{
-        id: 'existing_error',
-        timestamp: Date.now(),
-        prompt: 'Existing prompt',
-        expectedTool: 'existing_tool',
-        expectedArgs: {},
-        actualResponse: 'response',
-        parsedCalls: [],
-        category: 'test',
-        difficulty: 'easy',
-        errors: ['existing error'],
-        failureType: 'parse_error'
-      }];
+      const existingData = [
+        {
+          id: 'existing_error',
+          timestamp: Date.now(),
+          prompt: 'Existing prompt',
+          expectedTool: 'existing_tool',
+          expectedArgs: {},
+          actualResponse: 'response',
+          parsedCalls: [],
+          category: 'test',
+          difficulty: 'easy',
+          errors: ['existing error'],
+          failureType: 'parse_error',
+        },
+      ];
 
       fs.writeFileSync(tempLogPath, JSON.stringify(existingData, null, 2));
 
@@ -314,7 +336,7 @@ describe('ErrorCollector', () => {
         responseTime: 1000,
         rawResponse: 'invalid response',
         parsedCalls: [],
-        errors: ['JSON parsing failed']
+        errors: ['JSON parsing failed'],
       };
 
       errorCollector.recordFailure(
@@ -323,14 +345,14 @@ describe('ErrorCollector', () => {
         {},
         mockResult,
         'test',
-        'easy'
+        'easy',
       );
 
       const exportPath = path.join(tempDir, 'exported_errors.json');
       errorCollector.exportErrors(exportPath);
 
       expect(fs.existsSync(exportPath)).toBe(true);
-      
+
       const exportedData = JSON.parse(fs.readFileSync(exportPath, 'utf8'));
       expect(exportedData).toHaveProperty('exportTime');
       expect(exportedData).toHaveProperty('totalErrors', 1);
@@ -348,7 +370,7 @@ describe('ErrorCollector', () => {
         responseTime: 1000,
         rawResponse: 'invalid response',
         parsedCalls: [],
-        errors: ['JSON parsing failed']
+        errors: ['JSON parsing failed'],
       };
 
       errorCollector.recordFailure(
@@ -357,7 +379,7 @@ describe('ErrorCollector', () => {
         {},
         mockResult,
         'test',
-        'easy'
+        'easy',
       );
 
       expect(errorCollector.getAnalytics().totalErrors).toBe(1);

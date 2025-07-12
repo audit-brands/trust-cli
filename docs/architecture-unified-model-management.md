@@ -24,38 +24,38 @@ The `trust-cli` will become the single pane of glass for managing a user's entir
 
 ### 3.1. `trust model list`
 
-*   **Requirement:** This command must display a single, consolidated list of all models available from both the native `~/.trustcli/models/` directory and the Ollama REST API (`ollama list`).
-*   **Implementation Details:**
-    *   The command will first query the Ollama API.
-    *   It will then read the contents of its own `models.json` file.
-    *   It will merge these two lists into a single data structure.
-*   **UX Specification:**
-    *   The output table must include a new `Backend` column to clearly indicate the source of each model (`HuggingFace` or `Ollama`).
-    *   The command should intelligently handle duplicates (e.g., if the same model exists in both backends, it could be shown once with both backends listed).
+- **Requirement:** This command must display a single, consolidated list of all models available from both the native `~/.trustcli/models/` directory and the Ollama REST API (`ollama list`).
+- **Implementation Details:**
+  - The command will first query the Ollama API.
+  - It will then read the contents of its own `models.json` file.
+  - It will merge these two lists into a single data structure.
+- **UX Specification:**
+  - The output table must include a new `Backend` column to clearly indicate the source of each model (`HuggingFace` or `Ollama`).
+  - The command should intelligently handle duplicates (e.g., if the same model exists in both backends, it could be shown once with both backends listed).
 
 ### 3.2. `trust model delete <model_name>`
 
-*   **Requirement:** This command must be able to delete any model from the consolidated list, regardless of its backend.
-*   **Implementation Details:**
-    *   When the command is run, it will first determine which backend the specified `<model_name>` belongs to.
-    *   If it is a `HuggingFace` model, it will execute the existing logic to remove the GGUF file and update `models.json`.
-    *   If it is an `Ollama` model, it will execute the `ollama rm <model_name>` command as a child process.
-*   **UX Specification:**
-    *   The user experience should be seamless. The user should not need to know or care which backend the model belongs to. The command should simply confirm that "Model <model_name> has been deleted."
+- **Requirement:** This command must be able to delete any model from the consolidated list, regardless of its backend.
+- **Implementation Details:**
+  - When the command is run, it will first determine which backend the specified `<model_name>` belongs to.
+  - If it is a `HuggingFace` model, it will execute the existing logic to remove the GGUF file and update `models.json`.
+  - If it is an `Ollama` model, it will execute the `ollama rm <model_name>` command as a child process.
+- **UX Specification:**
+  - The user experience should be seamless. The user should not need to know or care which backend the model belongs to. The command should simply confirm that "Model <model_name> has been deleted."
 
 ### 3.3. `trust model download <model_name>`
 
-*   **Requirement:** This command should be the single entry point for acquiring new local models.
-*   **Implementation Details:**
-    *   The CLI will need to maintain a master list or a heuristic to determine the primary source for a given model.
-    *   When a user requests a model, the CLI will check its primary source. If the model is known to be an Ollama model, the CLI will execute `ollama pull <model_name>` under the hood.
-    *   If it is a GGUF model, it will use the existing download logic.
-*   **UX Specification:**
-    *   The command should provide consistent progress and completion feedback, regardless of which backend is being used to download the model.
-    *   If a model is available from multiple sources, the CLI could prompt the user to choose their preferred source.
+- **Requirement:** This command should be the single entry point for acquiring new local models.
+- **Implementation Details:**
+  - The CLI will need to maintain a master list or a heuristic to determine the primary source for a given model.
+  - When a user requests a model, the CLI will check its primary source. If the model is known to be an Ollama model, the CLI will execute `ollama pull <model_name>` under the hood.
+  - If it is a GGUF model, it will use the existing download logic.
+- **UX Specification:**
+  - The command should provide consistent progress and completion feedback, regardless of which backend is being used to download the model.
+  - If a model is available from multiple sources, the CLI could prompt the user to choose their preferred source.
 
 ## 4. Benefits
 
-*   **Simplicity:** The user only needs to learn one set of commands: `trust model ...`.
-*   **Clarity:** A single `trust model list` command provides a complete picture of all local AI assets.
-*   **Power:** It abstracts away the underlying technical details, allowing the user to think about their *models*, not their *backends*.
+- **Simplicity:** The user only needs to learn one set of commands: `trust model ...`.
+- **Clarity:** A single `trust model list` command provides a complete picture of all local AI assets.
+- **Power:** It abstracts away the underlying technical details, allowing the user to think about their _models_, not their _backends_.

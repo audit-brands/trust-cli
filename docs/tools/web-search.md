@@ -36,5 +36,5 @@ google_web_search(query="latest advancements in AI-powered code generation")
 
 - **Response returned:** The `google_web_search` tool returns a processed summary, not a raw list of search results.
 - **Citations:** The response includes citations to the sources used to generate the summary.
-- **Automatic filtering:** The tool will reject queries for basic arithmetic (e.g., "2+2", "what is 10*5") and simple number properties (e.g., "is 17 prime", "is 4 even") to prevent unnecessary web searches for calculable results.
+- **Automatic filtering:** The tool will reject queries for basic arithmetic (e.g., "2+2", "what is 10\*5") and simple number properties (e.g., "is 17 prime", "is 4 even") to prevent unnecessary web searches for calculable results.
 - **Use appropriately:** Only use this tool when you need current information from the web, not for calculations or logic that can be solved directly.

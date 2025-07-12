@@ -16,9 +16,9 @@ describe('FunctionCallEvaluator', () => {
     // Mock the content generator
     mockContentGenerator = {
       generateContent: vi.fn(),
-      getCurrentModel: vi.fn().mockReturnValue({ name: 'test-model' })
+      getCurrentModel: vi.fn().mockReturnValue({ name: 'test-model' }),
     };
-    
+
     evaluator = new FunctionCallEvaluator(mockContentGenerator);
   });
 
@@ -39,7 +39,7 @@ describe('FunctionCallEvaluator', () => {
     it('should have diverse categories', () => {
       const prompts = (evaluator as any).evaluationPrompts;
       const categories = new Set(prompts.map((p: any) => p.category));
-      
+
       expect(categories.has('file_operations')).toBe(true);
       expect(categories.has('shell_commands')).toBe(true);
       expect(categories.has('search')).toBe(true);
@@ -51,7 +51,7 @@ describe('FunctionCallEvaluator', () => {
     it('should have different difficulty levels', () => {
       const prompts = (evaluator as any).evaluationPrompts;
       const difficulties = new Set(prompts.map((p: any) => p.difficulty));
-      
+
       expect(difficulties.has('easy')).toBe(true);
       expect(difficulties.has('medium')).toBe(true);
       expect(difficulties.has('hard')).toBe(true);
@@ -61,38 +61,40 @@ describe('FunctionCallEvaluator', () => {
   describe('Argument comparison', () => {
     it('should correctly compare exact matches', () => {
       const compareArgs = (evaluator as any).compareArgs.bind(evaluator);
-      
-      expect(compareArgs(
-        { path: '/tmp', mode: 'read' },
-        { path: '/tmp', mode: 'read' }
-      )).toBe(true);
+
+      expect(
+        compareArgs(
+          { path: '/tmp', mode: 'read' },
+          { path: '/tmp', mode: 'read' },
+        ),
+      ).toBe(true);
     });
 
     it('should handle partial string matches', () => {
       const compareArgs = (evaluator as any).compareArgs.bind(evaluator);
-      
-      expect(compareArgs(
-        { command: 'ls -la /home/user' },
-        { command: 'ls -la' }
-      )).toBe(true);
+
+      expect(
+        compareArgs({ command: 'ls -la /home/user' }, { command: 'ls -la' }),
+      ).toBe(true);
     });
 
     it('should reject missing required arguments', () => {
       const compareArgs = (evaluator as any).compareArgs.bind(evaluator);
-      
-      expect(compareArgs(
-        { path: '/tmp' },
-        { path: '/tmp', mode: 'read' }
-      )).toBe(false);
+
+      expect(
+        compareArgs({ path: '/tmp' }, { path: '/tmp', mode: 'read' }),
+      ).toBe(false);
     });
 
     it('should reject different values', () => {
       const compareArgs = (evaluator as any).compareArgs.bind(evaluator);
-      
-      expect(compareArgs(
-        { path: '/home', mode: 'write' },
-        { path: '/tmp', mode: 'read' }
-      )).toBe(false);
+
+      expect(
+        compareArgs(
+          { path: '/home', mode: 'write' },
+          { path: '/tmp', mode: 'read' },
+        ),
+      ).toBe(false);
     });
   });
 
@@ -107,7 +109,7 @@ describe('FunctionCallEvaluator', () => {
           correctArgs: true,
           responseTime: 100,
           rawResponse: 'test',
-          parsedCalls: []
+          parsedCalls: [],
         },
         {
           promptId: 'test2',
@@ -117,12 +119,12 @@ describe('FunctionCallEvaluator', () => {
           correctArgs: false,
           responseTime: 200,
           rawResponse: 'test',
-          parsedCalls: []
-        }
+          parsedCalls: [],
+        },
       ];
-      
+
       const summary = (evaluator as any).generateSummary(results);
-      
+
       expect(summary.totalPrompts).toBe(2);
       expect(summary.successfulCalls).toBe(1);
       expect(summary.validJsonRate).toBe(50);

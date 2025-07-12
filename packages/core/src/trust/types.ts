@@ -11,8 +11,15 @@
 export const DEFAULT_TRUST_MODEL = 'qwen2.5-1.5b-instruct';
 
 // Re-export performance monitoring types and utilities
-export type { SystemMetrics, InferenceMetrics, ResourceUsage } from './performanceMonitor.js';
-export { PerformanceMonitor, globalPerformanceMonitor } from './performanceMonitor.js';
+export type {
+  SystemMetrics,
+  InferenceMetrics,
+  ResourceUsage,
+} from './performanceMonitor.js';
+export {
+  PerformanceMonitor,
+  globalPerformanceMonitor,
+} from './performanceMonitor.js';
 
 /**
  * Trust Model Configuration
@@ -92,7 +99,10 @@ export interface ModelMetrics {
  */
 export interface TrustModelClient {
   generateText(prompt: string, options?: GenerationOptions): Promise<string>;
-  generateStream(prompt: string, options?: GenerationOptions): AsyncIterable<string>;
+  generateStream(
+    prompt: string,
+    options?: GenerationOptions,
+  ): AsyncIterable<string>;
   loadModel(modelPath: string): Promise<void>;
   unloadModel(): Promise<void>;
   createChatSession(): Promise<any>;

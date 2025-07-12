@@ -19,7 +19,7 @@ describe('ModelIntegrityChecker', () => {
   let checker: ModelIntegrityChecker;
   const testConfigDir = '/test/config';
   const testModelPath = '/test/models/test-model.gguf';
-  
+
   beforeEach(() => {
     vi.clearAllMocks();
     checker = new ModelIntegrityChecker(testConfigDir);
@@ -34,11 +34,11 @@ describe('ModelIntegrityChecker', () => {
             size: 1000,
             source: 'test-source',
             addedDate: '2025-01-01',
-            lastUpdated: '2025-01-01'
-          }
+            lastUpdated: '2025-01-01',
+          },
         },
         version: '1.0.0',
-        lastUpdated: '2025-01-01'
+        lastUpdated: '2025-01-01',
       };
 
       vi.mocked(fs.readFile).mockResolvedValue(JSON.stringify(mockRegistry));
@@ -47,7 +47,7 @@ describe('ModelIntegrityChecker', () => {
 
       expect(fs.readFile).toHaveBeenCalledWith(
         path.join(testConfigDir, 'trusted-models.json'),
-        'utf-8'
+        'utf-8',
       );
     });
 
@@ -71,7 +71,7 @@ describe('ModelIntegrityChecker', () => {
       const mockStream = new Readable({
         read() {
           // Mock implementation - do nothing
-        }
+        },
       });
       vi.mocked(createReadStream).mockReturnValue(mockStream as any);
 
@@ -79,7 +79,7 @@ describe('ModelIntegrityChecker', () => {
       const hashPromise = checker.computeFileHashes(
         testModelPath,
         ['sha256'],
-        (processed, total) => progressUpdates.push(processed)
+        (processed, total) => progressUpdates.push(processed),
       );
 
       // Simulate streaming data asynchronously
@@ -103,14 +103,14 @@ describe('ModelIntegrityChecker', () => {
       const mockStream = new Readable({
         read() {
           // Mock implementation - do nothing
-        }
+        },
       });
       vi.mocked(createReadStream).mockReturnValue(mockStream as any);
 
-      const hashPromise = checker.computeFileHashes(
-        testModelPath,
-        ['sha256', 'md5']
-      );
+      const hashPromise = checker.computeFileHashes(testModelPath, [
+        'sha256',
+        'md5',
+      ]);
 
       process.nextTick(() => {
         mockStream.emit('data', Buffer.from('test data'));
@@ -126,40 +126,43 @@ describe('ModelIntegrityChecker', () => {
 
   describe('verifyModel', () => {
     it('should verify model successfully with matching hash', async () => {
-      const mockStats = { 
+      const mockStats = {
         size: 1000,
-        isFile: () => true 
+        isFile: () => true,
       } as any;
       vi.mocked(fs.stat).mockResolvedValue(mockStats);
 
       const mockStream = new Readable({
         read() {
           // Mock implementation - do nothing
-        }
+        },
       });
       vi.mocked(createReadStream).mockReturnValue(mockStream as any);
 
       // Initialize with trusted model
-      vi.mocked(fs.readFile).mockResolvedValue(JSON.stringify({
-        models: {
-          'test-model': {
-            sha256: '9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08',
-            size: 1000,
-            source: 'test',
-            addedDate: '2025-01-01',
-            lastUpdated: '2025-01-01'
-          }
-        },
-        version: '1.0.0',
-        lastUpdated: '2025-01-01'
-      }));
+      vi.mocked(fs.readFile).mockResolvedValue(
+        JSON.stringify({
+          models: {
+            'test-model': {
+              sha256:
+                '9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08',
+              size: 1000,
+              source: 'test',
+              addedDate: '2025-01-01',
+              lastUpdated: '2025-01-01',
+            },
+          },
+          version: '1.0.0',
+          lastUpdated: '2025-01-01',
+        }),
+      );
 
       await checker.initialize();
 
       const verifyPromise = checker.verifyModel(
         testModelPath,
         'test-model',
-        'sha256:9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08'
+        'sha256:9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08',
       );
 
       // Simulate file content that produces the expected hash
@@ -175,23 +178,23 @@ describe('ModelIntegrityChecker', () => {
     });
 
     it('should fail verification with hash mismatch', async () => {
-      const mockStats = { 
+      const mockStats = {
         size: 1000,
-        isFile: () => true 
+        isFile: () => true,
       } as any;
       vi.mocked(fs.stat).mockResolvedValue(mockStats);
 
       const mockStream = new Readable({
         read() {
           // Mock implementation - do nothing
-        }
+        },
       });
       vi.mocked(createReadStream).mockReturnValue(mockStream as any);
 
       const verifyPromise = checker.verifyModel(
         testModelPath,
         'test-model',
-        'sha256:wronghash123'
+        'sha256:wronghash123',
       );
 
       process.nextTick(() => {
@@ -208,53 +211,49 @@ describe('ModelIntegrityChecker', () => {
     it('should fail if file does not exist', async () => {
       vi.mocked(fs.stat).mockRejectedValue(new Error('File not found'));
 
-      const result = await checker.verifyModel(
-        testModelPath,
-        'test-model'
-      );
+      const result = await checker.verifyModel(testModelPath, 'test-model');
 
       expect(result.valid).toBe(false);
       expect(result.reason).toContain('Verification error');
     });
 
     it('should update registry for first verification', async () => {
-      const mockStats = { 
+      const mockStats = {
         size: 1000,
-        isFile: () => true 
+        isFile: () => true,
       } as any;
       vi.mocked(fs.stat).mockResolvedValue(mockStats);
 
       const mockStream = new Readable({
         read() {
           // Mock implementation - do nothing
-        }
+        },
       });
       vi.mocked(createReadStream).mockReturnValue(mockStream as any);
 
       // Initialize with pending verification
-      vi.mocked(fs.readFile).mockResolvedValue(JSON.stringify({
-        models: {
-          'test-model': {
-            sha256: 'pending_verification',
-            size: 1000,
-            source: 'test',
-            addedDate: '2025-01-01',
-            lastUpdated: '2025-01-01'
-          }
-        },
-        version: '1.0.0',
-        lastUpdated: '2025-01-01'
-      }));
+      vi.mocked(fs.readFile).mockResolvedValue(
+        JSON.stringify({
+          models: {
+            'test-model': {
+              sha256: 'pending_verification',
+              size: 1000,
+              source: 'test',
+              addedDate: '2025-01-01',
+              lastUpdated: '2025-01-01',
+            },
+          },
+          version: '1.0.0',
+          lastUpdated: '2025-01-01',
+        }),
+      );
 
       vi.mocked(fs.mkdir).mockResolvedValue(undefined);
       vi.mocked(fs.writeFile).mockResolvedValue();
 
       await checker.initialize();
 
-      const verifyPromise = checker.verifyModel(
-        testModelPath,
-        'test-model'
-      );
+      const verifyPromise = checker.verifyModel(testModelPath, 'test-model');
 
       process.nextTick(() => {
         mockStream.emit('data', Buffer.from('test'));
@@ -265,7 +264,7 @@ describe('ModelIntegrityChecker', () => {
 
       expect(fs.writeFile).toHaveBeenCalledWith(
         expect.stringContaining('trusted-models.json'),
-        expect.stringContaining('"sha256"')
+        expect.stringContaining('"sha256"'),
       );
     });
   });
@@ -278,7 +277,7 @@ describe('ModelIntegrityChecker', () => {
       const mockStream = new Readable({
         read() {
           // Mock implementation - do nothing
-        }
+        },
       });
       vi.mocked(createReadStream).mockReturnValue(mockStream as any);
 
@@ -290,7 +289,7 @@ describe('ModelIntegrityChecker', () => {
       const addPromise = checker.addTrustedModel(
         'new-model',
         '/path/to/new-model.gguf',
-        'https://example.com/model'
+        'https://example.com/model',
       );
 
       process.nextTick(() => {
@@ -302,47 +301,50 @@ describe('ModelIntegrityChecker', () => {
 
       expect(fs.writeFile).toHaveBeenCalledWith(
         expect.any(String),
-        expect.stringContaining('new-model')
+        expect.stringContaining('new-model'),
       );
     });
   });
 
   describe('generateIntegrityReport', () => {
     it('should generate complete integrity report', async () => {
-      const mockStats = { 
+      const mockStats = {
         size: 1500,
         isFile: () => true,
-        birthtime: new Date('2025-01-01')
+        birthtime: new Date('2025-01-01'),
       } as any;
       vi.mocked(fs.stat).mockResolvedValue(mockStats);
 
       const mockStream = new Readable({
         read() {
           // Mock implementation - do nothing
-        }
+        },
       });
       vi.mocked(createReadStream).mockReturnValue(mockStream as any);
 
       // Initialize with trusted model
-      vi.mocked(fs.readFile).mockResolvedValue(JSON.stringify({
-        models: {
-          'test-model': {
-            sha256: '9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08',
-            size: 1500,
-            source: 'test',
-            addedDate: '2025-01-01',
-            lastUpdated: '2025-01-01'
-          }
-        },
-        version: '1.0.0',
-        lastUpdated: '2025-01-01'
-      }));
+      vi.mocked(fs.readFile).mockResolvedValue(
+        JSON.stringify({
+          models: {
+            'test-model': {
+              sha256:
+                '9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08',
+              size: 1500,
+              source: 'test',
+              addedDate: '2025-01-01',
+              lastUpdated: '2025-01-01',
+            },
+          },
+          version: '1.0.0',
+          lastUpdated: '2025-01-01',
+        }),
+      );
 
       await checker.initialize();
 
       const reportPromise = checker.generateIntegrityReport(
         testModelPath,
-        'test-model'
+        'test-model',
       );
 
       process.nextTick(() => {
@@ -358,24 +360,24 @@ describe('ModelIntegrityChecker', () => {
         fileSize: 1500,
         sha256Hash: expect.stringContaining('sha256:'),
         trustedSource: true,
-        signatureValid: true
+        signatureValid: true,
       });
     });
   });
 
   describe('createModelManifest', () => {
     it('should create manifest file with metadata', async () => {
-      const mockStats = { 
+      const mockStats = {
         size: 1000,
         isFile: () => true,
-        birthtime: new Date('2025-01-01')
+        birthtime: new Date('2025-01-01'),
       } as any;
       vi.mocked(fs.stat).mockResolvedValue(mockStats);
 
       const mockStream = new Readable({
         read() {
           // Mock implementation - do nothing
-        }
+        },
       });
       vi.mocked(createReadStream).mockReturnValue(mockStream as any);
 
@@ -384,7 +386,7 @@ describe('ModelIntegrityChecker', () => {
       const manifestPromise = checker.createModelManifest(
         testModelPath,
         'test-model',
-        { version: '1.0', author: 'test' }
+        { version: '1.0', author: 'test' },
       );
 
       process.nextTick(() => {
@@ -397,7 +399,7 @@ describe('ModelIntegrityChecker', () => {
       expect(manifestPath).toBe(`${testModelPath}.manifest.json`);
       expect(fs.writeFile).toHaveBeenCalledWith(
         manifestPath,
-        expect.stringContaining('"version": "1.0"')
+        expect.stringContaining('"version": "1.0"'),
       );
     });
   });
@@ -407,12 +409,12 @@ describe('ModelIntegrityChecker', () => {
       vi.mocked(fs.readdir).mockResolvedValue([
         'model1.gguf',
         'model2.gguf',
-        'other.txt'
+        'other.txt',
       ] as any);
 
-      const mockStats = { 
+      const mockStats = {
         size: 1000,
-        isFile: () => true 
+        isFile: () => true,
       } as any;
       vi.mocked(fs.stat).mockResolvedValue(mockStats);
 
@@ -422,15 +424,15 @@ describe('ModelIntegrityChecker', () => {
         const mockStream = new Readable({
           read() {
             // Mock implementation - do nothing
-          }
+          },
         });
-        
+
         // Emit data asynchronously for this specific stream
         process.nextTick(() => {
           mockStream.emit('data', Buffer.from(`test data ${callCount++}`));
           mockStream.emit('end');
         });
-        
+
         return mockStream as any;
       });
 
@@ -452,7 +454,7 @@ describe('ModelIntegrityChecker', () => {
 
       expect(fs.writeFile).toHaveBeenCalledWith(
         '/backup/integrity.json',
-        expect.stringContaining('"exportDate"')
+        expect.stringContaining('"exportDate"'),
       );
     });
 
@@ -461,10 +463,10 @@ describe('ModelIntegrityChecker', () => {
         trustedRegistry: {
           models: { 'imported-model': { sha256: 'xyz789' } },
           version: '1.0.0',
-          lastUpdated: '2025-01-01'
+          lastUpdated: '2025-01-01',
         },
         exportDate: '2025-01-01',
-        version: '1.0'
+        version: '1.0',
       };
 
       vi.mocked(fs.readFile).mockResolvedValue(JSON.stringify(backupData));
@@ -475,7 +477,7 @@ describe('ModelIntegrityChecker', () => {
 
       expect(fs.writeFile).toHaveBeenCalledWith(
         expect.stringContaining('trusted-models.json'),
-        expect.stringContaining('imported-model')
+        expect.stringContaining('imported-model'),
       );
     });
   });

@@ -18,7 +18,15 @@ export type SecurityLevel = 'critical' | 'high' | 'medium' | 'low' | 'info';
 /**
  * Security categories for recommendations
  */
-export type SecurityCategory = 'authentication' | 'authorization' | 'encryption' | 'network' | 'system' | 'application' | 'compliance' | 'monitoring';
+export type SecurityCategory =
+  | 'authentication'
+  | 'authorization'
+  | 'encryption'
+  | 'network'
+  | 'system'
+  | 'application'
+  | 'compliance'
+  | 'monitoring';
 
 /**
  * Individual security recommendation
@@ -91,7 +99,12 @@ export interface SecurityAssessmentReport {
 export interface SecurityVulnerability {
   id: string;
   severity: 'critical' | 'high' | 'medium' | 'low';
-  type: 'configuration' | 'software' | 'permission' | 'network' | 'cryptographic';
+  type:
+    | 'configuration'
+    | 'software'
+    | 'permission'
+    | 'network'
+    | 'cryptographic';
   title: string;
   description: string;
   affected: string;
@@ -143,11 +156,11 @@ export interface SecurityAssessmentConfig {
   includeSystemScan: boolean;
   includeVulnerabilityAssessment: boolean;
   includeComplianceCheck: boolean;
-  customChecks?: {
+  customChecks?: Array<{
     name: string;
     description: string;
     check: () => Promise<SecurityRecommendation[]>;
-  }[];
+  }>;
 }
 
 /**
@@ -158,16 +171,26 @@ export class SecurityRecommendationEngine {
   private performanceMonitor: PerformanceMonitor;
   private reportsDir: string;
 
-  constructor(privacyManager: PrivacyManager, performanceMonitor: PerformanceMonitor) {
+  constructor(
+    privacyManager: PrivacyManager,
+    performanceMonitor: PerformanceMonitor,
+  ) {
     this.privacyManager = privacyManager;
     this.performanceMonitor = performanceMonitor;
-    this.reportsDir = path.join(os.homedir(), '.trustcli', 'security', 'reports');
+    this.reportsDir = path.join(
+      os.homedir(),
+      '.trustcli',
+      'security',
+      'reports',
+    );
   }
 
   /**
    * Conduct comprehensive security assessment
    */
-  async conductSecurityAssessment(config: SecurityAssessmentConfig): Promise<SecurityAssessmentReport> {
+  async conductSecurityAssessment(
+    config: SecurityAssessmentConfig,
+  ): Promise<SecurityAssessmentReport> {
     const startTime = Date.now();
     const assessmentId = `security-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
@@ -177,29 +200,29 @@ export class SecurityRecommendationEngine {
     const complianceGaps: ComplianceGap[] = [];
 
     // Core security checks
-    recommendations.push(...await this.assessAuthentication());
-    recommendations.push(...await this.assessEncryption());
-    recommendations.push(...await this.assessSystemSecurity());
-    recommendations.push(...await this.assessApplicationSecurity());
+    recommendations.push(...(await this.assessAuthentication()));
+    recommendations.push(...(await this.assessEncryption()));
+    recommendations.push(...(await this.assessSystemSecurity()));
+    recommendations.push(...(await this.assessApplicationSecurity()));
 
     // Category-specific assessments
     for (const category of config.categories) {
-      recommendations.push(...await this.assessSecurityCategory(category));
+      recommendations.push(...(await this.assessSecurityCategory(category)));
     }
 
     // System scanning
     if (config.includeSystemScan) {
-      systemHardening.push(...await this.performSystemHardening());
+      systemHardening.push(...(await this.performSystemHardening()));
     }
 
     // Vulnerability assessment
     if (config.includeVulnerabilityAssessment) {
-      vulnerabilities.push(...await this.assessVulnerabilities());
+      vulnerabilities.push(...(await this.assessVulnerabilities()));
     }
 
     // Compliance checking
     if (config.includeComplianceCheck) {
-      complianceGaps.push(...await this.checkComplianceGaps());
+      complianceGaps.push(...(await this.checkComplianceGaps()));
     }
 
     // Custom checks
@@ -216,29 +239,37 @@ export class SecurityRecommendationEngine {
             title: 'Custom Security Check Error',
             description: `Failed to execute custom security check "${customCheck.name}": ${error}`,
             impact: 'Security assessment coverage may be incomplete',
-            recommendation: 'Review and fix the custom security check implementation',
+            recommendation:
+              'Review and fix the custom security check implementation',
             implementation: {
-              steps: ['Review custom check code', 'Fix implementation errors', 'Re-run assessment'],
+              steps: [
+                'Review custom check code',
+                'Fix implementation errors',
+                'Re-run assessment',
+              ],
               effort: 'medium',
               timeEstimate: '1-2 hours',
-              cost: 'none'
+              cost: 'none',
             },
             remediation: {
               automated: false,
               manualSteps: ['Debug custom check', 'Fix errors', 'Test'],
-              verificationSteps: ['Re-run assessment']
+              verificationSteps: ['Re-run assessment'],
             },
             compliance: [],
             priority: 3,
             riskScore: 30,
-            timestamp: new Date()
+            timestamp: new Date(),
           });
         }
       }
     }
 
     // Calculate summary and risk metrics
-    const summary = this.calculateSecuritySummary(recommendations, vulnerabilities);
+    const summary = this.calculateSecuritySummary(
+      recommendations,
+      vulnerabilities,
+    );
     const actionPlan = this.generateSecurityActionPlan(recommendations);
 
     const report: SecurityAssessmentReport = {
@@ -249,12 +280,14 @@ export class SecurityRecommendationEngine {
         categories: config.categories,
         systemScan: config.includeSystemScan,
         configurationReview: true,
-        vulnerabilityAssessment: config.includeVulnerabilityAssessment
+        vulnerabilityAssessment: config.includeVulnerabilityAssessment,
       },
       summary,
       recommendations: recommendations.sort((a, b) => {
         const levelOrder = { critical: 4, high: 3, medium: 2, low: 1, info: 0 };
-        return levelOrder[b.level] - levelOrder[a.level] || b.riskScore - a.riskScore;
+        return (
+          levelOrder[b.level] - levelOrder[a.level] || b.riskScore - a.riskScore
+        );
       }),
       vulnerabilities: vulnerabilities.sort((a, b) => {
         const severityOrder = { critical: 4, high: 3, medium: 2, low: 1 };
@@ -262,7 +295,7 @@ export class SecurityRecommendationEngine {
       }),
       systemHardening,
       complianceGaps,
-      actionPlan
+      actionPlan,
     };
 
     // Save assessment report
@@ -280,30 +313,34 @@ export class SecurityRecommendationEngine {
     // Check for proper authentication mechanisms
     // Note: This is a basic check - in a real implementation, this would
     // analyze actual authentication configurations
-    
+
     recommendations.push({
       id: 'auth-local-only',
       level: 'info',
       category: 'authentication',
       title: 'Local-Only Authentication Model',
-      description: 'Trust CLI uses local-only inference, reducing authentication attack surface',
+      description:
+        'Trust CLI uses local-only inference, reducing authentication attack surface',
       impact: 'Positive security posture - no external authentication required',
       recommendation: 'Continue using local-only model for enhanced security',
       implementation: {
-        steps: ['Maintain local inference configuration', 'Avoid cloud-based authentication'],
+        steps: [
+          'Maintain local inference configuration',
+          'Avoid cloud-based authentication',
+        ],
         effort: 'low',
         timeEstimate: 'Ongoing',
-        cost: 'none'
+        cost: 'none',
       },
       remediation: {
         automated: false,
         manualSteps: ['Monitor authentication configuration'],
-        verificationSteps: ['Verify no external auth configured']
+        verificationSteps: ['Verify no external auth configured'],
       },
       compliance: ['SOX', 'HIPAA', 'PCI-DSS'],
       priority: 5,
       riskScore: 10,
-      timestamp: new Date()
+      timestamp: new Date(),
     });
 
     return recommendations;
@@ -322,7 +359,8 @@ export class SecurityRecommendationEngine {
         level: 'critical',
         category: 'encryption',
         title: 'Enable Encryption at Rest',
-        description: 'Data storage is not encrypted, exposing sensitive information to unauthorized access',
+        description:
+          'Data storage is not encrypted, exposing sensitive information to unauthorized access',
         impact: 'High risk of data breach if system is compromised',
         recommendation: 'Enable storage encryption immediately using AES-256',
         implementation: {
@@ -330,25 +368,26 @@ export class SecurityRecommendationEngine {
             'Enable encryptStorage in privacy configuration',
             'Generate encryption keys',
             'Re-encrypt existing data',
-            'Verify encryption is active'
+            'Verify encryption is active',
           ],
           effort: 'medium',
           timeEstimate: '2-4 hours',
-          cost: 'none'
+          cost: 'none',
         },
         remediation: {
           automated: true,
-          automationScript: 'trust privacy mode strict && trust privacy encrypt enable',
+          automationScript:
+            'trust privacy mode strict && trust privacy encrypt enable',
           manualSteps: [
             'Backup existing data',
             'Enable encryption in config',
-            'Verify all data is encrypted'
+            'Verify all data is encrypted',
           ],
           verificationSteps: [
             'Check privacy configuration',
             'Verify encrypted file extensions',
-            'Test data access with encryption'
-          ]
+            'Test data access with encryption',
+          ],
         },
         compliance: ['GDPR', 'HIPAA', 'PCI-DSS', 'SOX'],
         priority: 1,
@@ -356,9 +395,9 @@ export class SecurityRecommendationEngine {
         evidence: {
           type: 'config',
           source: 'privacy-config.json',
-          details: { encryptStorage: privacyConfig.encryptStorage }
+          details: { encryptStorage: privacyConfig.encryptStorage },
         },
-        timestamp: new Date()
+        timestamp: new Date(),
       });
     }
 
@@ -369,7 +408,8 @@ export class SecurityRecommendationEngine {
         level: 'medium',
         category: 'encryption',
         title: 'Verify Encryption Strength',
-        description: 'Ensure encryption uses industry-standard algorithms and key lengths',
+        description:
+          'Ensure encryption uses industry-standard algorithms and key lengths',
         impact: 'Weak encryption could be broken by determined attackers',
         recommendation: 'Verify AES-256-GCM is being used for encryption',
         implementation: {
@@ -377,29 +417,29 @@ export class SecurityRecommendationEngine {
             'Review encryption implementation',
             'Verify AES-256-GCM usage',
             'Check key generation methods',
-            'Validate key storage security'
+            'Validate key storage security',
           ],
           effort: 'low',
           timeEstimate: '30 minutes',
-          cost: 'none'
+          cost: 'none',
         },
         remediation: {
           automated: false,
           manualSteps: [
             'Check encryption algorithm in code',
             'Verify key length is 256 bits',
-            'Ensure proper IV generation'
+            'Ensure proper IV generation',
           ],
           verificationSteps: [
             'Code review of encryption functions',
             'Test encryption/decryption',
-            'Verify against security standards'
-          ]
+            'Verify against security standards',
+          ],
         },
         compliance: ['FIPS 140-2', 'Common Criteria'],
         priority: 3,
         riskScore: 40,
-        timestamp: new Date()
+        timestamp: new Date(),
       });
     }
 
@@ -425,23 +465,25 @@ export class SecurityRecommendationEngine {
           category: 'system',
           title: 'Secure Trust CLI Directory Permissions',
           description: `Trust CLI directory has permissions ${mode.toString(8)}, should be 700 for security`,
-          impact: 'Unauthorized users may access sensitive configuration and data',
-          recommendation: 'Set directory permissions to 700 (owner read/write/execute only)',
+          impact:
+            'Unauthorized users may access sensitive configuration and data',
+          recommendation:
+            'Set directory permissions to 700 (owner read/write/execute only)',
           implementation: {
             steps: [
               `chmod 700 ${trustDir}`,
               'Verify permissions are correct',
-              'Check subdirectory permissions'
+              'Check subdirectory permissions',
             ],
             effort: 'low',
             timeEstimate: '5 minutes',
-            cost: 'none'
+            cost: 'none',
           },
           remediation: {
             automated: true,
             automationScript: `chmod 700 ${trustDir}`,
             manualSteps: ['Change directory permissions', 'Verify changes'],
-            verificationSteps: ['ls -la to check permissions']
+            verificationSteps: ['ls -la to check permissions'],
           },
           compliance: ['NIST SP 800-53', 'CIS Controls'],
           priority: 2,
@@ -449,9 +491,9 @@ export class SecurityRecommendationEngine {
           evidence: {
             type: 'system',
             source: trustDir,
-            details: { currentMode: mode.toString(8), expectedMode: '700' }
+            details: { currentMode: mode.toString(8), expectedMode: '700' },
           },
-          timestamp: new Date()
+          timestamp: new Date(),
         });
       }
     } catch (error) {
@@ -472,21 +514,21 @@ export class SecurityRecommendationEngine {
           'Review privacy mode defaults',
           'Check audit logging defaults',
           'Verify encryption defaults',
-          'Update as needed'
+          'Update as needed',
         ],
         effort: 'low',
         timeEstimate: '1 hour quarterly',
-        cost: 'none'
+        cost: 'none',
       },
       remediation: {
         automated: false,
         manualSteps: ['Regular configuration review', 'Update defaults'],
-        verificationSteps: ['Test default configurations']
+        verificationSteps: ['Test default configurations'],
       },
       compliance: ['Security by Design'],
       priority: 4,
       riskScore: 20,
-      timestamp: new Date()
+      timestamp: new Date(),
     });
 
     return recommendations;
@@ -504,7 +546,8 @@ export class SecurityRecommendationEngine {
       level: 'high',
       category: 'application',
       title: 'Implement Model Integrity Verification',
-      description: 'Verify AI model integrity to prevent tampering and ensure authenticity',
+      description:
+        'Verify AI model integrity to prevent tampering and ensure authenticity',
       impact: 'Compromised models could produce malicious outputs or leak data',
       recommendation: 'Implement checksum verification for all AI models',
       implementation: {
@@ -512,11 +555,11 @@ export class SecurityRecommendationEngine {
           'Generate checksums for all models',
           'Store checksums securely',
           'Verify before each use',
-          'Alert on mismatch'
+          'Alert on mismatch',
         ],
         effort: 'medium',
         timeEstimate: '4-6 hours',
-        cost: 'low'
+        cost: 'low',
       },
       remediation: {
         automated: true,
@@ -524,18 +567,18 @@ export class SecurityRecommendationEngine {
         manualSteps: [
           'Calculate model checksums',
           'Store in secure location',
-          'Implement verification process'
+          'Implement verification process',
         ],
         verificationSteps: [
           'Test model verification',
           'Verify checksum storage',
-          'Test tamper detection'
-        ]
+          'Test tamper detection',
+        ],
       },
       compliance: ['NIST AI Risk Management Framework'],
       priority: 2,
       riskScore: 70,
-      timestamp: new Date()
+      timestamp: new Date(),
     });
 
     // Input validation
@@ -544,37 +587,39 @@ export class SecurityRecommendationEngine {
       level: 'medium',
       category: 'application',
       title: 'Implement Comprehensive Input Validation',
-      description: 'Validate and sanitize all user inputs to prevent injection attacks',
-      impact: 'Improper input handling could lead to prompt injection or data leakage',
+      description:
+        'Validate and sanitize all user inputs to prevent injection attacks',
+      impact:
+        'Improper input handling could lead to prompt injection or data leakage',
       recommendation: 'Implement robust input validation and sanitization',
       implementation: {
         steps: [
           'Define input validation rules',
           'Implement sanitization functions',
           'Add length and content checks',
-          'Test with malicious inputs'
+          'Test with malicious inputs',
         ],
         effort: 'medium',
         timeEstimate: '3-5 hours',
-        cost: 'none'
+        cost: 'none',
       },
       remediation: {
         automated: false,
         manualSteps: [
           'Code input validation',
           'Test validation functions',
-          'Document validation rules'
+          'Document validation rules',
         ],
         verificationSteps: [
           'Test with various inputs',
           'Verify sanitization works',
-          'Check error handling'
-        ]
+          'Check error handling',
+        ],
       },
       compliance: ['OWASP Top 10'],
       priority: 3,
       riskScore: 50,
-      timestamp: new Date()
+      timestamp: new Date(),
     });
 
     return recommendations;
@@ -583,21 +628,23 @@ export class SecurityRecommendationEngine {
   /**
    * Assess specific security category
    */
-  private async assessSecurityCategory(category: SecurityCategory): Promise<SecurityRecommendation[]> {
+  private async assessSecurityCategory(
+    category: SecurityCategory,
+  ): Promise<SecurityRecommendation[]> {
     const recommendations: SecurityRecommendation[] = [];
 
     switch (category) {
       case 'monitoring':
-        recommendations.push(...await this.assessMonitoring());
+        recommendations.push(...(await this.assessMonitoring()));
         break;
       case 'network':
-        recommendations.push(...await this.assessNetwork());
+        recommendations.push(...(await this.assessNetwork()));
         break;
       case 'authorization':
-        recommendations.push(...await this.assessAuthorization());
+        recommendations.push(...(await this.assessAuthorization()));
         break;
       case 'compliance':
-        recommendations.push(...await this.assessCompliance());
+        recommendations.push(...(await this.assessCompliance()));
         break;
     }
 
@@ -617,30 +664,33 @@ export class SecurityRecommendationEngine {
         level: 'high',
         category: 'monitoring',
         title: 'Enable Security Monitoring and Logging',
-        description: 'Security events are not being logged, preventing incident detection',
-        impact: 'Security incidents may go undetected, hampering response efforts',
-        recommendation: 'Enable comprehensive audit logging for security monitoring',
+        description:
+          'Security events are not being logged, preventing incident detection',
+        impact:
+          'Security incidents may go undetected, hampering response efforts',
+        recommendation:
+          'Enable comprehensive audit logging for security monitoring',
         implementation: {
           steps: [
             'Enable audit logging in privacy config',
             'Configure log retention policies',
             'Set up log monitoring',
-            'Define alerting rules'
+            'Define alerting rules',
           ],
           effort: 'medium',
           timeEstimate: '2-3 hours',
-          cost: 'none'
+          cost: 'none',
         },
         remediation: {
           automated: true,
           automationScript: 'trust privacy audit enable',
           manualSteps: ['Enable logging', 'Configure monitoring'],
-          verificationSteps: ['Check log generation', 'Verify monitoring']
+          verificationSteps: ['Check log generation', 'Verify monitoring'],
         },
         compliance: ['SOX', 'PCI-DSS', 'ISO 27001'],
         priority: 2,
         riskScore: 65,
-        timestamp: new Date()
+        timestamp: new Date(),
       });
     }
 
@@ -659,24 +709,25 @@ export class SecurityRecommendationEngine {
       level: 'info',
       category: 'network',
       title: 'Network Isolation Advantage',
-      description: 'Local-only AI operation provides network isolation benefits',
+      description:
+        'Local-only AI operation provides network isolation benefits',
       impact: 'Reduced attack surface by eliminating network dependencies',
       recommendation: 'Maintain local-only operation model for security',
       implementation: {
         steps: ['Continue local inference', 'Avoid network-dependent models'],
         effort: 'low',
         timeEstimate: 'Ongoing',
-        cost: 'none'
+        cost: 'none',
       },
       remediation: {
         automated: false,
         manualSteps: ['Monitor for network dependencies'],
-        verificationSteps: ['Verify no external connections']
+        verificationSteps: ['Verify no external connections'],
       },
       compliance: ['Zero Trust Architecture'],
       priority: 4,
       riskScore: 15,
-      timestamp: new Date()
+      timestamp: new Date(),
     });
 
     return recommendations;
@@ -702,22 +753,22 @@ export class SecurityRecommendationEngine {
           'Audit current file permissions',
           'Apply least privilege principle',
           'Set restrictive defaults',
-          'Monitor access patterns'
+          'Monitor access patterns',
         ],
         effort: 'medium',
         timeEstimate: '2-3 hours',
-        cost: 'none'
+        cost: 'none',
       },
       remediation: {
         automated: true,
         automationScript: 'find ~/.trustcli -type f -exec chmod 600 {} \\;',
         manualSteps: ['Set restrictive permissions', 'Verify access'],
-        verificationSteps: ['Test file access', 'Check permissions']
+        verificationSteps: ['Test file access', 'Check permissions'],
       },
       compliance: ['NIST SP 800-53 AC-3'],
       priority: 3,
       riskScore: 45,
-      timestamp: new Date()
+      timestamp: new Date(),
     });
 
     return recommendations;
@@ -735,7 +786,8 @@ export class SecurityRecommendationEngine {
       level: 'medium',
       category: 'compliance',
       title: 'Establish Regular Compliance Assessments',
-      description: 'Implement regular security and privacy compliance assessments',
+      description:
+        'Implement regular security and privacy compliance assessments',
       impact: 'Compliance drift may result in regulatory violations',
       recommendation: 'Schedule quarterly security and privacy assessments',
       implementation: {
@@ -743,22 +795,22 @@ export class SecurityRecommendationEngine {
           'Define assessment schedule',
           'Create assessment checklists',
           'Automate where possible',
-          'Track remediation progress'
+          'Track remediation progress',
         ],
         effort: 'medium',
         timeEstimate: '4-6 hours initial setup',
-        cost: 'low'
+        cost: 'low',
       },
       remediation: {
         automated: true,
         automationScript: 'trust privacy audit --comprehensive',
         manualSteps: ['Schedule assessments', 'Create processes'],
-        verificationSteps: ['Run test assessment', 'Verify reporting']
+        verificationSteps: ['Run test assessment', 'Verify reporting'],
       },
       compliance: ['Continuous Compliance'],
       priority: 3,
       riskScore: 35,
-      timestamp: new Date()
+      timestamp: new Date(),
     });
 
     return recommendations;
@@ -784,8 +836,9 @@ export class SecurityRecommendationEngine {
         status: mode === parseInt('700', 8) ? 'pass' : 'fail',
         expected: '700 (owner only)',
         actual: mode.toString(8),
-        recommendation: mode !== parseInt('700', 8) ? 'Set permissions to 700' : undefined,
-        securityImpact: 'high'
+        recommendation:
+          mode !== parseInt('700', 8) ? 'Set permissions to 700' : undefined,
+        securityImpact: 'high',
       });
     } catch (error) {
       checks.push({
@@ -797,7 +850,7 @@ export class SecurityRecommendationEngine {
         expected: 'Directory exists',
         actual: 'Directory not found',
         recommendation: 'Initialize Trust CLI configuration',
-        securityImpact: 'medium'
+        securityImpact: 'medium',
       });
     }
 
@@ -812,7 +865,7 @@ export class SecurityRecommendationEngine {
 
     // This is a placeholder for actual vulnerability scanning
     // In a real implementation, this would scan for known vulnerabilities
-    
+
     return vulnerabilities;
   }
 
@@ -833,7 +886,7 @@ export class SecurityRecommendationEngine {
         currentStatus: 'not_implemented',
         gap: 'Personal data encryption not implemented',
         recommendation: 'Enable storage encryption',
-        priority: 'critical'
+        priority: 'critical',
       });
     }
 
@@ -845,12 +898,18 @@ export class SecurityRecommendationEngine {
    */
   private calculateSecuritySummary(
     recommendations: SecurityRecommendation[],
-    vulnerabilities: SecurityVulnerability[]
+    vulnerabilities: SecurityVulnerability[],
   ): SecurityAssessmentReport['summary'] {
-    const criticalRecs = recommendations.filter(r => r.level === 'critical').length;
-    const highRecs = recommendations.filter(r => r.level === 'high').length;
-    const criticalVulns = vulnerabilities.filter(v => v.severity === 'critical').length;
-    const highVulns = vulnerabilities.filter(v => v.severity === 'high').length;
+    const criticalRecs = recommendations.filter(
+      (r) => r.level === 'critical',
+    ).length;
+    const highRecs = recommendations.filter((r) => r.level === 'high').length;
+    const criticalVulns = vulnerabilities.filter(
+      (v) => v.severity === 'critical',
+    ).length;
+    const highVulns = vulnerabilities.filter(
+      (v) => v.severity === 'high',
+    ).length;
 
     const totalRecommendations = recommendations.length;
     const criticalRecommendations = criticalRecs;
@@ -876,28 +935,35 @@ export class SecurityRecommendationEngine {
       criticalRecommendations,
       highRecommendations,
       overallSecurityScore: securityScore,
-      riskLevel
+      riskLevel,
     };
   }
 
   /**
    * Generate security action plan
    */
-  private generateSecurityActionPlan(recommendations: SecurityRecommendation[]): {
+  private generateSecurityActionPlan(
+    recommendations: SecurityRecommendation[],
+  ): {
     immediate: SecurityRecommendation[];
     shortTerm: SecurityRecommendation[];
     longTerm: SecurityRecommendation[];
   } {
     const immediate = recommendations
-      .filter(r => r.level === 'critical' || (r.level === 'high' && r.priority === 1))
+      .filter(
+        (r) =>
+          r.level === 'critical' || (r.level === 'high' && r.priority === 1),
+      )
       .slice(0, 5);
 
     const shortTerm = recommendations
-      .filter(r => r.level === 'high' || (r.level === 'medium' && r.priority <= 2))
+      .filter(
+        (r) => r.level === 'high' || (r.level === 'medium' && r.priority <= 2),
+      )
       .slice(0, 8);
 
     const longTerm = recommendations
-      .filter(r => r.level === 'medium' || r.level === 'low')
+      .filter((r) => r.level === 'medium' || r.level === 'low')
       .slice(0, 10);
 
     return { immediate, shortTerm, longTerm };
@@ -906,7 +972,9 @@ export class SecurityRecommendationEngine {
   /**
    * Save security report to disk
    */
-  private async saveSecurityReport(report: SecurityAssessmentReport): Promise<void> {
+  private async saveSecurityReport(
+    report: SecurityAssessmentReport,
+  ): Promise<void> {
     try {
       await fs.mkdir(this.reportsDir, { recursive: true });
       const reportPath = path.join(this.reportsDir, `${report.id}.json`);
@@ -937,7 +1005,9 @@ export class SecurityRecommendationEngine {
     output += `   High: ${report.summary.highRecommendations}\n\n`;
 
     // Critical and high recommendations
-    const criticalAndHigh = report.recommendations.filter(r => r.level === 'critical' || r.level === 'high');
+    const criticalAndHigh = report.recommendations.filter(
+      (r) => r.level === 'critical' || r.level === 'high',
+    );
     if (criticalAndHigh.length > 0) {
       output += `🚨 Critical & High Priority Recommendations:\n`;
       criticalAndHigh.forEach((rec, i) => {
@@ -956,7 +1026,12 @@ export class SecurityRecommendationEngine {
     if (report.vulnerabilities.length > 0) {
       output += `🛡️  Vulnerabilities Found:\n`;
       report.vulnerabilities.slice(0, 5).forEach((vuln, i) => {
-        const emoji = vuln.severity === 'critical' ? '🔴' : vuln.severity === 'high' ? '🟠' : '🟡';
+        const emoji =
+          vuln.severity === 'critical'
+            ? '🔴'
+            : vuln.severity === 'high'
+              ? '🟠'
+              : '🟡';
         output += `   ${i + 1}. ${emoji} ${vuln.title}\n`;
         output += `      ${vuln.description}\n`;
         if (vuln.cve) output += `      CVE: ${vuln.cve}\n`;

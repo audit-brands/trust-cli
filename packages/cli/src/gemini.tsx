@@ -18,7 +18,6 @@ import {
   LoadedSettings,
   loadSettings,
   SettingScope,
-  USER_SETTINGS_PATH,
 } from './config/settings.js';
 import { themeManager } from './ui/themes/theme-manager.js';
 import { getStartupWarnings } from './utils/startupWarnings.js';
@@ -87,8 +86,11 @@ export async function main() {
   process.removeAllListeners('warning');
   process.on('warning', (warning) => {
     // Skip punycode and url.parse deprecation warnings from dependencies
-    if (warning.name === 'DeprecationWarning' && 
-        (warning.message.includes('punycode') || warning.message.includes('url.parse'))) {
+    if (
+      warning.name === 'DeprecationWarning' &&
+      (warning.message.includes('punycode') ||
+        warning.message.includes('url.parse'))
+    ) {
       return;
     }
     // Log other warnings normally
@@ -97,11 +99,11 @@ export async function main() {
 
   // Check for specific commands first
   const args = process.argv.slice(2);
-  
+
   // Authentication command
   if (args[0] === 'auth') {
     const { handleAuthCommand } = await import('./commands/authCommands.js');
-    
+
     const action = args[1] as 'login' | 'logout' | 'status';
     if (!action || !['login', 'logout', 'status'].includes(action)) {
       console.error('Usage: trust auth [login|logout|status]');
@@ -110,12 +112,14 @@ export async function main() {
       console.error('  trust auth status');
       process.exit(1);
     }
-    
+
     try {
       await handleAuthCommand({
         action,
-        hfToken: args.includes('--hf-token') ? args[args.indexOf('--hf-token') + 1] : undefined,
-        verbose: args.includes('--verbose') || args.includes('-v')
+        hfToken: args.includes('--hf-token')
+          ? args[args.indexOf('--hf-token') + 1]
+          : undefined,
+        verbose: args.includes('--verbose') || args.includes('-v'),
       });
       return;
     } catch (error) {
@@ -123,23 +127,45 @@ export async function main() {
       process.exit(1);
     }
   }
-  
+
   // Performance monitoring command
   if (args[0] === 'performance' || args[0] === 'perf') {
-    const { handlePerformanceCommand } = await import('./commands/performanceCommands.js');
+    const { handlePerformanceCommand } = await import(
+      './commands/performanceCommands.js'
+    );
     try {
-      const action = args[1] as 'status' | 'report' | 'watch' | 'optimize' | 'profile' | 'recommend' | 'regression';
+      const action = args[1] as
+        | 'status'
+        | 'report'
+        | 'watch'
+        | 'optimize'
+        | 'profile'
+        | 'recommend'
+        | 'regression';
       const allFlags = args.slice(2);
-      
+
       await handlePerformanceCommand({
         action: action || 'status',
         verbose: allFlags.includes('--verbose') || allFlags.includes('-v'),
         watch: allFlags.includes('--watch') || allFlags.includes('-w'),
-        interval: allFlags.includes('--interval') ? parseInt(allFlags[allFlags.indexOf('--interval') + 1]) : 1000,
-        model: allFlags.includes('--model') ? allFlags[allFlags.indexOf('--model') + 1] : undefined,
-        workload: allFlags.includes('--workload') ? allFlags[allFlags.indexOf('--workload') + 1] : undefined,
-        format: allFlags.includes('--format') ? allFlags[allFlags.indexOf('--format') + 1] as 'json' | 'csv' | 'text' : undefined,
-        output: allFlags.includes('--output') ? allFlags[allFlags.indexOf('--output') + 1] : undefined,
+        interval: allFlags.includes('--interval')
+          ? parseInt(allFlags[allFlags.indexOf('--interval') + 1], 10)
+          : 1000,
+        model: allFlags.includes('--model')
+          ? allFlags[allFlags.indexOf('--model') + 1]
+          : undefined,
+        workload: allFlags.includes('--workload')
+          ? allFlags[allFlags.indexOf('--workload') + 1]
+          : undefined,
+        format: allFlags.includes('--format')
+          ? (allFlags[allFlags.indexOf('--format') + 1] as
+              | 'json'
+              | 'csv'
+              | 'text')
+          : undefined,
+        output: allFlags.includes('--output')
+          ? allFlags[allFlags.indexOf('--output') + 1]
+          : undefined,
       });
       return;
     } catch (error) {
@@ -147,29 +173,31 @@ export async function main() {
       process.exit(1);
     }
   }
-  
+
   // Model management commands
   if (args[0] === 'model') {
     const { handleModelCommand } = await import('./commands/modelCommands.js');
-    
+
     const action = args[1];
     let modelName = args[2];
     let task = args[2];
-    
+
     // For recommend command, the second argument is the task
     if (action === 'recommend') {
       task = args[2] || 'default';
       modelName = args[3]; // For recommend, model name might be optional
     }
-    
+
     const allFlags = args.slice(2);
-    
+
     try {
       await handleModelCommand({
         action: action as any,
         modelName,
         task,
-        ramLimit: allFlags.includes('--ram') ? parseInt(allFlags[allFlags.indexOf('--ram') + 1]) : undefined,
+        ramLimit: allFlags.includes('--ram')
+          ? parseInt(allFlags[allFlags.indexOf('--ram') + 1], 10)
+          : undefined,
         verbose: allFlags.includes('--verbose') || allFlags.includes('-v'),
       });
       return;
@@ -178,15 +206,17 @@ export async function main() {
       process.exit(1);
     }
   }
-  
+
   // Status command
   if (args[0] === 'status') {
-    const { handleStatusCommand } = await import('./commands/statusCommands.js');
-    
+    const { handleStatusCommand } = await import(
+      './commands/statusCommands.js'
+    );
+
     // Filter out flags to find the action
-    const nonFlagArgs = args.slice(1).filter(arg => !arg.startsWith('-'));
+    const nonFlagArgs = args.slice(1).filter((arg) => !arg.startsWith('-'));
     const action = nonFlagArgs[0] as 'show' | 'backend' | 'model' | 'all';
-    
+
     try {
       await handleStatusCommand({
         action: action || 'show',
@@ -198,20 +228,22 @@ export async function main() {
       process.exit(1);
     }
   }
-  
+
   // Configuration management commands
   if (args[0] === 'config') {
-    const { handleConfigCommand } = await import('./commands/configCommands.js');
-    
+    const { handleConfigCommand } = await import(
+      './commands/configCommands.js'
+    );
+
     const action = args[1];
     const allFlags = args.slice(2);
-    
+
     try {
       const configArgs: any = {
         action: action || 'show',
         verbose: allFlags.includes('--verbose') || allFlags.includes('-v'),
       };
-      
+
       // Parse specific arguments based on action
       switch (action) {
         case 'get':
@@ -226,14 +258,18 @@ export async function main() {
           break;
         case 'fallback':
           // Parse fallback order from remaining args
-          configArgs.order = args.slice(2).filter(arg => !arg.startsWith('--'));
+          configArgs.order = args
+            .slice(2)
+            .filter((arg) => !arg.startsWith('--'));
           break;
         case 'export':
         case 'import':
           configArgs.file = args[2];
           break;
+        default:
+          break;
       }
-      
+
       await handleConfigCommand(configArgs);
       return;
     } catch (error) {
@@ -244,7 +280,9 @@ export async function main() {
 
   // OpenAudit command
   if (args[0] === 'openaudit') {
-    const { handleOpenAuditCommand } = await import('./commands/openauditCommands.js');
+    const { handleOpenAuditCommand } = await import(
+      './commands/openauditCommands.js'
+    );
     try {
       await handleOpenAuditCommand({
         action: args[1] as string,
@@ -256,16 +294,22 @@ export async function main() {
       process.exit(1);
     }
   }
-  
+
   // API Server command
   if (args[0] === 'serve') {
     const { handleServeCommand } = await import('./commands/serveCommands.js');
     try {
       await handleServeCommand({
-        port: args.includes('--port') ? parseInt(args[args.indexOf('--port') + 1]) : 8080,
-        host: args.includes('--host') ? args[args.indexOf('--host') + 1] : 'localhost',
+        port: args.includes('--port')
+          ? parseInt(args[args.indexOf('--port') + 1], 10)
+          : 8080,
+        host: args.includes('--host')
+          ? args[args.indexOf('--host') + 1]
+          : 'localhost',
         cors: args.includes('--cors'),
-        apiKey: args.includes('--api-key') ? args[args.indexOf('--api-key') + 1] : undefined,
+        apiKey: args.includes('--api-key')
+          ? args[args.indexOf('--api-key') + 1]
+          : undefined,
         verbose: args.includes('--verbose') || args.includes('-v'),
         help: args.includes('--help') || args.includes('-h'),
       });
@@ -279,18 +323,22 @@ export async function main() {
   // Structured output command
   if (args[0] === 'structured') {
     const { Command } = await import('commander');
-    const { addStructuredCommands } = await import('./commands/structuredCommands.js');
-    
+    const { addStructuredCommands } = await import(
+      './commands/structuredCommands.js'
+    );
+
     // Create a commander program for structured commands
     const program = new Command();
     program.name('trust structured');
-    
+
     // Add structured commands
     addStructuredCommands(program);
-    
+
     try {
       // Parse the remaining arguments starting from 'structured'
-      await program.parseAsync(process.argv.slice(process.argv.indexOf('structured')));
+      await program.parseAsync(
+        process.argv.slice(process.argv.indexOf('structured')),
+      );
       return;
     } catch (error) {
       console.error(`❌ Structured command failed: ${error}`);
@@ -300,19 +348,40 @@ export async function main() {
 
   // Privacy audit command
   if (args[0] === 'privacy-audit') {
-    const { handlePrivacyAuditCommand } = await import('./commands/privacyAuditCommands.js');
-    
+    const { handlePrivacyAuditCommand } = await import(
+      './commands/privacyAuditCommands.js'
+    );
+
     try {
-      const action = args[1] as 'audit' | 'security' | 'compliance' | 'report' | 'history';
+      const action = args[1] as
+        | 'audit'
+        | 'security'
+        | 'compliance'
+        | 'report'
+        | 'history';
       const allFlags = args.slice(2);
-      
+
       await handlePrivacyAuditCommand({
         action: action || 'audit',
-        framework: allFlags.includes('--framework') ? allFlags[allFlags.indexOf('--framework') + 1] : undefined,
-        depth: allFlags.includes('--depth') ? allFlags[allFlags.indexOf('--depth') + 1] as 'basic' | 'standard' | 'comprehensive' : undefined,
-        format: allFlags.includes('--format') ? allFlags[allFlags.indexOf('--format') + 1] as 'text' | 'json' | 'csv' : undefined,
-        output: allFlags.includes('--output') ? allFlags[allFlags.indexOf('--output') + 1] : undefined,
-        verbose: allFlags.includes('--verbose') || allFlags.includes('-v')
+        framework: allFlags.includes('--framework')
+          ? allFlags[allFlags.indexOf('--framework') + 1]
+          : undefined,
+        depth: allFlags.includes('--depth')
+          ? (allFlags[allFlags.indexOf('--depth') + 1] as
+              | 'basic'
+              | 'standard'
+              | 'comprehensive')
+          : undefined,
+        format: allFlags.includes('--format')
+          ? (allFlags[allFlags.indexOf('--format') + 1] as
+              | 'text'
+              | 'json'
+              | 'csv')
+          : undefined,
+        output: allFlags.includes('--output')
+          ? allFlags[allFlags.indexOf('--output') + 1]
+          : undefined,
+        verbose: allFlags.includes('--verbose') || allFlags.includes('-v'),
       });
       return;
     } catch (error) {
@@ -323,8 +392,11 @@ export async function main() {
 
   const workspaceRoot = process.cwd();
   const settings = loadSettings(workspaceRoot);
-  
-  console.log('DEBUG: Loaded settings selectedAuthType:', settings.merged.selectedAuthType);
+
+  console.log(
+    'DEBUG: Loaded settings selectedAuthType:',
+    settings.merged.selectedAuthType,
+  );
 
   await cleanupCheckpoints();
   if (settings.errors.length > 0) {
@@ -352,8 +424,11 @@ export async function main() {
       AuthType.USE_TRUST_LOCAL,
     );
   }
-  
-  console.log('DEBUG: Final selectedAuthType:', settings.merged.selectedAuthType);
+
+  console.log(
+    'DEBUG: Final selectedAuthType:',
+    settings.merged.selectedAuthType,
+  );
 
   setMaxSizedBoxDebugging(config.getDebugMode());
 
@@ -521,11 +596,13 @@ async function validateNonInterActiveAuth(
   // making a special case for the cli. many headless environments might not have a settings.json set
   // HuggingFace models operate locally, so no API key is required for most operations
   if (!selectedAuthType) {
-    console.log('No authentication method set. Using HuggingFace local inference mode.');
+    console.log(
+      'No authentication method set. Using HuggingFace local inference mode.',
+    );
   }
 
   selectedAuthType = selectedAuthType || AuthType.USE_TRUST_LOCAL;
-  
+
   // HuggingFace authentication is always available for local inference
   if (selectedAuthType === AuthType.USE_TRUST_LOCAL) {
     await nonInteractiveConfig.refreshAuth(selectedAuthType);

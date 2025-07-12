@@ -7,6 +7,7 @@ Trust CLI supports three different AI backends with intelligent fallback, giving
 ## 🚀 Quick Start Guide
 
 ### Option 1: Ollama (Recommended)
+
 **Best for**: Fast setup, excellent performance, easy model management
 
 ```bash
@@ -24,6 +25,7 @@ trust
 ```
 
 ### Option 2: HuggingFace Models
+
 **Best for**: Complete offline operation, fine-grained control
 
 ```bash
@@ -38,6 +40,7 @@ trust
 ```
 
 ### Option 3: Cloud Models (Fallback)
+
 **Best for**: Maximum performance, latest capabilities
 
 ```bash
@@ -54,12 +57,15 @@ trust
 ## 🔧 Architecture Details
 
 ### Backend Selection Order
+
 Trust CLI tries backends in this order:
+
 1. **Ollama** (if running on localhost:11434)
 2. **HuggingFace** (if GGUF models downloaded)
 3. **Cloud** (if configured and enabled)
 
 ### Intelligent Fallback
+
 - **Automatic Detection**: Trust CLI checks each backend's availability
 - **Graceful Degradation**: Falls back to next available backend
 - **User Control**: Can disable fallback or force specific backend
@@ -67,6 +73,7 @@ Trust CLI tries backends in this order:
 ## ⚙️ Configuration Management
 
 ### View Current Configuration
+
 ```bash
 # Check current backend status
 trust config show
@@ -79,6 +86,7 @@ trust config get ai
 ```
 
 ### Backend Preferences
+
 ```bash
 # Set preferred backend
 trust config set ai.preferredBackend ollama
@@ -91,6 +99,7 @@ trust config set ai.enableFallback false
 ```
 
 ### Ollama Configuration
+
 ```bash
 # Set default model
 trust config set ai.ollama.defaultModel qwen2.5:7b
@@ -106,6 +115,7 @@ trust config set ai.ollama.maxToolCalls 5
 ```
 
 ### HuggingFace Configuration
+
 ```bash
 # Enable/disable HuggingFace fallback
 trust config set ai.huggingface.enabled true
@@ -115,6 +125,7 @@ trust config set ai.huggingface.gbnfFunctions true
 ```
 
 ### Cloud Configuration
+
 ```bash
 # Enable/disable cloud fallback
 trust config set ai.cloud.enabled false
@@ -125,20 +136,21 @@ trust config set ai.cloud.provider google  # or 'openai', 'anthropic'
 
 ## 📊 Backend Comparison
 
-| Feature | Ollama | HuggingFace | Cloud |
-|---------|---------|-------------|-------|
-| **Setup** | Simple | Moderate | Simple |
-| **Performance** | Fast | Medium | Fastest |
-| **Privacy** | Private | Private | Shared |
-| **Offline** | Yes | Yes | No |
-| **Model Selection** | Extensive | Curated | Latest |
-| **Tool Calling** | Native | GBNF | Native |
-| **Resource Usage** | Low | Medium | None |
-| **Model Management** | Built-in | Manual | None |
+| Feature              | Ollama    | HuggingFace | Cloud   |
+| -------------------- | --------- | ----------- | ------- |
+| **Setup**            | Simple    | Moderate    | Simple  |
+| **Performance**      | Fast      | Medium      | Fastest |
+| **Privacy**          | Private   | Private     | Shared  |
+| **Offline**          | Yes       | Yes         | No      |
+| **Model Selection**  | Extensive | Curated     | Latest  |
+| **Tool Calling**     | Native    | GBNF        | Native  |
+| **Resource Usage**   | Low       | Medium      | None    |
+| **Model Management** | Built-in  | Manual      | None    |
 
 ## 🎯 Recommended Setups
 
 ### Privacy-First Developer
+
 ```bash
 # Complete local operation, no cloud fallback
 trust config set ai.enableFallback false
@@ -148,6 +160,7 @@ trust model download phi-3.5-mini-instruct
 ```
 
 ### Performance-Optimized Developer
+
 ```bash
 # Ollama primary, cloud fallback for heavy tasks
 ollama pull qwen2.5:7b
@@ -156,6 +169,7 @@ trust config set ai.cloud.enabled true
 ```
 
 ### Enterprise/Security Team
+
 ```bash
 # Local-only deployment with security policies
 trust config set ai.enableFallback false
@@ -165,6 +179,7 @@ trust config set ai.huggingface.gbnfFunctions true
 ```
 
 ### Hybrid Workflow Developer
+
 ```bash
 # Ollama for general use, HuggingFace for sensitive work
 ollama pull qwen2.5:7b
@@ -175,6 +190,7 @@ trust config set ai.fallbackOrder "ollama,huggingface,cloud"
 ## 🔧 Advanced Configuration
 
 ### Configuration File Location
+
 All settings are stored in `~/.trustcli/config.json`:
 
 ```json
@@ -202,6 +218,7 @@ All settings are stored in `~/.trustcli/config.json`:
 ```
 
 ### Environment Variables
+
 ```bash
 # Override backend selection
 export TRUST_BACKEND=ollama
@@ -216,6 +233,7 @@ export TRUST_CONFIG_DIR=~/.custom-trust
 ## 🛠️ Troubleshooting
 
 ### Ollama Not Detected
+
 ```bash
 # Check if Ollama is running
 curl http://localhost:11434/api/tags
@@ -228,6 +246,7 @@ journalctl -f -u ollama  # Linux systemd
 ```
 
 ### HuggingFace Models Not Loading
+
 ```bash
 # Check downloaded models
 trust model list
@@ -240,6 +259,7 @@ trust model download qwen2.5-1.5b-instruct
 ```
 
 ### Cloud Authentication Issues
+
 ```bash
 # Check authentication status
 trust auth status
@@ -252,6 +272,7 @@ trust auth logout
 ```
 
 ### Configuration Issues
+
 ```bash
 # Reset to defaults
 trust config reset
@@ -266,6 +287,7 @@ trust config show
 ## 🚀 Performance Tips
 
 ### Ollama Optimization
+
 ```bash
 # Use appropriate model size for your hardware
 ollama pull qwen2.5:1.5b  # 2GB RAM
@@ -277,6 +299,7 @@ trust config set ai.ollama.timeout 300000  # 5 minutes
 ```
 
 ### HuggingFace Local Optimization
+
 ```bash
 # Enable GBNF for better function calling
 trust config set ai.trustLocal.gbnfFunctions true
@@ -286,6 +309,7 @@ trust model download phi-3.5-mini-instruct  # Q4_K_M (balanced)
 ```
 
 ### Memory Management
+
 ```bash
 # Check system resources
 trust perf status
@@ -300,6 +324,7 @@ trust perf watch
 ## 🔒 Security Considerations
 
 ### Local-Only Operation
+
 ```bash
 # Disable all external connections
 trust config set ai.cloud.enabled false
@@ -310,6 +335,7 @@ trust config show | grep -E "(cloud|external)"
 ```
 
 ### Model Verification
+
 ```bash
 # Verify all models
 trust model verify
@@ -322,6 +348,7 @@ trust model info qwen2.5-1.5b-instruct
 ```
 
 ### Privacy Audit
+
 ```bash
 # Review current configuration
 trust config show

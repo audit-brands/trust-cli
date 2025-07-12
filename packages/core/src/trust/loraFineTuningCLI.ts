@@ -25,11 +25,18 @@ export class LoRAFineTuningCLI {
   constructor() {
     const configDir = path.join(os.homedir(), '.trustcli');
     const performanceMonitor = new PerformanceMonitor();
-    
+
     this.modelManager = new TrustModelManagerImpl();
     this.errorCollector = new ErrorCollector();
-    this.performanceBenchmark = new PerformanceBenchmark(performanceMonitor, this.modelManager);
-    this.fineTuner = new LoRAFineTuner(configDir, this.errorCollector, this.performanceBenchmark);
+    this.performanceBenchmark = new PerformanceBenchmark(
+      performanceMonitor,
+      this.modelManager,
+    );
+    this.fineTuner = new LoRAFineTuner(
+      configDir,
+      this.errorCollector,
+      this.performanceBenchmark,
+    );
   }
 
   /**
@@ -59,7 +66,11 @@ export class LoRAFineTuningCLI {
       .description('Create training dataset from error collection')
       .requiredOption('--model <name>', 'Model name to create dataset for')
       .option('--min-samples <count>', 'Minimum number of samples', '50')
-      .option('--error-types <types>', 'Comma-separated error types', 'wrong_tool,wrong_args,parse_error')
+      .option(
+        '--error-types <types>',
+        'Comma-separated error types',
+        'wrong_tool,wrong_args,parse_error',
+      )
       .action(async (options) => {
         await this.createDataset(options);
       });
@@ -87,9 +98,7 @@ export class LoRAFineTuningCLI {
       });
 
     // Jobs command
-    const jobsCmd = program
-      .command('jobs')
-      .description('Manage training jobs');
+    const jobsCmd = program.command('jobs').description('Manage training jobs');
 
     jobsCmd
       .command('list')
@@ -153,8 +162,8 @@ export class LoRAFineTuningCLI {
 
     try {
       const models = await this.modelManager.getAvailableModels();
-      const modelsToAnalyze = options.model 
-        ? models.filter(m => m.name === options.model)
+      const modelsToAnalyze = options.model
+        ? models.filter((m) => m.name === options.model)
         : models;
 
       if (modelsToAnalyze.length === 0) {
@@ -162,14 +171,19 @@ export class LoRAFineTuningCLI {
         return;
       }
 
-      const weakModels = await this.fineTuner.identifyWeakModels(modelsToAnalyze);
+      const weakModels =
+        await this.fineTuner.identifyWeakModels(modelsToAnalyze);
 
       if (weakModels.length === 0) {
-        console.log('✅ No weak models detected. All models are performing well!');
+        console.log(
+          '✅ No weak models detected. All models are performing well!',
+        );
         return;
       }
 
-      console.log(`Found ${weakModels.length} model(s) that could benefit from fine-tuning:\n`);
+      console.log(
+        `Found ${weakModels.length} model(s) that could benefit from fine-tuning:\n`,
+      );
 
       for (const { model, weaknesses, priority } of weakModels) {
         console.log(`📊 ${model.name} (${model.parameters})`);
@@ -184,8 +198,12 @@ export class LoRAFineTuningCLI {
       }
 
       console.log('💡 Next steps:');
-      console.log('1. Create training dataset: trust lora dataset create --model <model-name>');
-      console.log('2. Start training: trust lora train --model <model-name> --dataset <dataset-id>');
+      console.log(
+        '1. Create training dataset: trust lora dataset create --model <model-name>',
+      );
+      console.log(
+        '2. Start training: trust lora train --model <model-name> --dataset <dataset-id>',
+      );
     } catch (error) {
       console.error('❌ Analysis failed:', error);
     }
@@ -195,13 +213,15 @@ export class LoRAFineTuningCLI {
     console.log(`📚 Creating training dataset for ${options.model}...\n`);
 
     try {
-      const errorTypes = options.errorTypes.split(',').map((t: string) => t.trim());
+      const errorTypes = options.errorTypes
+        .split(',')
+        .map((t: string) => t.trim());
       const minSamples = parseInt(options.minSamples);
 
       const dataset = await this.fineTuner.generateDatasetFromErrors(
         options.model,
         errorTypes,
-        minSamples
+        minSamples,
       );
 
       console.log('✅ Dataset created successfully!');
@@ -213,7 +233,9 @@ export class LoRAFineTuningCLI {
       console.log(`   Source: ${dataset.source}`);
       console.log();
       console.log('💡 Start training with:');
-      console.log(`trust lora train --model ${options.model} --dataset ${dataset.id}`);
+      console.log(
+        `trust lora train --model ${options.model} --dataset ${dataset.id}`,
+      );
     } catch (error) {
       console.error('❌ Dataset creation failed:', error);
     }
@@ -224,7 +246,9 @@ export class LoRAFineTuningCLI {
 
     try {
       // This would need to be implemented in the LoRAFineTuner
-      console.log('Feature not yet implemented - datasets will be listed from storage');
+      console.log(
+        'Feature not yet implemented - datasets will be listed from storage',
+      );
     } catch (error) {
       console.error('❌ Failed to list datasets:', error);
     }
@@ -235,7 +259,7 @@ export class LoRAFineTuningCLI {
 
     try {
       const models = await this.modelManager.getAvailableModels();
-      const model = models.find(m => m.name === options.model);
+      const model = models.find((m) => m.name === options.model);
 
       if (!model) {
         console.error(`❌ Model ${options.model} not found`);
@@ -251,16 +275,21 @@ export class LoRAFineTuningCLI {
         samples: [],
         createdAt: new Date(),
         quality: 'medium' as const,
-        domain: 'function_calling' as const
+        domain: 'function_calling' as const,
       };
 
-      const config = this.fineTuner.createOptimalConfig(options.model, model, mockDataset);
-      
+      const config = this.fineTuner.createOptimalConfig(
+        options.model,
+        model,
+        mockDataset,
+      );
+
       // Override with CLI options
       if (options.rank) config.rank = parseInt(options.rank);
       if (options.alpha) config.alpha = parseInt(options.alpha);
       if (options.epochs) config.epochs = parseInt(options.epochs);
-      if (options.learningRate) config.learningRate = parseFloat(options.learningRate);
+      if (options.learningRate)
+        config.learningRate = parseFloat(options.learningRate);
       if (options.batchSize) config.batchSize = parseInt(options.batchSize);
 
       console.log('📋 Training configuration:');
@@ -278,11 +307,15 @@ export class LoRAFineTuningCLI {
       console.log(`   Job ID: ${job.id}`);
       console.log(`   Status: ${job.status}`);
       console.log(`   Progress: ${job.progress}%`);
-      
+
       if (job.resultAdapter) {
         console.log(`   Adapter ID: ${job.resultAdapter.id}`);
-        console.log(`   Accuracy: ${job.resultAdapter.performance.accuracy.toFixed(3)}`);
-        console.log(`   Benchmark Score: ${job.resultAdapter.performance.benchmarkScore.toFixed(3)}`);
+        console.log(
+          `   Accuracy: ${job.resultAdapter.performance.accuracy.toFixed(3)}`,
+        );
+        console.log(
+          `   Benchmark Score: ${job.resultAdapter.performance.benchmarkScore.toFixed(3)}`,
+        );
       }
     } catch (error) {
       console.error('❌ Training failed:', error);
@@ -291,7 +324,9 @@ export class LoRAFineTuningCLI {
 
   private async listJobs(): Promise<void> {
     console.log('📋 Training jobs:\n');
-    console.log('Feature not yet implemented - jobs will be listed from storage');
+    console.log(
+      'Feature not yet implemented - jobs will be listed from storage',
+    );
   }
 
   private async checkJobStatus(options: any): Promise<void> {
@@ -299,7 +334,7 @@ export class LoRAFineTuningCLI {
 
     try {
       const status = this.fineTuner.getJobStatus(options.jobId);
-      
+
       if (!status) {
         console.log('❌ Job not found');
         return;
@@ -308,14 +343,14 @@ export class LoRAFineTuningCLI {
       console.log(`📋 Job Status: ${status.status.toUpperCase()}`);
       console.log(`   Progress: ${status.progress}%`);
       console.log(`   Started: ${status.startTime?.toISOString()}`);
-      
+
       if (status.endTime) {
         console.log(`   Completed: ${status.endTime.toISOString()}`);
       }
-      
+
       if (status.logs.length > 0) {
         console.log('   Recent logs:');
-        status.logs.slice(-5).forEach(log => console.log(`     ${log}`));
+        status.logs.slice(-5).forEach((log) => console.log(`     ${log}`));
       }
     } catch (error) {
       console.error('❌ Failed to check job status:', error);
@@ -327,7 +362,7 @@ export class LoRAFineTuningCLI {
 
     try {
       const adapters = await this.fineTuner.listAdapters();
-      
+
       if (adapters.length === 0) {
         console.log('No adapters found. Train a model first!');
         return;
@@ -337,9 +372,13 @@ export class LoRAFineTuningCLI {
         console.log(`📊 ${adapter.name} (${adapter.id})`);
         console.log(`   Base Model: ${adapter.baseModel}`);
         console.log(`   Accuracy: ${adapter.performance.accuracy.toFixed(3)}`);
-        console.log(`   Benchmark Score: ${adapter.performance.benchmarkScore.toFixed(3)}`);
+        console.log(
+          `   Benchmark Score: ${adapter.performance.benchmarkScore.toFixed(3)}`,
+        );
         console.log(`   Created: ${adapter.createdAt.toISOString()}`);
-        console.log(`   Training Duration: ${(adapter.trainingDuration / 1000).toFixed(1)}s`);
+        console.log(
+          `   Training Duration: ${(adapter.trainingDuration / 1000).toFixed(1)}s`,
+        );
         console.log();
       }
     } catch (error) {
@@ -352,15 +391,19 @@ export class LoRAFineTuningCLI {
 
     try {
       const adapter = await this.fineTuner.loadAdapter(options.adapterId);
-      
+
       console.log('✅ Adapter loaded successfully!');
       console.log(`   Name: ${adapter.name}`);
       console.log(`   Base Model: ${adapter.baseModel}`);
       console.log(`   Performance:`);
       console.log(`     Accuracy: ${adapter.performance.accuracy.toFixed(3)}`);
       console.log(`     Loss: ${adapter.performance.loss.toFixed(3)}`);
-      console.log(`     Perplexity: ${adapter.performance.perplexity.toFixed(2)}`);
-      console.log(`     Benchmark Score: ${adapter.performance.benchmarkScore.toFixed(3)}`);
+      console.log(
+        `     Perplexity: ${adapter.performance.perplexity.toFixed(2)}`,
+      );
+      console.log(
+        `     Benchmark Score: ${adapter.performance.benchmarkScore.toFixed(3)}`,
+      );
     } catch (error) {
       console.error('❌ Failed to load adapter:', error);
     }
@@ -368,7 +411,9 @@ export class LoRAFineTuningCLI {
 
   private async deleteAdapter(options: any): Promise<void> {
     if (!options.force) {
-      console.log(`⚠️  Are you sure you want to delete adapter ${options.adapterId}? (This action cannot be undone)`);
+      console.log(
+        `⚠️  Are you sure you want to delete adapter ${options.adapterId}? (This action cannot be undone)`,
+      );
       console.log('Use --force to confirm deletion');
       return;
     }
@@ -388,9 +433,11 @@ export class LoRAFineTuningCLI {
 
     try {
       const report = await this.fineTuner.generateTrainingReport();
-      
+
       if (options.output) {
-        await import('fs/promises').then(fs => fs.writeFile(options.output, report));
+        await import('fs/promises').then((fs) =>
+          fs.writeFile(options.output, report),
+        );
         console.log(`✅ Report saved to ${options.output}`);
       } else {
         console.log(report);

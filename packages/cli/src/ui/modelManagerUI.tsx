@@ -7,7 +7,12 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Text, Newline, useInput } from 'ink';
 import Spinner from 'ink-spinner';
-import { TrustModelManagerImpl, TrustConfiguration, globalPerformanceMonitor , TrustModelConfig } from '@trust-cli/trust-cli-core';
+import {
+  TrustModelManagerImpl,
+  TrustConfiguration,
+  globalPerformanceMonitor,
+  TrustModelConfig,
+} from '@trust-cli/trust-cli-core';
 
 interface ModelManagerUIProps {
   onExit: () => void;
@@ -23,7 +28,12 @@ interface UIState {
   loading: boolean;
   message: string;
   error: string;
-  downloadProgress?: { model: string; progress: number; speed: string; eta: string };
+  downloadProgress?: {
+    model: string;
+    progress: number;
+    speed: string;
+    eta: string;
+  };
 }
 
 export const ModelManagerUI: React.FC<ModelManagerUIProps> = ({ onExit }) => {
@@ -38,8 +48,8 @@ export const ModelManagerUI: React.FC<ModelManagerUIProps> = ({ onExit }) => {
   });
 
   const [config, setConfig] = useState<TrustConfiguration | null>(null);
-  const [modelManager, setModelManager] = useState<TrustModelManagerImpl | null>(null);
-  const [downloadStatuses, setDownloadStatuses] = useState<Map<string, boolean>>(new Map());
+  const [modelManager, setModelManager] =
+    useState<TrustModelManagerImpl | null>(null);
 
   // Initialize components
   useEffect(() => {
@@ -47,31 +57,33 @@ export const ModelManagerUI: React.FC<ModelManagerUIProps> = ({ onExit }) => {
       try {
         const trustConfig = new TrustConfiguration();
         await trustConfig.initialize();
-        
-        const manager = new TrustModelManagerImpl(trustConfig.getModelsDirectory());
+
+        const manager = new TrustModelManagerImpl(
+          trustConfig.getModelsDirectory(),
+        );
         await manager.initialize();
-        
+
         const models = manager.listAvailableModels();
         const currentModel = manager.getCurrentModel();
-        
+
         // Check download status for all models
         const statusMap = new Map<string, boolean>();
         for (const model of models) {
           const isDownloaded = await manager.verifyModel(model.path);
           statusMap.set(model.name, isDownloaded);
         }
-        
+
         setConfig(trustConfig);
         setModelManager(manager);
         setDownloadStatuses(statusMap);
-        setState(prev => ({
+        setState((prev) => ({
           ...prev,
           models,
           selectedModel: currentModel,
           loading: false,
         }));
       } catch (error) {
-        setState(prev => ({
+        setState((prev) => ({
           ...prev,
           error: `Initialization failed: ${error}`,
           loading: false,
@@ -107,27 +119,29 @@ export const ModelManagerUI: React.FC<ModelManagerUIProps> = ({ onExit }) => {
       case 'settings':
         handleSettingsInput(input, key);
         break;
+      default:
+        break;
     }
   });
 
   const handleListInput = (input: string, key: any) => {
     if (key.upArrow && state.selectedIndex > 0) {
-      setState(prev => ({ ...prev, selectedIndex: prev.selectedIndex - 1 }));
+      setState((prev) => ({ ...prev, selectedIndex: prev.selectedIndex - 1 }));
     } else if (key.downArrow && state.selectedIndex < state.models.length - 1) {
-      setState(prev => ({ ...prev, selectedIndex: prev.selectedIndex + 1 }));
+      setState((prev) => ({ ...prev, selectedIndex: prev.selectedIndex + 1 }));
     } else if (key.return || input === ' ') {
       const model = state.models[state.selectedIndex];
-      setState(prev => ({ 
-        ...prev, 
-        view: 'detail', 
-        selectedModel: model 
+      setState((prev) => ({
+        ...prev,
+        view: 'detail',
+        selectedModel: model,
       }));
     } else if (input === 'd') {
-      setState(prev => ({ ...prev, view: 'download' }));
+      setState((prev) => ({ ...prev, view: 'download' }));
     } else if (input === 'b') {
-      setState(prev => ({ ...prev, view: 'benchmark' }));
+      setState((prev) => ({ ...prev, view: 'benchmark' }));
     } else if (input === 's') {
-      setState(prev => ({ ...prev, view: 'settings' }));
+      setState((prev) => ({ ...prev, view: 'settings' }));
     } else if (input === 'r') {
       refreshModelList();
     }
@@ -135,7 +149,7 @@ export const ModelManagerUI: React.FC<ModelManagerUIProps> = ({ onExit }) => {
 
   const handleDetailInput = (input: string, key: any) => {
     if (key.escape || input === 'b') {
-      setState(prev => ({ ...prev, view: 'list' }));
+      setState((prev) => ({ ...prev, view: 'list' }));
     } else if (input === 's' && state.selectedModel && modelManager) {
       switchToModel(state.selectedModel);
     } else if (input === 'v' && state.selectedModel && modelManager) {
@@ -147,30 +161,30 @@ export const ModelManagerUI: React.FC<ModelManagerUIProps> = ({ onExit }) => {
 
   const handleDownloadInput = (input: string, key: any) => {
     if (key.escape || input === 'b') {
-      setState(prev => ({ ...prev, view: 'list' }));
+      setState((prev) => ({ ...prev, view: 'list' }));
     }
   };
 
   const handleBenchmarkInput = (input: string, key: any) => {
     if (key.escape || input === 'b') {
-      setState(prev => ({ ...prev, view: 'list' }));
+      setState((prev) => ({ ...prev, view: 'list' }));
     }
   };
 
   const handleSettingsInput = (input: string, key: any) => {
     if (key.escape || input === 'b') {
-      setState(prev => ({ ...prev, view: 'list' }));
+      setState((prev) => ({ ...prev, view: 'list' }));
     }
   };
 
   const refreshModelList = async () => {
     if (!modelManager) return;
-    
-    setState(prev => ({ ...prev, loading: true }));
+
+    setState((prev) => ({ ...prev, loading: true }));
     try {
       const models = modelManager.listAvailableModels();
       const currentModel = modelManager.getCurrentModel();
-      setState(prev => ({
+      setState((prev) => ({
         ...prev,
         models,
         selectedModel: currentModel,
@@ -178,7 +192,7 @@ export const ModelManagerUI: React.FC<ModelManagerUIProps> = ({ onExit }) => {
         message: 'Model list refreshed',
       }));
     } catch (error) {
-      setState(prev => ({
+      setState((prev) => ({
         ...prev,
         error: `Failed to refresh: ${error}`,
         loading: false,
@@ -188,18 +202,18 @@ export const ModelManagerUI: React.FC<ModelManagerUIProps> = ({ onExit }) => {
 
   const switchToModel = async (model: TrustModelConfig) => {
     if (!modelManager) return;
-    
-    setState(prev => ({ ...prev, loading: true }));
+
+    setState((prev) => ({ ...prev, loading: true }));
     try {
       await modelManager.switchModel(model.name);
-      setState(prev => ({
+      setState((prev) => ({
         ...prev,
         selectedModel: model,
         loading: false,
         message: `Switched to ${model.name}`,
       }));
     } catch (error) {
-      setState(prev => ({
+      setState((prev) => ({
         ...prev,
         error: `Failed to switch model: ${error}`,
         loading: false,
@@ -209,17 +223,17 @@ export const ModelManagerUI: React.FC<ModelManagerUIProps> = ({ onExit }) => {
 
   const verifyModel = async (model: TrustModelConfig) => {
     if (!modelManager) return;
-    
-    setState(prev => ({ ...prev, loading: true }));
+
+    setState((prev) => ({ ...prev, loading: true }));
     try {
       const integrity = await modelManager.verifyModelIntegrity(model.name);
-      setState(prev => ({
+      setState((prev) => ({
         ...prev,
         loading: false,
         message: integrity.message,
       }));
     } catch (error) {
-      setState(prev => ({
+      setState((prev) => ({
         ...prev,
         error: `Verification failed: ${error}`,
         loading: false,
@@ -229,12 +243,12 @@ export const ModelManagerUI: React.FC<ModelManagerUIProps> = ({ onExit }) => {
 
   const downloadModel = async (modelName: string) => {
     if (!modelManager) return;
-    
-    setState(prev => ({ ...prev, loading: true, view: 'download' }));
+
+    setState((prev) => ({ ...prev, loading: true, view: 'download' }));
     try {
       // This would implement progress tracking in a real scenario
       await modelManager.downloadModel(modelName);
-      setState(prev => ({
+      setState((prev) => ({
         ...prev,
         loading: false,
         message: `Downloaded ${modelName}`,
@@ -242,7 +256,7 @@ export const ModelManagerUI: React.FC<ModelManagerUIProps> = ({ onExit }) => {
       }));
       refreshModelList();
     } catch (error) {
-      setState(prev => ({
+      setState((prev) => ({
         ...prev,
         error: `Download failed: ${error}`,
         loading: false,
@@ -266,7 +280,7 @@ export const ModelManagerUI: React.FC<ModelManagerUIProps> = ({ onExit }) => {
     <Box flexDirection="column" padding={1}>
       <Header />
       <Newline />
-      
+
       {state.error && (
         <>
           <Box borderStyle="round" borderColor="red" padding={1}>
@@ -275,7 +289,7 @@ export const ModelManagerUI: React.FC<ModelManagerUIProps> = ({ onExit }) => {
           <Newline />
         </>
       )}
-      
+
       {state.message && (
         <>
           <Box borderStyle="round" borderColor="green" padding={1}>
@@ -289,8 +303,10 @@ export const ModelManagerUI: React.FC<ModelManagerUIProps> = ({ onExit }) => {
       {state.view === 'detail' && <ModelDetailView state={state} />}
       {state.view === 'download' && <DownloadView state={state} />}
       {state.view === 'benchmark' && <BenchmarkView state={state} />}
-      {state.view === 'settings' && <SettingsView state={state} config={config} />}
-      
+      {state.view === 'settings' && (
+        <SettingsView state={state} config={config} />
+      )}
+
       <Newline />
       <NavigationHelp view={state.view} />
     </Box>
@@ -300,11 +316,11 @@ export const ModelManagerUI: React.FC<ModelManagerUIProps> = ({ onExit }) => {
 const Header: React.FC = () => (
   <Box borderStyle="double" borderColor="blue" padding={1}>
     <Box flexDirection="column" width="100%">
-      <Text color="blue" bold>🛡️  Trust CLI - Advanced Model Manager</Text>
-      <Text color="gray">Trust: An Open System for Modern Assurance</Text>
-      <Text color="gray">
-        🦙 Ollama • 🤗 HuggingFace • ☁️  Cloud
+      <Text color="blue" bold>
+        🛡️ Trust CLI - Advanced Model Manager
       </Text>
+      <Text color="gray">Trust: An Open System for Modern Assurance</Text>
+      <Text color="gray">🦙 Ollama • 🤗 HuggingFace • ☁️ Cloud</Text>
     </Box>
   </Box>
 );
@@ -314,9 +330,9 @@ const ModelListView: React.FC<{ state: UIState }> = ({ state }) => (
     <Text bold>📦 Available Models</Text>
     <Text color="gray">Use ↑↓ to navigate, Enter to view details</Text>
     <Newline />
-    
+
     {state.models.map((model, index) => (
-      <ModelListItem 
+      <ModelListItem
         key={`${model.name}-${index}`}
         model={model}
         isSelected={index === state.selectedIndex}
@@ -333,7 +349,7 @@ const ModelListItem: React.FC<{
 }> = ({ model, isSelected, isCurrent }) => {
   const indicator = isCurrent ? '🎯' : ' ';
   const selector = isSelected ? '▶' : ' ';
-  
+
   // Enhanced status with more visual indicators
   let status = '⚪';
   let statusText = 'not downloaded';
@@ -344,26 +360,33 @@ const ModelListItem: React.FC<{
     status = '📄';
     statusText = 'downloaded';
   }
-  
+
   // Determine backend with enhanced indicators
   const backend = model.name.includes('ollama') ? '🦙' : '🤗';
   const backendText = model.name.includes('ollama') ? 'Ollama' : 'HuggingFace';
-  
+
   // RAM requirement with color coding
-  const ramColor = model.ramRequirement.includes('8GB') || model.ramRequirement.includes('16GB') ? 'yellow' : 'green';
-  
+  const ramColor =
+    model.ramRequirement.includes('8GB') ||
+    model.ramRequirement.includes('16GB')
+      ? 'yellow'
+      : 'green';
+
   return (
     <Box flexDirection="column">
       <Box>
-        <Text color={isSelected ? 'blue' : undefined} backgroundColor={isSelected ? 'white' : undefined}>
+        <Text
+          color={isSelected ? 'blue' : undefined}
+          backgroundColor={isSelected ? 'white' : undefined}
+        >
           {selector} {indicator} {backend} {model.name} {status}
         </Text>
       </Box>
       <Box marginLeft={2}>
         <Text color="gray">
-          {model.description} | {backendText} | 
-          <Text color={ramColor}> {model.ramRequirement}</Text> | 
-          ⭐ {model.trustScore}/10 | {statusText}
+          {model.description} | {backendText} |
+          <Text color={ramColor}> {model.ramRequirement}</Text> | ⭐{' '}
+          {model.trustScore}/10 | {statusText}
         </Text>
       </Box>
     </Box>
@@ -372,32 +395,56 @@ const ModelListItem: React.FC<{
 
 const ModelDetailView: React.FC<{ state: UIState }> = ({ state }) => {
   if (!state.selectedModel) return <Text>No model selected</Text>;
-  
+
   const model = state.selectedModel;
-  
+
   return (
     <Box flexDirection="column">
       <Text bold>📋 Model Details: {model.name}</Text>
       <Newline />
-      
+
       <Box flexDirection="column" marginLeft={2}>
-        <Text><Text bold>Description:</Text> {model.description}</Text>
-        <Text><Text bold>Backend:</Text> {model.name.includes('ollama') ? '🦙 Ollama (Local Inference)' : 
-                                          '🤗 HuggingFace (Local GGUF)'}</Text>
-        <Text><Text bold>Type:</Text> {model.type}</Text>
-        <Text><Text bold>Parameters:</Text> {model.parameters}</Text>
-        <Text><Text bold>RAM Required:</Text> {model.ramRequirement}</Text>
-        <Text><Text bold>Trust Score:</Text> {model.trustScore}/10</Text>
-        <Text><Text bold>Quantization:</Text> {model.quantization}</Text>
-        <Text><Text bold>Context Size:</Text> {model.contextSize} tokens</Text>
-        <Text><Text bold>Path:</Text> {model.path}</Text>
-        
+        <Text>
+          <Text bold>Description:</Text> {model.description}
+        </Text>
+        <Text>
+          <Text bold>Backend:</Text>{' '}
+          {model.name.includes('ollama')
+            ? '🦙 Ollama (Local Inference)'
+            : '🤗 HuggingFace (Local GGUF)'}
+        </Text>
+        <Text>
+          <Text bold>Type:</Text> {model.type}
+        </Text>
+        <Text>
+          <Text bold>Parameters:</Text> {model.parameters}
+        </Text>
+        <Text>
+          <Text bold>RAM Required:</Text> {model.ramRequirement}
+        </Text>
+        <Text>
+          <Text bold>Trust Score:</Text> {model.trustScore}/10
+        </Text>
+        <Text>
+          <Text bold>Quantization:</Text> {model.quantization}
+        </Text>
+        <Text>
+          <Text bold>Context Size:</Text> {model.contextSize} tokens
+        </Text>
+        <Text>
+          <Text bold>Path:</Text> {model.path}
+        </Text>
+
         {model.verificationHash && (
-          <Text><Text bold>Hash:</Text> {model.verificationHash.substring(0, 20)}...</Text>
+          <Text>
+            <Text bold>Hash:</Text> {model.verificationHash.substring(0, 20)}...
+          </Text>
         )}
-        
+
         {model.downloadUrl && (
-          <Text><Text bold>Download URL:</Text> {model.downloadUrl}</Text>
+          <Text>
+            <Text bold>Download URL:</Text> {model.downloadUrl}
+          </Text>
         )}
       </Box>
     </Box>
@@ -408,7 +455,7 @@ const DownloadView: React.FC<{ state: UIState }> = ({ state }) => (
   <Box flexDirection="column">
     <Text bold>⬇️ Model Downloads</Text>
     <Newline />
-    
+
     {state.downloadProgress ? (
       <Box flexDirection="column">
         <Text>Downloading: {state.downloadProgress.model}</Text>
@@ -425,25 +472,32 @@ const DownloadView: React.FC<{ state: UIState }> = ({ state }) => (
 const BenchmarkView: React.FC<{ state: UIState }> = ({ state }) => {
   const stats = globalPerformanceMonitor.getInferenceStats();
   const systemMetrics = globalPerformanceMonitor.getSystemMetrics();
-  
+
   return (
     <Box flexDirection="column">
       <Text bold>📊 Performance Benchmarks</Text>
       <Newline />
-      
+
       <Box flexDirection="column" marginLeft={2}>
         <Text bold>System Performance:</Text>
         <Text>Platform: {systemMetrics.platform}</Text>
-        <Text>Total RAM: {Math.floor(systemMetrics.memoryUsage.total / (1024**3))}GB</Text>
-        <Text>Available RAM: {Math.floor(systemMetrics.memoryUsage.available / (1024**3))}GB</Text>
+        <Text>
+          Total RAM: {Math.floor(systemMetrics.memoryUsage.total / 1024 ** 3)}GB
+        </Text>
+        <Text>
+          Available RAM:{' '}
+          {Math.floor(systemMetrics.memoryUsage.available / 1024 ** 3)}GB
+        </Text>
         <Text>Load Average: {systemMetrics.loadAverage[0].toFixed(2)}</Text>
         <Newline />
-        
+
         <Text bold>Inference Statistics:</Text>
         <Text>Total Inferences: {stats.totalInferences}</Text>
-        <Text>Average Speed: {stats.averageTokensPerSecond.toFixed(1)} tokens/sec</Text>
+        <Text>
+          Average Speed: {stats.averageTokensPerSecond.toFixed(1)} tokens/sec
+        </Text>
         <Text>Average Time: {stats.averageInferenceTime.toFixed(0)}ms</Text>
-        
+
         {state.selectedModel && (
           <>
             <Newline />
@@ -457,37 +511,47 @@ const BenchmarkView: React.FC<{ state: UIState }> = ({ state }) => {
   );
 };
 
-const SettingsView: React.FC<{ 
-  state: UIState; 
-  config: TrustConfiguration | null; 
+const SettingsView: React.FC<{
+  state: UIState;
+  config: TrustConfiguration | null;
 }> = ({ state, config }) => {
   if (!config) return <Text>Configuration not available</Text>;
-  
+
   const settings = config.get();
-  
+
   return (
     <Box flexDirection="column">
       <Text bold>⚙️ Trust Configuration</Text>
       <Newline />
-      
+
       <Box flexDirection="column" marginLeft={2}>
         <Text bold>Privacy Settings:</Text>
         <Text>Privacy Mode: {settings.privacy.privacyMode}</Text>
-        <Text>Model Verification: {settings.privacy.modelVerification ? 'enabled' : 'disabled'}</Text>
-        <Text>Audit Logging: {settings.privacy.auditLogging ? 'enabled' : 'disabled'}</Text>
+        <Text>
+          Model Verification:{' '}
+          {settings.privacy.modelVerification ? 'enabled' : 'disabled'}
+        </Text>
+        <Text>
+          Audit Logging:{' '}
+          {settings.privacy.auditLogging ? 'enabled' : 'disabled'}
+        </Text>
         <Newline />
-        
+
         <Text bold>Model Settings:</Text>
         <Text>Default Model: {settings.models.default}</Text>
         <Text>Models Directory: {settings.models.directory}</Text>
-        <Text>Auto Verify: {settings.models.autoVerify ? 'enabled' : 'disabled'}</Text>
+        <Text>
+          Auto Verify: {settings.models.autoVerify ? 'enabled' : 'disabled'}
+        </Text>
         <Newline />
-        
+
         <Text bold>Inference Settings:</Text>
         <Text>Temperature: {settings.inference.temperature}</Text>
         <Text>Top P: {settings.inference.topP}</Text>
         <Text>Max Tokens: {settings.inference.maxTokens}</Text>
-        <Text>Streaming: {settings.inference.stream ? 'enabled' : 'disabled'}</Text>
+        <Text>
+          Streaming: {settings.inference.stream ? 'enabled' : 'disabled'}
+        </Text>
       </Box>
     </Box>
   );
@@ -501,7 +565,7 @@ const NavigationHelp: React.FC<{ view: ViewMode }> = ({ view }) => {
     benchmark: 'T: Test Model • B: Back • Q: Quit',
     settings: 'E: Edit Settings • B: Back • Q: Quit',
   };
-  
+
   return (
     <Box borderStyle="round" borderColor="gray" padding={1}>
       <Text color="gray">{helpText[view]}</Text>

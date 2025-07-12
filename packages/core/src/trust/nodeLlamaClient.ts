@@ -4,12 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { getLlama, LlamaChatSession, defineChatSessionFunction } from 'node-llama-cpp';
-import { 
-  TrustModelClient, 
-  TrustModelConfig, 
-  GenerationOptions, 
-  ModelMetrics 
+import {
+  getLlama,
+  LlamaChatSession,
+  defineChatSessionFunction,
+} from 'node-llama-cpp';
+import {
+  TrustModelClient,
+  TrustModelConfig,
+  GenerationOptions,
+  ModelMetrics,
 } from './types.js';
 import * as os from 'os';
 
@@ -23,7 +27,7 @@ export class TrustNodeLlamaClient implements TrustModelClient {
     tokensPerSecond: 0,
     memoryUsage: 0,
     responseTime: 0,
-    lastUsed: new Date()
+    lastUsed: new Date(),
   };
 
   async loadModel(modelPath: string, config?: TrustModelConfig): Promise<void> {
@@ -39,20 +43,20 @@ export class TrustNodeLlamaClient implements TrustModelClient {
 
     try {
       this.llama = await getLlama();
-      
+
       const modelSettings = this.getOptimalSettings(config);
       console.log(`Loading model: ${modelPath}`);
       console.log(`Settings: ${JSON.stringify(modelSettings, null, 2)}`);
-      
+
       this.model = await this.llama.loadModel({
         modelPath,
-        ...modelSettings
+        ...modelSettings,
       });
-      
+
       this.context = await this.model.createContext({
-        contextSize: config?.contextSize || 4096
+        contextSize: config?.contextSize || 4096,
       });
-      
+
       this.currentModelConfig = config || {
         name: 'unknown',
         path: modelPath,
@@ -60,9 +64,9 @@ export class TrustNodeLlamaClient implements TrustModelClient {
         quantization: 'Q4_K_M',
         contextSize: 4096,
         ramRequirement: '8GB',
-        description: 'Unknown model'
+        description: 'Unknown model',
       };
-      
+
       console.log(`Model loaded successfully: ${this.currentModelConfig.name}`);
     } catch (error) {
       console.error('Failed to load model:', error);
@@ -99,54 +103,57 @@ export class TrustNodeLlamaClient implements TrustModelClient {
     if (!this.context) {
       throw new Error('Model not loaded');
     }
-    
+
     // Try reusing existing session first
     if (this.reusableSession) {
       console.log('🔄 Reusing existing chat session...');
       return this.reusableSession;
     }
-    
+
     console.log('🆕 Creating new chat session...');
     this.reusableSession = new LlamaChatSession({
-      contextSequence: this.context.getSequence()
+      contextSequence: this.context.getSequence(),
     });
-    
+
     return this.reusableSession;
   }
 
-  async generateText(prompt: string, options?: GenerationOptions): Promise<string> {
+  async generateText(
+    prompt: string,
+    options?: GenerationOptions,
+  ): Promise<string> {
     if (!this.model) {
       throw new Error('Model not loaded');
     }
 
     const startTime = Date.now();
-    
+
     try {
       const session = await this.createChatSession();
-      
+
       // Build prompt options with native function calling support
       const promptOptions: any = {
         temperature: options?.temperature ?? 0.7,
         topP: options?.topP ?? 0.9,
         topK: options?.topK ?? 40,
-        maxTokens: options?.maxTokens ?? 2048
+        maxTokens: options?.maxTokens ?? 2048,
       };
-      
+
       // Add native function calling support if functions are provided
       if (options?.functions) {
         promptOptions.functions = options.functions;
       }
-      
+
       // Add JSON schema grammar support if provided
       if (options?.grammar) {
         promptOptions.grammar = options.grammar;
       }
-      
+
       const response = await session.prompt(prompt, promptOptions);
 
       const endTime = Date.now();
       this.updateMetrics(endTime - startTime, response.length);
-      
+
       return response;
     } catch (error) {
       console.error('Error generating text:', error);
@@ -154,72 +161,76 @@ export class TrustNodeLlamaClient implements TrustModelClient {
     }
   }
 
-  async* generateStream(prompt: string, options?: GenerationOptions): AsyncIterable<string> {
+  async *generateStream(
+    prompt: string,
+    options?: GenerationOptions,
+  ): AsyncIterable<string> {
     if (!this.model) {
       throw new Error('Model not loaded');
     }
 
     const startTime = Date.now();
     let totalTokens = 0;
-    
+
     try {
       const session = await this.createChatSession();
-      
+
       // Build prompt options with native function calling support
       const promptOptions: any = {
         temperature: options?.temperature ?? 0.7,
         topP: options?.topP ?? 0.9,
         topK: options?.topK ?? 40,
-        maxTokens: options?.maxTokens ?? 512  // Already reduced from 2048
+        maxTokens: options?.maxTokens ?? 512, // Already reduced from 2048
       };
-      
+
       // Add native function calling support if functions are provided
       if (options?.functions) {
         promptOptions.functions = options.functions;
       }
-      
+
       // Add JSON schema grammar support if provided
       if (options?.grammar) {
         promptOptions.grammar = options.grammar;
       }
-      
+
       const response = await session.prompt(prompt, promptOptions);
-      
+
       totalTokens = response.length;
       yield response;
 
       const endTime = Date.now();
       this.updateMetrics(endTime - startTime, totalTokens);
-      
     } catch (error) {
       console.error('Error generating stream:', error);
       // Fallback to non-streaming if streaming fails
       try {
         console.log('Falling back to non-streaming generation...');
         const session = await this.createChatSession();
-        
+
         // Build prompt options with native function calling support
         const promptOptions: any = {
           temperature: options?.temperature ?? 0.7,
           topP: options?.topP ?? 0.9,
           topK: options?.topK ?? 40,
-          maxTokens: options?.maxTokens ?? 512
+          maxTokens: options?.maxTokens ?? 512,
         };
-        
+
         // Add native function calling support if functions are provided
         if (options?.functions) {
           promptOptions.functions = options.functions;
         }
-        
+
         // Add JSON schema grammar support if provided
         if (options?.grammar) {
           promptOptions.grammar = options.grammar;
         }
-        
+
         const response = await session.prompt(prompt, promptOptions);
         yield response;
       } catch (fallbackError) {
-        throw new Error(`Stream generation failed: ${error}. Fallback failed: ${fallbackError}`);
+        throw new Error(
+          `Stream generation failed: ${error}. Fallback failed: ${fallbackError}`,
+        );
       }
     }
   }
@@ -240,16 +251,18 @@ export class TrustNodeLlamaClient implements TrustModelClient {
     const cpuCount = os.cpus().length;
     const totalMemory = os.totalmem();
     const freeMemory = os.freemem();
-    
+
     // Auto-detect optimal settings based on system capabilities
     const settings = {
       threads: Math.min(8, cpuCount),
       // GPU detection would go here in the future
       // For now, use CPU-only inference
     };
-    
-    console.log(`System info: ${cpuCount} CPUs, ${(totalMemory / 1024 / 1024 / 1024).toFixed(1)}GB RAM, ${(freeMemory / 1024 / 1024 / 1024).toFixed(1)}GB free`);
-    
+
+    console.log(
+      `System info: ${cpuCount} CPUs, ${(totalMemory / 1024 / 1024 / 1024).toFixed(1)}GB RAM, ${(freeMemory / 1024 / 1024 / 1024).toFixed(1)}GB free`,
+    );
+
     return settings;
   }
 

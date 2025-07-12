@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { PerformanceMonitor, SystemMetrics } from './performanceMonitor.js';
+import { PerformanceMonitor } from './performanceMonitor.js';
 import { TrustModelConfig } from './types.js';
 import * as os from 'os';
 
@@ -51,12 +51,15 @@ export class HardwareOptimizer {
   private detectHardwareCapabilities(): HardwareCapabilities {
     const metrics = this.performanceMonitor.getSystemMetrics();
     const cpus = os.cpus();
-    
+
     const totalRAMGB = metrics.memoryUsage.total / (1024 * 1024 * 1024);
     const availableRAMGB = metrics.memoryUsage.available / (1024 * 1024 * 1024);
-    
+
     // Determine recommended concurrency based on CPU cores and memory
-    let recommendedConcurrency = Math.min(cpus.length, Math.floor(availableRAMGB / 2));
+    let recommendedConcurrency = Math.min(
+      cpus.length,
+      Math.floor(availableRAMGB / 2),
+    );
     recommendedConcurrency = Math.max(1, Math.min(recommendedConcurrency, 4)); // Cap at 4
 
     return {
@@ -66,7 +69,7 @@ export class HardwareOptimizer {
       cpuSpeed: cpus[0]?.speed || 0,
       platform: os.platform(),
       architecture: os.arch(),
-      recommendedConcurrency
+      recommendedConcurrency,
     };
   }
 
@@ -78,21 +81,33 @@ export class HardwareOptimizer {
 
     for (const model of models) {
       const ramRequiredGB = this.parseRAMRequirement(model.ramRequirement);
-      const suitabilityScore = this.calculateSuitabilityScore(model, ramRequiredGB);
-      const performanceEstimate = this.estimatePerformance(model, ramRequiredGB);
+      const suitabilityScore = this.calculateSuitabilityScore(
+        model,
+        ramRequiredGB,
+      );
+      const performanceEstimate = this.estimatePerformance(
+        model,
+        ramRequiredGB,
+      );
       const warnings = this.generateWarnings(model, ramRequiredGB);
-      
+
       recommendations.push({
         model,
         suitabilityScore,
-        reason: this.generateRecommendationReason(model, ramRequiredGB, suitabilityScore),
+        reason: this.generateRecommendationReason(
+          model,
+          ramRequiredGB,
+          suitabilityScore,
+        ),
         performanceEstimate,
-        warnings
+        warnings,
       });
     }
 
     // Sort by suitability score (highest first)
-    return recommendations.sort((a, b) => b.suitabilityScore - a.suitabilityScore);
+    return recommendations.sort(
+      (a, b) => b.suitabilityScore - a.suitabilityScore,
+    );
   }
 
   /**
@@ -100,7 +115,8 @@ export class HardwareOptimizer {
    */
   generateOptimizationRecommendations(): OptimizationRecommendation[] {
     const recommendations: OptimizationRecommendation[] = [];
-    const { totalRAMGB, availableRAMGB, cpuCores, platform } = this.systemCapabilities;
+    const { totalRAMGB, availableRAMGB, cpuCores, platform } =
+      this.systemCapabilities;
 
     // Memory optimizations
     if (availableRAMGB < 4) {
@@ -109,8 +125,9 @@ export class HardwareOptimizer {
         priority: 'high',
         title: 'Low Available Memory Detected',
         description: `Only ${availableRAMGB.toFixed(1)}GB RAM available. Consider closing unused applications.`,
-        implementation: 'Close browser tabs, IDE instances, and other memory-intensive applications',
-        expectedImprovement: 'Faster model loading and reduced swap usage'
+        implementation:
+          'Close browser tabs, IDE instances, and other memory-intensive applications',
+        expectedImprovement: 'Faster model loading and reduced swap usage',
       });
     }
 
@@ -120,8 +137,9 @@ export class HardwareOptimizer {
         priority: 'medium',
         title: 'Memory Fragmentation Detected',
         description: 'High memory usage detected despite sufficient total RAM',
-        implementation: 'Restart applications or system to free fragmented memory',
-        expectedImprovement: 'Better memory allocation for large models'
+        implementation:
+          'Restart applications or system to free fragmented memory',
+        expectedImprovement: 'Better memory allocation for large models',
       });
     }
 
@@ -132,8 +150,9 @@ export class HardwareOptimizer {
         priority: 'medium',
         title: 'Limited CPU Cores',
         description: `${cpuCores} CPU cores detected. Consider optimizing threading settings.`,
-        implementation: 'Set threading to match core count, avoid concurrent inference',
-        expectedImprovement: '10-20% performance improvement'
+        implementation:
+          'Set threading to match core count, avoid concurrent inference',
+        expectedImprovement: '10-20% performance improvement',
       });
     }
 
@@ -143,9 +162,11 @@ export class HardwareOptimizer {
         category: 'model',
         priority: 'low',
         title: 'Consider Higher Quality Models',
-        description: 'Your system can handle Q8_0 or FP16 quantization for better quality',
+        description:
+          'Your system can handle Q8_0 or FP16 quantization for better quality',
         implementation: 'Download Q8_0 variants of your preferred models',
-        expectedImprovement: 'Better response quality with minimal speed impact'
+        expectedImprovement:
+          'Better response quality with minimal speed impact',
       });
     }
 
@@ -157,7 +178,7 @@ export class HardwareOptimizer {
         title: 'macOS Metal Acceleration',
         description: 'Enable Metal GPU acceleration for faster inference',
         implementation: 'Configure model to use Metal backend if available',
-        expectedImprovement: '2-5x performance improvement on Apple Silicon'
+        expectedImprovement: '2-5x performance improvement on Apple Silicon',
       });
     }
 
@@ -167,8 +188,9 @@ export class HardwareOptimizer {
         priority: 'low',
         title: 'Linux Huge Pages',
         description: 'Enable huge pages for better memory performance',
-        implementation: 'Configure kernel huge pages: echo 1024 > /proc/sys/vm/nr_hugepages',
-        expectedImprovement: '5-10% performance improvement for large models'
+        implementation:
+          'Configure kernel huge pages: echo 1024 > /proc/sys/vm/nr_hugepages',
+        expectedImprovement: '5-10% performance improvement for large models',
       });
     }
 
@@ -184,10 +206,10 @@ export class HardwareOptimizer {
   generateOptimizationReport(): string {
     const capabilities = this.systemCapabilities;
     const recommendations = this.generateOptimizationRecommendations();
-    
+
     let report = '\n🔧 Hardware Optimization Report\n';
     report += '═'.repeat(60) + '\n\n';
-    
+
     // System capabilities
     report += '💻 System Capabilities:\n';
     report += `   Total RAM: ${capabilities.totalRAMGB.toFixed(1)}GB\n`;
@@ -196,19 +218,24 @@ export class HardwareOptimizer {
     report += `   CPU Speed: ${capabilities.cpuSpeed}MHz\n`;
     report += `   Platform: ${capabilities.platform} (${capabilities.architecture})\n`;
     report += `   Recommended Concurrency: ${capabilities.recommendedConcurrency}\n\n`;
-    
+
     // Hardware classification
     const classification = this.classifyHardware();
     report += `🏷️  Hardware Classification: ${classification.category}\n`;
     report += `   Performance Tier: ${classification.tier}\n`;
     report += `   Optimal Model Size: ${classification.optimalModelSize}\n\n`;
-    
+
     // Optimization recommendations
     if (recommendations.length > 0) {
       report += '⚡ Optimization Recommendations:\n\n';
-      
+
       recommendations.forEach((rec, index) => {
-        const priorityEmoji = rec.priority === 'high' ? '🔴' : rec.priority === 'medium' ? '🟡' : '🟢';
+        const priorityEmoji =
+          rec.priority === 'high'
+            ? '🔴'
+            : rec.priority === 'medium'
+              ? '🟡'
+              : '🟢';
         report += `${index + 1}. ${priorityEmoji} ${rec.title}\n`;
         report += `   Category: ${rec.category}\n`;
         report += `   Description: ${rec.description}\n`;
@@ -216,9 +243,10 @@ export class HardwareOptimizer {
         report += `   Expected Improvement: ${rec.expectedImprovement}\n\n`;
       });
     } else {
-      report += '✅ No optimization recommendations - your system is well configured!\n\n';
+      report +=
+        '✅ No optimization recommendations - your system is well configured!\n\n';
     }
-    
+
     return report;
   }
 
@@ -227,9 +255,12 @@ export class HardwareOptimizer {
     return match ? parseFloat(match[1]) : 4; // Default to 4GB if parsing fails
   }
 
-  private calculateSuitabilityScore(model: TrustModelConfig, ramRequiredGB: number): number {
+  private calculateSuitabilityScore(
+    model: TrustModelConfig,
+    ramRequiredGB: number,
+  ): number {
     let score = 100;
-    
+
     // RAM availability check
     const ramRatio = ramRequiredGB / this.systemCapabilities.availableRAMGB;
     if (ramRatio > 1) {
@@ -239,70 +270,91 @@ export class HardwareOptimizer {
     } else if (ramRatio > 0.6) {
       score -= 10; // Small penalty for high RAM usage
     }
-    
+
     // CPU cores consideration
     const paramCount = this.parseParameterCount(model.parameters || '3B');
     if (paramCount > 7 && this.systemCapabilities.cpuCores < 4) {
       score -= 15; // Penalty for large models on few cores
     }
-    
+
     // Quantization optimization
-    if (this.systemCapabilities.availableRAMGB >= 8 && model.quantization === 'Q4_K_M') {
+    if (
+      this.systemCapabilities.availableRAMGB >= 8 &&
+      model.quantization === 'Q4_K_M'
+    ) {
       score -= 5; // Minor penalty for not using better quantization when possible
     }
-    
+
     return Math.max(0, score);
   }
 
-  private estimatePerformance(model: TrustModelConfig, ramRequiredGB: number): {
+  private estimatePerformance(
+    model: TrustModelConfig,
+    ramRequiredGB: number,
+  ): {
     tokensPerSecond: number;
     ramUsageGB: number;
     cpuUtilization: number;
   } {
     const paramCount = this.parseParameterCount(model.parameters || '3B');
     const baseSpeed = this.systemCapabilities.cpuCores * 0.5; // Base tokens/sec per core
-    
+
     // Scale by model size (larger models are slower)
     let tokensPerSecond = baseSpeed * (8 / Math.max(paramCount, 1));
-    
+
     // Adjust for quantization
     if (model.quantization === 'Q4_K_M') tokensPerSecond *= 1.2;
     if (model.quantization === 'Q8_0') tokensPerSecond *= 0.9;
     if (model.quantization === 'FP16') tokensPerSecond *= 0.7;
-    
+
     // Adjust for memory pressure
-    const memoryPressure = ramRequiredGB / this.systemCapabilities.availableRAMGB;
+    const memoryPressure =
+      ramRequiredGB / this.systemCapabilities.availableRAMGB;
     if (memoryPressure > 0.8) tokensPerSecond *= 0.7;
-    
-    const cpuUtilization = Math.min(100, (paramCount / this.systemCapabilities.cpuCores) * 20);
-    
+
+    const cpuUtilization = Math.min(
+      100,
+      (paramCount / this.systemCapabilities.cpuCores) * 20,
+    );
+
     return {
       tokensPerSecond: Math.round(tokensPerSecond * 10) / 10,
       ramUsageGB: ramRequiredGB,
-      cpuUtilization: Math.round(cpuUtilization)
+      cpuUtilization: Math.round(cpuUtilization),
     };
   }
 
-  private generateWarnings(model: TrustModelConfig, ramRequiredGB: number): string[] {
+  private generateWarnings(
+    model: TrustModelConfig,
+    ramRequiredGB: number,
+  ): string[] {
     const warnings: string[] = [];
-    
+
     if (ramRequiredGB > this.systemCapabilities.availableRAMGB) {
-      warnings.push('Insufficient RAM - model may fail to load or cause system slowdown');
+      warnings.push(
+        'Insufficient RAM - model may fail to load or cause system slowdown',
+      );
     }
-    
+
     if (ramRequiredGB > this.systemCapabilities.availableRAMGB * 0.8) {
       warnings.push('High memory usage - may impact system responsiveness');
     }
-    
+
     const paramCount = this.parseParameterCount(model.parameters || '3B');
     if (paramCount > 7 && this.systemCapabilities.cpuCores < 4) {
-      warnings.push('Large model on limited CPU cores - expect slower performance');
+      warnings.push(
+        'Large model on limited CPU cores - expect slower performance',
+      );
     }
-    
+
     return warnings;
   }
 
-  private generateRecommendationReason(model: TrustModelConfig, ramRequiredGB: number, score: number): string {
+  private generateRecommendationReason(
+    model: TrustModelConfig,
+    ramRequiredGB: number,
+    score: number,
+  ): string {
     if (score >= 90) {
       return 'Excellent match - optimal performance expected';
     } else if (score >= 75) {
@@ -327,30 +379,30 @@ export class HardwareOptimizer {
     optimalModelSize: string;
   } {
     const { totalRAMGB, cpuCores } = this.systemCapabilities;
-    
+
     if (totalRAMGB >= 32 && cpuCores >= 8) {
       return {
         category: 'High-end Workstation',
         tier: 'Premium',
-        optimalModelSize: '7B+ parameters with Q8_0/FP16'
+        optimalModelSize: '7B+ parameters with Q8_0/FP16',
       };
     } else if (totalRAMGB >= 16 && cpuCores >= 4) {
       return {
         category: 'Performance Desktop',
         tier: 'High',
-        optimalModelSize: '3-7B parameters with Q4_K_M/Q8_0'
+        optimalModelSize: '3-7B parameters with Q4_K_M/Q8_0',
       };
     } else if (totalRAMGB >= 8 && cpuCores >= 2) {
       return {
         category: 'Standard Desktop',
         tier: 'Medium',
-        optimalModelSize: '1.5-3B parameters with Q4_K_M'
+        optimalModelSize: '1.5-3B parameters with Q4_K_M',
       };
     } else {
       return {
         category: 'Budget/Mobile',
         tier: 'Basic',
-        optimalModelSize: '1.5B parameters with Q4_K_M'
+        optimalModelSize: '1.5B parameters with Q4_K_M',
       };
     }
   }

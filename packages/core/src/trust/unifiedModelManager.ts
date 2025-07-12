@@ -21,10 +21,10 @@ export interface UnifiedModel {
   description?: string;
   trustScore?: number;
   taskSuitability?: {
-    coding?: number;      // 0-10 score for coding tasks
-    reasoning?: number;   // 0-10 score for reasoning tasks
-    general?: number;     // 0-10 score for general tasks
-    creative?: number;    // 0-10 score for creative tasks
+    coding?: number; // 0-10 score for coding tasks
+    reasoning?: number; // 0-10 score for reasoning tasks
+    general?: number; // 0-10 score for general tasks
+    creative?: number; // 0-10 score for creative tasks
   };
   available: boolean;
   metadata?: {
@@ -79,9 +79,13 @@ export class UnifiedModelManager {
    */
   async discoverAllModels(forceRefresh = false): Promise<UnifiedModel[]> {
     const now = Date.now();
-    
+
     // Return cached models if still valid
-    if (!forceRefresh && this.cachedModels.length > 0 && (now - this.lastCacheUpdate) < this.cacheTimeout) {
+    if (
+      !forceRefresh &&
+      this.cachedModels.length > 0 &&
+      now - this.lastCacheUpdate < this.cacheTimeout
+    ) {
       return this.cachedModels;
     }
 
@@ -118,8 +122,8 @@ export class UnifiedModelManager {
   private async discoverHuggingFaceModels(): Promise<UnifiedModel[]> {
     try {
       const models = this.trustModelManager.listAvailableModels();
-      
-      return models.map(model => ({
+
+      return models.map((model) => ({
         name: model.name,
         backend: 'huggingface' as const,
         type: model.type,
@@ -128,7 +132,11 @@ export class UnifiedModelManager {
         ramRequirement: model.ramRequirement,
         description: model.description,
         trustScore: model.trustScore,
-        taskSuitability: this.inferTaskSuitability(model.name, model.type, model.description),
+        taskSuitability: this.inferTaskSuitability(
+          model.name,
+          model.type,
+          model.description,
+        ),
         available: true, // Assume available if in the manager
         metadata: {
           quantization: model.quantization,
@@ -149,8 +157,8 @@ export class UnifiedModelManager {
   private async discoverOllamaModels(): Promise<UnifiedModel[]> {
     try {
       const modelNames = await this.ollamaClient.listModels();
-      
-      return modelNames.map(name => ({
+
+      return modelNames.map((name) => ({
         name,
         backend: 'ollama' as const,
         type: this.inferOllamaModelType(name),
@@ -159,7 +167,10 @@ export class UnifiedModelManager {
         ramRequirement: this.inferOllamaRAMRequirement(name),
         description: `Ollama model: ${name}`,
         trustScore: 8.0, // Default trust score for Ollama models
-        taskSuitability: this.inferTaskSuitability(name, this.inferOllamaModelType(name)),
+        taskSuitability: this.inferTaskSuitability(
+          name,
+          this.inferOllamaModelType(name),
+        ),
         available: true,
         metadata: {},
       }));
@@ -184,16 +195,16 @@ export class UnifiedModelManager {
   filterModels(
     models: UnifiedModel[],
     taskType?: TaskType,
-    hardwareConstraints?: HardwareConstraints
+    hardwareConstraints?: HardwareConstraints,
   ): UnifiedModel[] {
     let filtered = [...models];
 
     // Filter by availability
-    filtered = filtered.filter(model => model.available);
+    filtered = filtered.filter((model) => model.available);
 
     // Filter by task suitability
     if (taskType && taskType !== 'general') {
-      filtered = filtered.filter(model => {
+      filtered = filtered.filter((model) => {
         const suitability = model.taskSuitability?.[taskType] || 0;
         return suitability >= 6; // Minimum suitability threshold
       });
@@ -202,14 +213,17 @@ export class UnifiedModelManager {
     // Filter by hardware constraints
     if (hardwareConstraints) {
       if (hardwareConstraints.availableRAM) {
-        filtered = filtered.filter(model => {
+        filtered = filtered.filter((model) => {
           const ramReq = this.parseRAMRequirement(model.ramRequirement);
           return ramReq <= hardwareConstraints.availableRAM!;
         });
       }
 
-      if (hardwareConstraints.maxDownloadSize && hardwareConstraints.maxDownloadSize > 0) {
-        filtered = filtered.filter(model => {
+      if (
+        hardwareConstraints.maxDownloadSize &&
+        hardwareConstraints.maxDownloadSize > 0
+      ) {
+        filtered = filtered.filter((model) => {
           const size = model.metadata?.expectedSize || 0;
           return size <= hardwareConstraints.maxDownloadSize!;
         });
@@ -222,19 +236,23 @@ export class UnifiedModelManager {
   /**
    * Select the best model from a filtered list based on Trust Score and task suitability
    */
-  selectBestModel(models: UnifiedModel[], taskType?: TaskType): UnifiedModel | null {
+  selectBestModel(
+    models: UnifiedModel[],
+    taskType?: TaskType,
+  ): UnifiedModel | null {
     if (models.length === 0) return null;
 
     // Sort by combined score: trust score + task suitability
-    const scored = models.map(model => {
+    const scored = models.map((model) => {
       const trustScore = model.trustScore || 0;
-      const taskScore = taskType && model.taskSuitability?.[taskType] 
-        ? model.taskSuitability[taskType] || 0 
-        : model.taskSuitability?.general || 0;
-      
+      const taskScore =
+        taskType && model.taskSuitability?.[taskType]
+          ? model.taskSuitability[taskType] || 0
+          : model.taskSuitability?.general || 0;
+
       return {
         model,
-        combinedScore: (trustScore * 0.6) + (taskScore * 0.4), // Weight trust score higher
+        combinedScore: trustScore * 0.6 + taskScore * 0.4, // Weight trust score higher
       };
     });
 
@@ -270,12 +288,12 @@ export class UnifiedModelManager {
   // Helper methods for inferring model characteristics
 
   private inferTaskSuitability(
-    name: string, 
-    type?: string, 
-    description?: string
+    name: string,
+    type?: string,
+    description?: string,
   ): UnifiedModel['taskSuitability'] {
     const text = `${name} ${type || ''} ${description || ''}`.toLowerCase();
-    
+
     // Default suitability scores
     const suitability = {
       coding: 5,
@@ -285,19 +303,36 @@ export class UnifiedModelManager {
     };
 
     // Adjust based on model name/type patterns
-    if (text.includes('code') || text.includes('coding') || text.includes('phi')) {
+    if (
+      text.includes('code') ||
+      text.includes('coding') ||
+      text.includes('phi')
+    ) {
       suitability.coding = 9;
     }
-    
-    if (text.includes('reason') || text.includes('logic') || text.includes('deepseek') || text.includes('qwen')) {
+
+    if (
+      text.includes('reason') ||
+      text.includes('logic') ||
+      text.includes('deepseek') ||
+      text.includes('qwen')
+    ) {
       suitability.reasoning = 9;
     }
-    
-    if (text.includes('instruct') || text.includes('chat') || text.includes('assistant')) {
+
+    if (
+      text.includes('instruct') ||
+      text.includes('chat') ||
+      text.includes('assistant')
+    ) {
       suitability.general = 9;
     }
-    
-    if (text.includes('creative') || text.includes('art') || text.includes('story')) {
+
+    if (
+      text.includes('creative') ||
+      text.includes('art') ||
+      text.includes('story')
+    ) {
       suitability.creative = 9;
     }
 
@@ -330,19 +365,19 @@ export class UnifiedModelManager {
     if (name.includes('16k')) return 16384;
     if (name.includes('8k')) return 8192;
     if (name.includes('4k')) return 4096;
-    
+
     // Default based on model type
     if (name.includes('qwen')) return 8192;
     if (name.includes('llama')) return 4096;
     if (name.includes('phi')) return 4096;
-    
+
     return 4096; // Conservative default
   }
 
   private inferOllamaRAMRequirement(name: string): string {
     const params = this.inferOllamaParameters(name);
     const match = params.match(/(\d+(?:\.\d+)?)/);
-    
+
     if (match) {
       const num = parseFloat(match[1]);
       if (params.includes('B')) {
@@ -354,18 +389,18 @@ export class UnifiedModelManager {
         return '2GB';
       }
     }
-    
+
     return '4GB'; // Conservative default
   }
 
   private parseRAMRequirement(ramReq?: string): number {
     if (!ramReq) return 8; // Default assumption: 8GB
-    
+
     const match = ramReq.match(/(\d+(?:\.\d+)?)/);
     if (match) {
       return parseFloat(match[1]);
     }
-    
+
     return 8;
   }
 }

@@ -15,7 +15,13 @@ export interface EvaluationPrompt {
   prompt: string;
   expectedTool: string;
   expectedArgs: Record<string, any>;
-  category: 'file_operations' | 'shell_commands' | 'search' | 'web' | 'memory' | 'complex';
+  category:
+    | 'file_operations'
+    | 'shell_commands'
+    | 'search'
+    | 'web'
+    | 'memory'
+    | 'complex';
   difficulty: 'easy' | 'medium' | 'hard';
 }
 
@@ -39,16 +45,22 @@ export interface EvaluationSummary {
   correctToolRate: number;
   correctArgsRate: number;
   averageResponseTime: number;
-  categoryBreakdown: Record<string, {
-    total: number;
-    success: number;
-    rate: number;
-  }>;
-  difficultyBreakdown: Record<string, {
-    total: number;
-    success: number;
-    rate: number;
-  }>;
+  categoryBreakdown: Record<
+    string,
+    {
+      total: number;
+      success: number;
+      rate: number;
+    }
+  >;
+  difficultyBreakdown: Record<
+    string,
+    {
+      total: number;
+      success: number;
+      rate: number;
+    }
+  >;
 }
 
 /**
@@ -61,7 +73,10 @@ export class FunctionCallEvaluator {
   private evaluationPrompts: EvaluationPrompt[];
   private errorCollector: ErrorCollector;
 
-  constructor(contentGenerator: TrustContentGenerator, errorCollector?: ErrorCollector) {
+  constructor(
+    contentGenerator: TrustContentGenerator,
+    errorCollector?: ErrorCollector,
+  ) {
     this.contentGenerator = contentGenerator;
     this.jsonParser = new JsonRepairParser();
     this.evaluationPrompts = this.createEvaluationPrompts();
@@ -73,59 +88,66 @@ export class FunctionCallEvaluator {
    */
   async runEvaluation(): Promise<EvaluationSummary> {
     const results: EvaluationResult[] = [];
-    
-    console.log(`Starting function call evaluation with ${this.evaluationPrompts.length} prompts...`);
-    
+
+    console.log(
+      `Starting function call evaluation with ${this.evaluationPrompts.length} prompts...`,
+    );
+
     for (const prompt of this.evaluationPrompts) {
       console.log(`Evaluating: ${prompt.description}`);
-      
+
       const result = await this.evaluatePrompt(prompt);
       results.push(result);
-      
+
       // Brief pause to prevent overloading
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
     }
-    
+
     return this.generateSummary(results);
   }
 
   /**
    * Evaluate a single prompt
    */
-  private async evaluatePrompt(prompt: EvaluationPrompt): Promise<EvaluationResult> {
+  private async evaluatePrompt(
+    prompt: EvaluationPrompt,
+  ): Promise<EvaluationResult> {
     const startTime = Date.now();
-    
+
     try {
       // Generate response using the content generator
       const response = await this.contentGenerator.generateContent({
         model: 'trust-model', // This will be ignored by TrustContentGenerator
-        contents: [{ parts: [{ text: prompt.prompt }], role: 'user' }]
+        contents: [{ parts: [{ text: prompt.prompt }], role: 'user' }],
       });
-      
+
       const responseTime = Date.now() - startTime;
       const rawResponse = response.text || '';
-      
+
       // Parse function calls from response
       const parseResult = this.jsonParser.parseFunctionCalls(rawResponse);
-      
+
       // Evaluate results
       const validJson = parseResult.success;
       const parsedCalls = parseResult.functionCalls || [];
-      
+
       let correctTool = false;
       let correctArgs = false;
-      
+
       if (parsedCalls.length > 0) {
         const firstCall = parsedCalls[0];
         correctTool = firstCall.name === prompt.expectedTool;
-        
+
         if (correctTool) {
-          correctArgs = this.compareArgs(firstCall.args || {}, prompt.expectedArgs);
+          correctArgs = this.compareArgs(
+            firstCall.args || {},
+            prompt.expectedArgs,
+          );
         }
       }
-      
+
       const success = validJson && correctTool && correctArgs;
-      
+
       const result = {
         promptId: prompt.id,
         success,
@@ -136,9 +158,9 @@ export class FunctionCallEvaluator {
         rawResponse,
         parsedCalls,
         errors: parseResult.errors,
-        repairAttempts: parseResult.errors?.length || 0
+        repairAttempts: parseResult.errors?.length || 0,
       };
-      
+
       // Record failure if evaluation was unsuccessful
       if (!success) {
         this.errorCollector.recordFailure(
@@ -152,12 +174,11 @@ export class FunctionCallEvaluator {
           // Temperature would need to be tracked in content generator
         );
       }
-      
+
       return result;
-      
     } catch (error) {
       const responseTime = Date.now() - startTime;
-      
+
       const result = {
         promptId: prompt.id,
         success: false,
@@ -167,9 +188,9 @@ export class FunctionCallEvaluator {
         responseTime,
         rawResponse: '',
         parsedCalls: [],
-        errors: [String(error)]
+        errors: [String(error)],
       };
-      
+
       // Record error failure
       this.errorCollector.recordFailure(
         prompt.prompt,
@@ -180,7 +201,7 @@ export class FunctionCallEvaluator {
         prompt.difficulty,
         this.contentGenerator.getCurrentModel()?.name,
       );
-      
+
       return result;
     }
   }
@@ -188,18 +209,24 @@ export class FunctionCallEvaluator {
   /**
    * Compare function arguments with expected values
    */
-  private compareArgs(actual: Record<string, any>, expected: Record<string, any>): boolean {
+  private compareArgs(
+    actual: Record<string, any>,
+    expected: Record<string, any>,
+  ): boolean {
     const expectedKeys = Object.keys(expected);
     const actualKeys = Object.keys(actual);
-    
+
     // Check if all expected keys are present
     for (const key of expectedKeys) {
       if (!actualKeys.includes(key)) {
         return false;
       }
-      
+
       // For string values, allow partial matches
-      if (typeof expected[key] === 'string' && typeof actual[key] === 'string') {
+      if (
+        typeof expected[key] === 'string' &&
+        typeof actual[key] === 'string'
+      ) {
         if (!actual[key].includes(expected[key])) {
           return false;
         }
@@ -207,7 +234,7 @@ export class FunctionCallEvaluator {
         return false;
       }
     }
-    
+
     return true;
   }
 
@@ -216,20 +243,26 @@ export class FunctionCallEvaluator {
    */
   private generateSummary(results: EvaluationResult[]): EvaluationSummary {
     const total = results.length;
-    const successful = results.filter(r => r.success).length;
-    const validJson = results.filter(r => r.validJson).length;
-    const correctTool = results.filter(r => r.correctTool).length;
-    const correctArgs = results.filter(r => r.correctArgs).length;
+    const successful = results.filter((r) => r.success).length;
+    const validJson = results.filter((r) => r.validJson).length;
+    const correctTool = results.filter((r) => r.correctTool).length;
+    const correctArgs = results.filter((r) => r.correctArgs).length;
     const totalTime = results.reduce((sum, r) => sum + r.responseTime, 0);
-    
+
     // Category breakdown
-    const categoryBreakdown: Record<string, { total: number; success: number; rate: number }> = {};
-    const difficultyBreakdown: Record<string, { total: number; success: number; rate: number }> = {};
-    
+    const categoryBreakdown: Record<
+      string,
+      { total: number; success: number; rate: number }
+    > = {};
+    const difficultyBreakdown: Record<
+      string,
+      { total: number; success: number; rate: number }
+    > = {};
+
     for (const prompt of this.evaluationPrompts) {
-      const result = results.find(r => r.promptId === prompt.id);
+      const result = results.find((r) => r.promptId === prompt.id);
       if (!result) continue;
-      
+
       // Category stats
       if (!categoryBreakdown[prompt.category]) {
         categoryBreakdown[prompt.category] = { total: 0, success: 0, rate: 0 };
@@ -238,28 +271,32 @@ export class FunctionCallEvaluator {
       if (result.success) {
         categoryBreakdown[prompt.category].success++;
       }
-      
+
       // Difficulty stats
       if (!difficultyBreakdown[prompt.difficulty]) {
-        difficultyBreakdown[prompt.difficulty] = { total: 0, success: 0, rate: 0 };
+        difficultyBreakdown[prompt.difficulty] = {
+          total: 0,
+          success: 0,
+          rate: 0,
+        };
       }
       difficultyBreakdown[prompt.difficulty].total++;
       if (result.success) {
         difficultyBreakdown[prompt.difficulty].success++;
       }
     }
-    
+
     // Calculate rates
     for (const category of Object.keys(categoryBreakdown)) {
       const stats = categoryBreakdown[category];
       stats.rate = stats.total > 0 ? (stats.success / stats.total) * 100 : 0;
     }
-    
+
     for (const difficulty of Object.keys(difficultyBreakdown)) {
       const stats = difficultyBreakdown[difficulty];
       stats.rate = stats.total > 0 ? (stats.success / stats.total) * 100 : 0;
     }
-    
+
     return {
       totalPrompts: total,
       successfulCalls: successful,
@@ -268,7 +305,7 @@ export class FunctionCallEvaluator {
       correctArgsRate: total > 0 ? (correctArgs / total) * 100 : 0,
       averageResponseTime: total > 0 ? totalTime / total : 0,
       categoryBreakdown,
-      difficultyBreakdown
+      difficultyBreakdown,
     };
   }
 
@@ -285,7 +322,7 @@ export class FunctionCallEvaluator {
         expectedTool: 'list_directory',
         expectedArgs: { path: '.' },
         category: 'file_operations',
-        difficulty: 'easy'
+        difficulty: 'easy',
       },
       {
         id: 'file_02',
@@ -294,16 +331,17 @@ export class FunctionCallEvaluator {
         expectedTool: 'read_file',
         expectedArgs: { path: 'package.json' },
         category: 'file_operations',
-        difficulty: 'easy'
+        difficulty: 'easy',
       },
       {
         id: 'file_03',
         description: 'Write to a file',
-        prompt: 'Create a new file called test.txt with the content "Hello World"',
+        prompt:
+          'Create a new file called test.txt with the content "Hello World"',
         expectedTool: 'write_file',
         expectedArgs: { path: 'test.txt', content: 'Hello World' },
         category: 'file_operations',
-        difficulty: 'easy'
+        difficulty: 'easy',
       },
       {
         id: 'file_04',
@@ -312,7 +350,7 @@ export class FunctionCallEvaluator {
         expectedTool: 'list_directory',
         expectedArgs: { path: '/tmp' },
         category: 'file_operations',
-        difficulty: 'easy'
+        difficulty: 'easy',
       },
       {
         id: 'file_05',
@@ -321,9 +359,9 @@ export class FunctionCallEvaluator {
         expectedTool: 'read_file',
         expectedArgs: { path: '/etc/hosts' },
         category: 'file_operations',
-        difficulty: 'easy'
+        difficulty: 'easy',
       },
-      
+
       // Shell Commands (Medium)
       {
         id: 'shell_01',
@@ -332,7 +370,7 @@ export class FunctionCallEvaluator {
         expectedTool: 'shell_command',
         expectedArgs: { command: 'ls -la' },
         category: 'shell_commands',
-        difficulty: 'medium'
+        difficulty: 'medium',
       },
       {
         id: 'shell_02',
@@ -341,7 +379,7 @@ export class FunctionCallEvaluator {
         expectedTool: 'shell_command',
         expectedArgs: { command: 'df -h' },
         category: 'shell_commands',
-        difficulty: 'medium'
+        difficulty: 'medium',
       },
       {
         id: 'shell_03',
@@ -350,7 +388,7 @@ export class FunctionCallEvaluator {
         expectedTool: 'shell_command',
         expectedArgs: { command: 'ps aux | grep node' },
         category: 'shell_commands',
-        difficulty: 'medium'
+        difficulty: 'medium',
       },
       {
         id: 'shell_04',
@@ -359,7 +397,7 @@ export class FunctionCallEvaluator {
         expectedTool: 'shell_command',
         expectedArgs: { command: 'netstat -an' },
         category: 'shell_commands',
-        difficulty: 'medium'
+        difficulty: 'medium',
       },
       {
         id: 'shell_05',
@@ -368,9 +406,9 @@ export class FunctionCallEvaluator {
         expectedTool: 'shell_command',
         expectedArgs: { command: 'uname -a' },
         category: 'shell_commands',
-        difficulty: 'medium'
+        difficulty: 'medium',
       },
-      
+
       // Search Operations (Medium)
       {
         id: 'search_01',
@@ -379,7 +417,7 @@ export class FunctionCallEvaluator {
         expectedTool: 'shell_command',
         expectedArgs: { command: 'find . -name "*.js"' },
         category: 'search',
-        difficulty: 'medium'
+        difficulty: 'medium',
       },
       {
         id: 'search_02',
@@ -388,7 +426,7 @@ export class FunctionCallEvaluator {
         expectedTool: 'shell_command',
         expectedArgs: { command: 'grep -r "function" --include="*.ts" .' },
         category: 'search',
-        difficulty: 'medium'
+        difficulty: 'medium',
       },
       {
         id: 'search_03',
@@ -397,7 +435,7 @@ export class FunctionCallEvaluator {
         expectedTool: 'shell_command',
         expectedArgs: { command: 'find . -size +1M' },
         category: 'search',
-        difficulty: 'medium'
+        difficulty: 'medium',
       },
       {
         id: 'search_04',
@@ -406,18 +444,20 @@ export class FunctionCallEvaluator {
         expectedTool: 'shell_command',
         expectedArgs: { command: 'find . -newermt today' },
         category: 'search',
-        difficulty: 'medium'
+        difficulty: 'medium',
       },
       {
         id: 'search_05',
         description: 'Complex search',
         prompt: 'Find all JSON files that contain the word "test"',
         expectedTool: 'shell_command',
-        expectedArgs: { command: 'find . -name "*.json" -exec grep -l "test" {} \\;' },
+        expectedArgs: {
+          command: 'find . -name "*.json" -exec grep -l "test" {} \\;',
+        },
         category: 'search',
-        difficulty: 'hard'
+        difficulty: 'hard',
       },
-      
+
       // Web Operations (Hard)
       {
         id: 'web_01',
@@ -426,7 +466,7 @@ export class FunctionCallEvaluator {
         expectedTool: 'web_search',
         expectedArgs: { query: 'Node.js best practices' },
         category: 'web',
-        difficulty: 'hard'
+        difficulty: 'hard',
       },
       {
         id: 'web_02',
@@ -435,7 +475,7 @@ export class FunctionCallEvaluator {
         expectedTool: 'web_fetch',
         expectedArgs: { url: 'https://example.com' },
         category: 'web',
-        difficulty: 'hard'
+        difficulty: 'hard',
       },
       {
         id: 'web_03',
@@ -444,7 +484,7 @@ export class FunctionCallEvaluator {
         expectedTool: 'web_search',
         expectedArgs: { query: 'TypeScript interfaces documentation' },
         category: 'web',
-        difficulty: 'hard'
+        difficulty: 'hard',
       },
       {
         id: 'web_04',
@@ -453,7 +493,7 @@ export class FunctionCallEvaluator {
         expectedTool: 'web_fetch',
         expectedArgs: { url: 'https://api.github.com/users/octocat' },
         category: 'web',
-        difficulty: 'hard'
+        difficulty: 'hard',
       },
       {
         id: 'web_05',
@@ -462,9 +502,9 @@ export class FunctionCallEvaluator {
         expectedTool: 'web_search',
         expectedArgs: { query: 'JavaScript async await examples' },
         category: 'web',
-        difficulty: 'hard'
+        difficulty: 'hard',
       },
-      
+
       // Memory Operations (Medium)
       {
         id: 'memory_01',
@@ -473,7 +513,7 @@ export class FunctionCallEvaluator {
         expectedTool: 'save_memory',
         expectedArgs: { content: 'project uses TypeScript' },
         category: 'memory',
-        difficulty: 'medium'
+        difficulty: 'medium',
       },
       {
         id: 'memory_02',
@@ -482,7 +522,7 @@ export class FunctionCallEvaluator {
         expectedTool: 'search_memory',
         expectedArgs: { query: 'TypeScript' },
         category: 'memory',
-        difficulty: 'medium'
+        difficulty: 'medium',
       },
       {
         id: 'memory_03',
@@ -491,7 +531,7 @@ export class FunctionCallEvaluator {
         expectedTool: 'save_memory',
         expectedArgs: { content: 'CLI tool for AI development' },
         category: 'memory',
-        difficulty: 'medium'
+        difficulty: 'medium',
       },
       {
         id: 'memory_04',
@@ -500,7 +540,7 @@ export class FunctionCallEvaluator {
         expectedTool: 'search_memory',
         expectedArgs: { query: 'project' },
         category: 'memory',
-        difficulty: 'medium'
+        difficulty: 'medium',
       },
       {
         id: 'memory_05',
@@ -509,27 +549,29 @@ export class FunctionCallEvaluator {
         expectedTool: 'save_memory',
         expectedArgs: { content: 'default model is phi-3.5-mini' },
         category: 'memory',
-        difficulty: 'medium'
+        difficulty: 'medium',
       },
-      
+
       // Complex Operations (Hard)
       {
         id: 'complex_01',
         description: 'Multi-step file operation',
-        prompt: 'Create a backup of package.json by copying it to package.json.backup',
+        prompt:
+          'Create a backup of package.json by copying it to package.json.backup',
         expectedTool: 'shell_command',
         expectedArgs: { command: 'cp package.json package.json.backup' },
         category: 'complex',
-        difficulty: 'hard'
+        difficulty: 'hard',
       },
       {
         id: 'complex_02',
         description: 'Analysis request',
-        prompt: 'Analyze the structure of this project by listing all directories',
+        prompt:
+          'Analyze the structure of this project by listing all directories',
         expectedTool: 'shell_command',
         expectedArgs: { command: 'find . -type d' },
         category: 'complex',
-        difficulty: 'hard'
+        difficulty: 'hard',
       },
       {
         id: 'complex_03',
@@ -538,7 +580,7 @@ export class FunctionCallEvaluator {
         expectedTool: 'shell_command',
         expectedArgs: { command: 'tsc --noEmit' },
         category: 'complex',
-        difficulty: 'hard'
+        difficulty: 'hard',
       },
       {
         id: 'complex_04',
@@ -547,7 +589,7 @@ export class FunctionCallEvaluator {
         expectedTool: 'shell_command',
         expectedArgs: { command: 'npm update' },
         category: 'complex',
-        difficulty: 'hard'
+        difficulty: 'hard',
       },
       {
         id: 'complex_05',
@@ -556,9 +598,9 @@ export class FunctionCallEvaluator {
         expectedTool: 'shell_command',
         expectedArgs: { command: 'npm run lint' },
         category: 'complex',
-        difficulty: 'hard'
+        difficulty: 'hard',
       },
-      
+
       // Additional varied prompts to reach 50
       {
         id: 'misc_01',
@@ -567,7 +609,7 @@ export class FunctionCallEvaluator {
         expectedTool: 'shell_command',
         expectedArgs: { command: 'echo $PATH' },
         category: 'shell_commands',
-        difficulty: 'easy'
+        difficulty: 'easy',
       },
       {
         id: 'misc_02',
@@ -576,7 +618,7 @@ export class FunctionCallEvaluator {
         expectedTool: 'shell_command',
         expectedArgs: { command: 'wc -l README.md' },
         category: 'file_operations',
-        difficulty: 'easy'
+        difficulty: 'easy',
       },
       {
         id: 'misc_03',
@@ -585,7 +627,7 @@ export class FunctionCallEvaluator {
         expectedTool: 'shell_command',
         expectedArgs: { command: 'git status' },
         category: 'shell_commands',
-        difficulty: 'easy'
+        difficulty: 'easy',
       },
       {
         id: 'misc_04',
@@ -594,7 +636,7 @@ export class FunctionCallEvaluator {
         expectedTool: 'shell_command',
         expectedArgs: { command: 'mkdir temp' },
         category: 'file_operations',
-        difficulty: 'easy'
+        difficulty: 'easy',
       },
       {
         id: 'misc_05',
@@ -603,7 +645,7 @@ export class FunctionCallEvaluator {
         expectedTool: 'shell_command',
         expectedArgs: { command: 'tar -czf src.tar.gz src/' },
         category: 'complex',
-        difficulty: 'medium'
+        difficulty: 'medium',
       },
       {
         id: 'misc_06',
@@ -612,7 +654,7 @@ export class FunctionCallEvaluator {
         expectedTool: 'shell_command',
         expectedArgs: { command: 'ls -l package.json' },
         category: 'file_operations',
-        difficulty: 'easy'
+        difficulty: 'easy',
       },
       {
         id: 'misc_07',
@@ -621,7 +663,7 @@ export class FunctionCallEvaluator {
         expectedTool: 'shell_command',
         expectedArgs: { command: 'uptime' },
         category: 'shell_commands',
-        difficulty: 'easy'
+        difficulty: 'easy',
       },
       {
         id: 'misc_08',
@@ -630,7 +672,7 @@ export class FunctionCallEvaluator {
         expectedTool: 'shell_command',
         expectedArgs: { command: 'date' },
         category: 'shell_commands',
-        difficulty: 'easy'
+        difficulty: 'easy',
       },
       {
         id: 'misc_09',
@@ -639,7 +681,7 @@ export class FunctionCallEvaluator {
         expectedTool: 'shell_command',
         expectedArgs: { command: 'diff file1.txt file2.txt' },
         category: 'file_operations',
-        difficulty: 'medium'
+        difficulty: 'medium',
       },
       {
         id: 'misc_10',
@@ -648,7 +690,7 @@ export class FunctionCallEvaluator {
         expectedTool: 'shell_command',
         expectedArgs: { command: 'free -h' },
         category: 'shell_commands',
-        difficulty: 'easy'
+        difficulty: 'easy',
       },
       {
         id: 'misc_11',
@@ -657,7 +699,7 @@ export class FunctionCallEvaluator {
         expectedTool: 'shell_command',
         expectedArgs: { command: 'sort data.txt' },
         category: 'file_operations',
-        difficulty: 'medium'
+        difficulty: 'medium',
       },
       {
         id: 'misc_12',
@@ -666,7 +708,7 @@ export class FunctionCallEvaluator {
         expectedTool: 'shell_command',
         expectedArgs: { command: 'ls -lh' },
         category: 'file_operations',
-        difficulty: 'easy'
+        difficulty: 'easy',
       },
       {
         id: 'misc_13',
@@ -675,7 +717,7 @@ export class FunctionCallEvaluator {
         expectedTool: 'shell_command',
         expectedArgs: { command: 'sed -i s/old/new/g config.txt' },
         category: 'file_operations',
-        difficulty: 'hard'
+        difficulty: 'hard',
       },
       {
         id: 'misc_14',
@@ -684,7 +726,7 @@ export class FunctionCallEvaluator {
         expectedTool: 'shell_command',
         expectedArgs: { command: 'ping -c 3 google.com' },
         category: 'shell_commands',
-        difficulty: 'medium'
+        difficulty: 'medium',
       },
       {
         id: 'misc_15',
@@ -693,7 +735,7 @@ export class FunctionCallEvaluator {
         expectedTool: 'shell_command',
         expectedArgs: { command: 'node --version' },
         category: 'shell_commands',
-        difficulty: 'easy'
+        difficulty: 'easy',
       },
       {
         id: 'misc_16',
@@ -702,7 +744,7 @@ export class FunctionCallEvaluator {
         expectedTool: 'shell_command',
         expectedArgs: { command: 'ps aux' },
         category: 'shell_commands',
-        difficulty: 'easy'
+        difficulty: 'easy',
       },
       {
         id: 'misc_17',
@@ -711,7 +753,7 @@ export class FunctionCallEvaluator {
         expectedTool: 'shell_command',
         expectedArgs: { command: 'printenv' },
         category: 'shell_commands',
-        difficulty: 'easy'
+        difficulty: 'easy',
       },
       {
         id: 'misc_18',
@@ -720,7 +762,7 @@ export class FunctionCallEvaluator {
         expectedTool: 'shell_command',
         expectedArgs: { command: 'cp important.txt important.txt.backup' },
         category: 'file_operations',
-        difficulty: 'medium'
+        difficulty: 'medium',
       },
       {
         id: 'misc_19',
@@ -729,7 +771,7 @@ export class FunctionCallEvaluator {
         expectedTool: 'shell_command',
         expectedArgs: { command: 'top -n 1' },
         category: 'shell_commands',
-        difficulty: 'medium'
+        difficulty: 'medium',
       },
       {
         id: 'misc_20',
@@ -738,8 +780,8 @@ export class FunctionCallEvaluator {
         expectedTool: 'shell_command',
         expectedArgs: { command: 'npm --version' },
         category: 'shell_commands',
-        difficulty: 'easy'
-      }
+        difficulty: 'easy',
+      },
     ];
   }
 
@@ -748,27 +790,37 @@ export class FunctionCallEvaluator {
    */
   printReport(summary: EvaluationSummary): void {
     console.log('\n=== FUNCTION CALL EVALUATION REPORT ===\n');
-    
+
     console.log('OVERALL RESULTS:');
     console.log(`Total Prompts: ${summary.totalPrompts}`);
-    console.log(`Successful Calls: ${summary.successfulCalls} (${(summary.successfulCalls/summary.totalPrompts*100).toFixed(1)}%)`);
+    console.log(
+      `Successful Calls: ${summary.successfulCalls} (${((summary.successfulCalls / summary.totalPrompts) * 100).toFixed(1)}%)`,
+    );
     console.log(`Valid JSON Rate: ${summary.validJsonRate.toFixed(1)}%`);
     console.log(`Correct Tool Rate: ${summary.correctToolRate.toFixed(1)}%`);
     console.log(`Correct Args Rate: ${summary.correctArgsRate.toFixed(1)}%`);
-    console.log(`Average Response Time: ${summary.averageResponseTime.toFixed(0)}ms`);
-    
+    console.log(
+      `Average Response Time: ${summary.averageResponseTime.toFixed(0)}ms`,
+    );
+
     console.log('\nCATEGORY BREAKDOWN:');
     for (const [category, stats] of Object.entries(summary.categoryBreakdown)) {
-      console.log(`${category.padEnd(20)}: ${stats.success}/${stats.total} (${stats.rate.toFixed(1)}%)`);
+      console.log(
+        `${category.padEnd(20)}: ${stats.success}/${stats.total} (${stats.rate.toFixed(1)}%)`,
+      );
     }
-    
+
     console.log('\nDIFFICULTY BREAKDOWN:');
-    for (const [difficulty, stats] of Object.entries(summary.difficultyBreakdown)) {
-      console.log(`${difficulty.padEnd(20)}: ${stats.success}/${stats.total} (${stats.rate.toFixed(1)}%)`);
+    for (const [difficulty, stats] of Object.entries(
+      summary.difficultyBreakdown,
+    )) {
+      console.log(
+        `${difficulty.padEnd(20)}: ${stats.success}/${stats.total} (${stats.rate.toFixed(1)}%)`,
+      );
     }
-    
+
     console.log('\n=== END REPORT ===\n');
-    
+
     // Print error analytics
     this.errorCollector.printSummary();
   }

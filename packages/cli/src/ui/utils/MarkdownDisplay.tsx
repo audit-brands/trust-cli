@@ -278,7 +278,7 @@ const MarkdownDisplayInternal: React.FC<MarkdownDisplayProps> = ({
     contentBlocks.push(
       <Box key="streaming-cursor">
         <StreamingCursor isActive={true} />
-      </Box>
+      </Box>,
     );
   }
 

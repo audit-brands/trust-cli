@@ -5,8 +5,6 @@
  */
 
 import {
-  EmbedContentParameters,
-  GenerateContentConfig,
   Part,
   SchemaUnion,
   PartListUnion,
@@ -31,12 +29,6 @@ import { GeminiChat } from './geminiChat.js';
 import { retryWithBackoff } from '../utils/retry.js';
 import { getErrorMessage } from '../utils/errors.js';
 import { tokenLimit } from './tokenLimits.js';
-import {
-  AuthType,
-  ContentGenerator,
-  ContentGeneratorConfig,
-  createContentGenerator,
-} from './contentGenerator.js';
 import { ProxyAgent, setGlobalDispatcher } from 'undici';
 import { DEFAULT_GEMINI_FLASH_MODEL } from '../config/models.js';
 
@@ -49,7 +41,7 @@ export class GeminiClient {
   private chat?: GeminiChat;
   private contentGenerator?: ContentGenerator;
   private embeddingModel: string;
-  private generateContentConfig: GenerateContentConfig = {
+  private generateContentConfig = {
     temperature: 0,
     topP: 1,
   };
@@ -80,6 +72,22 @@ export class GeminiClient {
     return this.contentGenerator;
   }
 
+  /**
+   * Generate content for tool summarization
+   * @param prompt The prompt for summarization
+   * @param signal Abort signal for cancellation
+   * @returns The generated summary text
+   */
+  async generateSummary(prompt: string, signal: AbortSignal): Promise<string> {
+    const response = await this.generateContent(
+      [{ text: prompt }],
+      signal,
+      DEFAULT_GEMINI_FLASH_MODEL,
+      { temperature: 0.3, topP: 0.95 },
+    );
+    return getResponseText(response);
+  }
+
   async addHistory(content: Content) {
     this.getChat().addHistory(content);
   }
@@ -106,7 +114,7 @@ export class GeminiClient {
   private async getEnvironment(): Promise<Part[]> {
     const cwd = this.config.getWorkingDir();
     const platform = process.platform;
-    
+
     // Minimal context for better performance with local models
     const context = `Working in: ${cwd} (${platform})`.trim();
 
@@ -449,7 +457,8 @@ export class GeminiClient {
     }
 
     // Determine how many recent turns to preserve (configurable)
-    const RECENT_TURNS_TO_PRESERVE = this.config.getContextCompressionConfig().preserveRecentTurns;
+    const RECENT_TURNS_TO_PRESERVE =
+      this.config.getContextCompressionConfig().preserveRecentTurns;
     const recentHistory = curatedHistory.slice(-RECENT_TURNS_TO_PRESERVE);
     const oldHistory = curatedHistory.slice(0, -RECENT_TURNS_TO_PRESERVE);
 
@@ -459,14 +468,15 @@ export class GeminiClient {
     }
 
     // Get token count for recent history to ensure we have room for it
-    const { totalTokens: recentTokens } = await this.getContentGenerator().countTokens({
-      model,
-      contents: recentHistory,
-    });
+    const { totalTokens: recentTokens } =
+      await this.getContentGenerator().countTokens({
+        model,
+        contents: recentHistory,
+      });
 
     // Create temporary chat with only old history for compression
     const tempChat = await this.startChat(oldHistory);
-    
+
     // Compress only the old history
     const { text: summary } = await tempChat.sendMessage({
       message: {

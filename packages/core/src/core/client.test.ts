@@ -130,7 +130,9 @@ describe('Gemini Client (client.ts)', () => {
         getProxy: vi.fn().mockReturnValue(undefined),
         getWorkingDir: vi.fn().mockReturnValue('/test/dir'),
         getFileService: vi.fn().mockReturnValue(fileService),
-        getContextCompressionConfig: vi.fn().mockReturnValue({ preserveRecentTurns: 1 }),
+        getContextCompressionConfig: vi
+          .fn()
+          .mockReturnValue({ preserveRecentTurns: 1 }),
         getUsageStatisticsEnabled: vi.fn().mockReturnValue(false),
       };
       return mock as unknown as Config;
@@ -384,26 +386,27 @@ describe('Gemini Client (client.ts)', () => {
 
       // Mock the chat's sendMessage method
       const mockChat: Partial<GeminiChat> = {
-        getHistory: vi
-          .fn()
-          .mockReturnValue([
-            { role: 'user', parts: [{ text: 'Old conversation 1' }] },
-            { role: 'model', parts: [{ text: 'Response 1' }] },
-            { role: 'user', parts: [{ text: 'Recent conversation' }] },
-          ]),
+        getHistory: vi.fn().mockReturnValue([
+          { role: 'user', parts: [{ text: 'Old conversation 1' }] },
+          { role: 'model', parts: [{ text: 'Response 1' }] },
+          { role: 'user', parts: [{ text: 'Recent conversation' }] },
+        ]),
         addHistory: vi.fn(),
         sendMessage: mockSendMessage,
       };
       client['chat'] = mockChat as GeminiChat;
-      
+
       // Mock startChat to return different chat instances but with same sendMessage mock
-      const mockStartChat = vi.spyOn(client as any, 'startChat').mockImplementation(async () => {
-        return {
-          ...mockChat,
-          getHistory: vi.fn().mockReturnValue([]),
-          sendMessage: mockSendMessage,
-        } as GeminiChat;
-      });
+      const mockStartChat = vi
+        .spyOn(client as any, 'startChat')
+        .mockImplementation(
+          async () =>
+            ({
+              ...mockChat,
+              getHistory: vi.fn().mockReturnValue([]),
+              sendMessage: mockSendMessage,
+            }) as GeminiChat,
+        );
     });
 
     it('should not trigger summarization if token count is below threshold', async () => {

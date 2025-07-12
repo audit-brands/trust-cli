@@ -21,7 +21,7 @@ describe('OllamaClient', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    
+
     mockOpenAIClient = {
       chat: {
         completions: {
@@ -31,7 +31,7 @@ describe('OllamaClient', () => {
     };
 
     MockOpenAI.mockImplementation(() => mockOpenAIClient as any);
-    
+
     client = new OllamaClient();
   });
 
@@ -46,7 +46,7 @@ describe('OllamaClient', () => {
         baseUrl: 'http://custom:11434',
         timeout: 60000,
       });
-      
+
       expect(customClient.getModel()).toBe('llama3.2:3b');
     });
   });
@@ -60,13 +60,18 @@ describe('OllamaClient', () => {
       const isConnected = await client.checkConnection();
 
       expect(isConnected).toBe(true);
-      expect(global.fetch).toHaveBeenCalledWith('http://localhost:11434/api/tags', expect.objectContaining({
-        signal: expect.any(AbortSignal)
-      }));
+      expect(global.fetch).toHaveBeenCalledWith(
+        'http://localhost:11434/api/tags',
+        expect.objectContaining({
+          signal: expect.any(AbortSignal),
+        }),
+      );
     });
 
     it('should return false when Ollama is not running', async () => {
-      (global.fetch as any).mockRejectedValueOnce(new Error('Connection refused'));
+      (global.fetch as any).mockRejectedValueOnce(
+        new Error('Connection refused'),
+      );
 
       const isConnected = await client.checkConnection();
 
@@ -77,10 +82,7 @@ describe('OllamaClient', () => {
   describe('model management', () => {
     it('should list available models', async () => {
       const mockModels = {
-        models: [
-          { name: 'qwen2.5:1.5b' },
-          { name: 'llama3.2:3b' },
-        ],
+        models: [{ name: 'qwen2.5:1.5b' }, { name: 'llama3.2:3b' }],
       };
 
       (global.fetch as any).mockResolvedValueOnce({
@@ -95,9 +97,7 @@ describe('OllamaClient', () => {
 
     it('should check if a model is available', async () => {
       const mockModels = {
-        models: [
-          { name: 'qwen2.5:1.5b' },
-        ],
+        models: [{ name: 'qwen2.5:1.5b' }],
       };
 
       (global.fetch as any).mockResolvedValueOnce({
@@ -119,20 +119,24 @@ describe('OllamaClient', () => {
   describe('chat completion', () => {
     it('should generate chat completion with tool calling', async () => {
       const mockCompletion = {
-        choices: [{
-          message: {
-            content: 'Hello!',
-            tool_calls: [{
-              id: 'call_123',
-              type: 'function',
-              function: {
-                name: 'read_file',
-                arguments: '{"path": "test.txt"}',
-              },
-            }],
+        choices: [
+          {
+            message: {
+              content: 'Hello!',
+              tool_calls: [
+                {
+                  id: 'call_123',
+                  type: 'function',
+                  function: {
+                    name: 'read_file',
+                    arguments: '{"path": "test.txt"}',
+                  },
+                },
+              ],
+            },
+            finish_reason: 'tool_calls',
           },
-          finish_reason: 'tool_calls',
-        }],
+        ],
         usage: {
           prompt_tokens: 10,
           completion_tokens: 20,
@@ -140,25 +144,29 @@ describe('OllamaClient', () => {
         },
       };
 
-      mockOpenAIClient.chat.completions.create.mockResolvedValueOnce(mockCompletion);
+      mockOpenAIClient.chat.completions.create.mockResolvedValueOnce(
+        mockCompletion,
+      );
 
       const messages: OllamaMessage[] = [
         { role: 'user', content: 'Read test.txt' },
       ];
-      const tools = [{
-        type: 'function' as const,
-        function: {
-          name: 'read_file',
-          description: 'Read a file',
-          parameters: {
-            type: 'object' as const,
-            properties: {
-              path: { type: 'string' },
+      const tools = [
+        {
+          type: 'function' as const,
+          function: {
+            name: 'read_file',
+            description: 'Read a file',
+            parameters: {
+              type: 'object' as const,
+              properties: {
+                path: { type: 'string' },
+              },
+              required: ['path'],
             },
-            required: ['path'],
           },
         },
-      }];
+      ];
 
       const result = await client.chatCompletion(messages, tools);
 
@@ -174,19 +182,21 @@ describe('OllamaClient', () => {
 
     it('should handle completion without tool calls', async () => {
       const mockCompletion = {
-        choices: [{
-          message: {
-            content: 'Hello, how can I help you?',
+        choices: [
+          {
+            message: {
+              content: 'Hello, how can I help you?',
+            },
+            finish_reason: 'stop',
           },
-          finish_reason: 'stop',
-        }],
+        ],
       };
 
-      mockOpenAIClient.chat.completions.create.mockResolvedValueOnce(mockCompletion);
+      mockOpenAIClient.chat.completions.create.mockResolvedValueOnce(
+        mockCompletion,
+      );
 
-      const messages: OllamaMessage[] = [
-        { role: 'user', content: 'Hello' },
-      ];
+      const messages: OllamaMessage[] = [{ role: 'user', content: 'Hello' }];
 
       const result = await client.chatCompletion(messages);
 
@@ -197,15 +207,13 @@ describe('OllamaClient', () => {
 
     it('should handle errors gracefully', async () => {
       mockOpenAIClient.chat.completions.create.mockRejectedValueOnce(
-        new Error('API error')
+        new Error('API error'),
       );
 
-      const messages: OllamaMessage[] = [
-        { role: 'user', content: 'Hello' },
-      ];
+      const messages: OllamaMessage[] = [{ role: 'user', content: 'Hello' }];
 
       await expect(client.chatCompletion(messages)).rejects.toThrow(
-        'Ollama chat completion failed: API error'
+        'Ollama chat completion failed: API error',
       );
     });
   });
@@ -219,8 +227,12 @@ describe('OllamaClient', () => {
         ok: true,
         body: new ReadableStream({
           start(controller) {
-            controller.enqueue(new TextEncoder().encode('{"status": "Downloading..."}\n'));
-            controller.enqueue(new TextEncoder().encode('{"status": "Extracting..."}\n'));
+            controller.enqueue(
+              new TextEncoder().encode('{"status": "Downloading..."}\n'),
+            );
+            controller.enqueue(
+              new TextEncoder().encode('{"status": "Extracting..."}\n'),
+            );
             controller.close();
           },
         }),
@@ -234,7 +246,9 @@ describe('OllamaClient', () => {
       expect(progressUpdates).toContain('Pulling model qwen2.5:1.5b...');
       expect(progressUpdates).toContain('Downloading...');
       expect(progressUpdates).toContain('Extracting...');
-      expect(progressUpdates).toContain('Model qwen2.5:1.5b pulled successfully');
+      expect(progressUpdates).toContain(
+        'Model qwen2.5:1.5b pulled successfully',
+      );
     });
 
     it('should handle pull failures', async () => {
@@ -253,11 +267,13 @@ describe('OllamaClient', () => {
     it('should get client status', async () => {
       (global.fetch as any)
         .mockResolvedValueOnce({ ok: true }) // checkConnection
-        .mockResolvedValueOnce({ // listModels
+        .mockResolvedValueOnce({
+          // listModels
           ok: true,
           json: async () => ({ models: [{ name: 'qwen2.5:1.5b' }] }),
         })
-        .mockResolvedValueOnce({ // listModels again for isModelAvailable
+        .mockResolvedValueOnce({
+          // listModels again for isModelAvailable
           ok: true,
           json: async () => ({ models: [{ name: 'qwen2.5:1.5b' }] }),
         });
@@ -280,17 +296,19 @@ describe('OllamaClient', () => {
     });
 
     it('should create system prompt with available tools', () => {
-      const tools = [{
-        type: 'function' as const,
-        function: {
-          name: 'read_file',
-          description: 'Read a file from the filesystem',
-          parameters: {
-            type: 'object' as const,
-            properties: {},
+      const tools = [
+        {
+          type: 'function' as const,
+          function: {
+            name: 'read_file',
+            description: 'Read a file from the filesystem',
+            parameters: {
+              type: 'object' as const,
+              properties: {},
+            },
           },
         },
-      }];
+      ];
 
       const prompt = client.createSystemPrompt(tools);
 

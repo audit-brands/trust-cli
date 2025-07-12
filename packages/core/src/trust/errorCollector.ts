@@ -20,7 +20,12 @@ export interface ErrorRecord {
   category: string;
   difficulty: string;
   errors: string[];
-  failureType: 'parse_error' | 'wrong_tool' | 'wrong_args' | 'validation_error' | 'generation_error';
+  failureType:
+    | 'parse_error'
+    | 'wrong_tool'
+    | 'wrong_args'
+    | 'validation_error'
+    | 'generation_error';
   retryCount?: number;
   model?: string;
   temperature?: number;
@@ -36,11 +41,14 @@ export interface ErrorAnalytics {
     count: number;
     examples: string[];
   }>;
-  toolAccuracy: Record<string, {
-    attempts: number;
-    successes: number;
-    accuracy: number;
-  }>;
+  toolAccuracy: Record<
+    string,
+    {
+      attempts: number;
+      successes: number;
+      accuracy: number;
+    }
+  >;
 }
 
 /**
@@ -52,7 +60,8 @@ export class ErrorCollector {
   private maxErrorsInMemory: number = 1000;
 
   constructor(errorLogPath?: string) {
-    this.errorLogPath = errorLogPath || path.join(process.cwd(), '.trust', 'error_log.json');
+    this.errorLogPath =
+      errorLogPath || path.join(process.cwd(), '.trust', 'error_log.json');
     this.ensureErrorLogDirectory();
     this.loadExistingErrors();
   }
@@ -68,7 +77,7 @@ export class ErrorCollector {
     category: string,
     difficulty: string,
     model?: string,
-    temperature?: number
+    temperature?: number,
   ): void {
     const errorRecord: ErrorRecord = {
       id: this.generateId(),
@@ -95,7 +104,7 @@ export class ErrorCollector {
    * Record a retry attempt
    */
   recordRetry(originalErrorId: string): void {
-    const error = this.errors.find(e => e.id === originalErrorId);
+    const error = this.errors.find((e) => e.id === originalErrorId);
     if (error) {
       error.retryCount = (error.retryCount || 0) + 1;
       this.persistError(error);
@@ -117,9 +126,12 @@ export class ErrorCollector {
 
     // Count errors by type
     for (const error of this.errors) {
-      analytics.errorsByType[error.failureType] = (analytics.errorsByType[error.failureType] || 0) + 1;
-      analytics.errorsByCategory[error.category] = (analytics.errorsByCategory[error.category] || 0) + 1;
-      analytics.errorsByDifficulty[error.difficulty] = (analytics.errorsByDifficulty[error.difficulty] || 0) + 1;
+      analytics.errorsByType[error.failureType] =
+        (analytics.errorsByType[error.failureType] || 0) + 1;
+      analytics.errorsByCategory[error.category] =
+        (analytics.errorsByCategory[error.category] || 0) + 1;
+      analytics.errorsByDifficulty[error.difficulty] =
+        (analytics.errorsByDifficulty[error.difficulty] || 0) + 1;
 
       // Track tool accuracy
       if (!analytics.toolAccuracy[error.expectedTool]) {
@@ -135,7 +147,8 @@ export class ErrorCollector {
     // Calculate tool accuracy (would need success data from evaluator)
     for (const tool of Object.keys(analytics.toolAccuracy)) {
       const stats = analytics.toolAccuracy[tool];
-      stats.accuracy = stats.attempts > 0 ? (stats.successes / stats.attempts) * 100 : 0;
+      stats.accuracy =
+        stats.attempts > 0 ? (stats.successes / stats.attempts) * 100 : 0;
     }
 
     // Find common failure patterns
@@ -148,23 +161,23 @@ export class ErrorCollector {
    * Get errors by specific criteria
    */
   getErrorsByType(failureType: string): ErrorRecord[] {
-    return this.errors.filter(e => e.failureType === failureType);
+    return this.errors.filter((e) => e.failureType === failureType);
   }
 
   getErrorsByCategory(category: string): ErrorRecord[] {
-    return this.errors.filter(e => e.category === category);
+    return this.errors.filter((e) => e.category === category);
   }
 
   getErrorsByTool(tool: string): ErrorRecord[] {
-    return this.errors.filter(e => e.expectedTool === tool);
+    return this.errors.filter((e) => e.expectedTool === tool);
   }
 
   /**
    * Get recent errors (last N days)
    */
   getRecentErrors(days: number = 7): ErrorRecord[] {
-    const cutoff = Date.now() - (days * 24 * 60 * 60 * 1000);
-    return this.errors.filter(e => e.timestamp > cutoff);
+    const cutoff = Date.now() - days * 24 * 60 * 60 * 1000;
+    return this.errors.filter((e) => e.timestamp > cutoff);
   }
 
   /**
@@ -196,37 +209,43 @@ export class ErrorCollector {
    */
   printSummary(): void {
     const analytics = this.getAnalytics();
-    
+
     console.log('\n=== ERROR COLLECTION SUMMARY ===\n');
     console.log(`Total Errors Recorded: ${analytics.totalErrors}`);
-    
+
     console.log('\nErrors by Type:');
     for (const [type, count] of Object.entries(analytics.errorsByType)) {
       console.log(`  ${type}: ${count}`);
     }
-    
+
     console.log('\nErrors by Category:');
-    for (const [category, count] of Object.entries(analytics.errorsByCategory)) {
+    for (const [category, count] of Object.entries(
+      analytics.errorsByCategory,
+    )) {
       console.log(`  ${category}: ${count}`);
     }
-    
+
     console.log('\nErrors by Difficulty:');
-    for (const [difficulty, count] of Object.entries(analytics.errorsByDifficulty)) {
+    for (const [difficulty, count] of Object.entries(
+      analytics.errorsByDifficulty,
+    )) {
       console.log(`  ${difficulty}: ${count}`);
     }
-    
+
     console.log('\nTool Accuracy:');
     for (const [tool, stats] of Object.entries(analytics.toolAccuracy)) {
-      console.log(`  ${tool}: ${stats.attempts} attempts, ${stats.accuracy.toFixed(1)}% accuracy`);
+      console.log(
+        `  ${tool}: ${stats.attempts} attempts, ${stats.accuracy.toFixed(1)}% accuracy`,
+      );
     }
-    
+
     if (analytics.commonFailures.length > 0) {
       console.log('\nCommon Failure Patterns:');
       for (const pattern of analytics.commonFailures.slice(0, 5)) {
         console.log(`  "${pattern.pattern}": ${pattern.count} occurrences`);
       }
     }
-    
+
     console.log('\n=== END SUMMARY ===\n');
   }
 
@@ -242,7 +261,7 @@ export class ErrorCollector {
       try {
         const data = fs.readFileSync(this.errorLogPath, 'utf8');
         const parsed = JSON.parse(data);
-        this.errors = Array.isArray(parsed) ? parsed : (parsed.errors || []);
+        this.errors = Array.isArray(parsed) ? parsed : parsed.errors || [];
       } catch (error) {
         console.warn('Failed to load existing error log:', error);
         this.errors = [];
@@ -254,14 +273,14 @@ export class ErrorCollector {
     try {
       // Append to file (simple approach - in production might use a database)
       const allErrors = this.loadAllErrors();
-      const existingIndex = allErrors.findIndex(e => e.id === error.id);
-      
+      const existingIndex = allErrors.findIndex((e) => e.id === error.id);
+
       if (existingIndex >= 0) {
         allErrors[existingIndex] = error;
       } else {
         allErrors.push(error);
       }
-      
+
       fs.writeFileSync(this.errorLogPath, JSON.stringify(allErrors, null, 2));
     } catch (error) {
       console.warn('Failed to persist error:', error);
@@ -273,7 +292,7 @@ export class ErrorCollector {
       try {
         const data = fs.readFileSync(this.errorLogPath, 'utf8');
         const parsed = JSON.parse(data);
-        return Array.isArray(parsed) ? parsed : (parsed.errors || []);
+        return Array.isArray(parsed) ? parsed : parsed.errors || [];
       } catch (error) {
         return [];
       }
@@ -288,7 +307,9 @@ export class ErrorCollector {
     }
   }
 
-  private categorizeFailure(result: EvaluationResult): ErrorRecord['failureType'] {
+  private categorizeFailure(
+    result: EvaluationResult,
+  ): ErrorRecord['failureType'] {
     if (!result.validJson) {
       return 'parse_error';
     }
@@ -310,16 +331,16 @@ export class ErrorCollector {
     examples: string[];
   }> {
     const patterns = new Map<string, { count: number; examples: string[] }>();
-    
+
     for (const error of this.errors) {
       for (const errorMsg of error.errors) {
         // Simple pattern matching - could be more sophisticated
         const pattern = errorMsg.replace(/\d+/g, '#').replace(/['"]/g, '');
-        
+
         if (!patterns.has(pattern)) {
           patterns.set(pattern, { count: 0, examples: [] });
         }
-        
+
         const data = patterns.get(pattern)!;
         data.count++;
         if (data.examples.length < 3) {
@@ -327,7 +348,7 @@ export class ErrorCollector {
         }
       }
     }
-    
+
     return Array.from(patterns.entries())
       .map(([pattern, data]) => ({ pattern, ...data }))
       .sort((a, b) => b.count - a.count);

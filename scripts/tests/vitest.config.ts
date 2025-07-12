@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright 2025 Google LLC
+ * Copyright 2025 Audit Risk Media LLC
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -10,6 +10,8 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
+    minWorkers: 1,
+    maxWorkers: 1,
     include: ['scripts/tests/**/*.test.js'],
     setupFiles: ['scripts/tests/test-setup.ts'],
     coverage: {

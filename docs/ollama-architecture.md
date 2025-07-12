@@ -84,13 +84,13 @@ graph TB
         Interactive[Interactive Mode]
         API[API Server]
     end
-    
+
     subgraph "Content Generation"
         TCG[TrustContentGenerator]
         Fallback[Fallback Manager]
         Selection[Backend Selection]
     end
-    
+
     subgraph "Ollama Integration"
         OCG[OllamaContentGenerator]
         OC[OllamaClient]
@@ -98,26 +98,26 @@ graph TB
         CM[Connection Manager]
         QM[Queue Manager]
     end
-    
+
     subgraph "Ollama Service"
         Server[Ollama Server]
         Models[Model Runtime]
         Storage[Model Storage]
     end
-    
+
     CLI --> TCG
     Interactive --> TCG
     API --> TCG
-    
+
     TCG --> Fallback
     TCG --> Selection
     Selection --> OCG
-    
+
     OCG --> OC
     OCG --> TR
     OC --> CM
     OC --> QM
-    
+
     CM --> Server
     QM --> Server
     Server --> Models
@@ -137,34 +137,34 @@ sequenceDiagram
     participant OC as OllamaClient
     participant TR as ToolRegistry
     participant Ollama
-    
+
     User->>CLI: Command with prompt
     CLI->>TCG: Generate content request
-    
+
     TCG->>TCG: Select backend (Ollama)
     TCG->>OCG: Initialize generation
-    
+
     OCG->>OC: Check connection
     OC->>Ollama: Health check
     Ollama-->>OC: Status OK
     OC-->>OCG: Connected
-    
+
     OCG->>TR: Get tool definitions
     TR-->>OCG: Tool schemas
-    
+
     OCG->>OC: Generate with tools
     OC->>Ollama: POST /v1/chat/completions
-    
+
     Note over Ollama: Model processes request<br/>and identifies tool calls
-    
+
     Ollama-->>OC: Response with tool calls
     OC-->>OCG: Parsed tool calls
-    
+
     loop For each tool call
         OCG->>TR: Execute tool
         TR-->>OCG: Tool result
     end
-    
+
     OCG->>OC: Continue conversation
     OC->>Ollama: Follow-up request
     Ollama-->>OC: Final response
@@ -182,18 +182,18 @@ sequenceDiagram
     participant OCG as OllamaContentGenerator
     participant OC as OllamaClient
     participant Ollama
-    
+
     Client->>OCG: Generate stream request
     OCG->>OC: Create stream
     OC->>Ollama: POST with stream=true
-    
+
     loop Streaming response
         Ollama-->>OC: SSE chunk
         OC->>OC: Parse chunk
         OC-->>OCG: Processed chunk
         OCG-->>Client: Stream chunk
     end
-    
+
     Ollama-->>OC: Stream complete
     OC-->>OCG: End of stream
     OCG-->>Client: Stream finished
@@ -206,21 +206,21 @@ graph TD
     A[Request Start] --> B{Ollama Available?}
     B -->|Yes| C[Try Ollama]
     B -->|No| G[Try HuggingFace]
-    
+
     C --> D{Success?}
     D -->|Yes| E[Return Response]
     D -->|No| F{Fallback Enabled?}
-    
+
     F -->|Yes| G[Try HuggingFace]
     F -->|No| K[Return Error]
-    
+
     G --> H{Success?}
     H -->|Yes| E
     H -->|No| I{Cloud Enabled?}
-    
+
     I -->|Yes| J[Try Cloud API]
     I -->|No| K
-    
+
     J --> L{Success?}
     L -->|Yes| E
     L -->|No| K
@@ -242,16 +242,16 @@ interface ConnectionPool {
 class OllamaConnectionManager {
   private pool: ConnectionPool;
   private metrics: ConnectionMetrics;
-  
+
   async acquireConnection(): Promise<Connection> {
     // Pool management logic
     if (this.pool.activeConnections.size < this.pool.maxConnections) {
       return this.createConnection();
     }
-    
+
     return this.waitForAvailableConnection();
   }
-  
+
   async releaseConnection(conn: Connection): Promise<void> {
     // Connection cleanup and reuse
   }
@@ -273,12 +273,12 @@ interface QueuedRequest {
 class RequestQueue {
   private queue: PriorityQueue<QueuedRequest>;
   private processing: Map<string, Promise<void>>;
-  
+
   async enqueue(request: QueuedRequest): Promise<OllamaResponse> {
     return new Promise((resolve, reject) => {
       request.resolve = resolve;
       request.reject = reject;
-      
+
       this.queue.push(request);
       this.processQueue();
     });
@@ -292,19 +292,19 @@ class RequestQueue {
 class ModelPreheater {
   private preheatedModels: Set<string>;
   private preheatPromise: Map<string, Promise<void>>;
-  
+
   async preheatModel(modelName: string): Promise<void> {
     if (this.preheatedModels.has(modelName)) {
       return;
     }
-    
+
     if (this.preheatPromise.has(modelName)) {
       return this.preheatPromise.get(modelName);
     }
-    
+
     const promise = this.performPreheat(modelName);
     this.preheatPromise.set(modelName, promise);
-    
+
     try {
       await promise;
       this.preheatedModels.add(modelName);
@@ -312,7 +312,7 @@ class ModelPreheater {
       this.preheatPromise.delete(modelName);
     }
   }
-  
+
   private async performPreheat(modelName: string): Promise<void> {
     // Send minimal request to load model into memory
     await this.ollamaClient.generate({
@@ -320,8 +320,8 @@ class ModelPreheater {
       prompt: 'Hello',
       options: {
         num_predict: 1,
-        temperature: 0
-      }
+        temperature: 0,
+      },
     });
   }
 }
@@ -340,7 +340,7 @@ enum ErrorType {
   RATE_LIMIT_ERROR = 'rate_limit_error',
   VALIDATION_ERROR = 'validation_error',
   TOOL_EXECUTION_ERROR = 'tool_execution_error',
-  UNKNOWN_ERROR = 'unknown_error'
+  UNKNOWN_ERROR = 'unknown_error',
 }
 
 class OllamaError extends Error {
@@ -348,15 +348,15 @@ class OllamaError extends Error {
   code: string;
   recoverable: boolean;
   context: Record<string, any>;
-  
+
   constructor(
-    type: ErrorType, 
-    message: string, 
+    type: ErrorType,
+    message: string,
     options: {
       code?: string;
       recoverable?: boolean;
       context?: Record<string, any>;
-    } = {}
+    } = {},
   ) {
     super(message);
     this.type = type;
@@ -381,7 +381,7 @@ class ConnectionRecoveryStrategy implements RecoveryStrategy {
   canRecover(error: OllamaError): boolean {
     return error.type === ErrorType.CONNECTION_ERROR;
   }
-  
+
   async recover(error: OllamaError, context: any): Promise<any> {
     // Attempt to reconnect with exponential backoff
     await this.waitForConnection();
@@ -393,22 +393,22 @@ class ModelRecoveryStrategy implements RecoveryStrategy {
   canRecover(error: OllamaError): boolean {
     return error.type === ErrorType.MODEL_NOT_FOUND;
   }
-  
+
   async recover(error: OllamaError, context: any): Promise<any> {
     const modelName = context.model;
-    
+
     // Attempt to pull model
     console.log(`Attempting to pull model: ${modelName}`);
     const success = await this.ollamaClient.pullModel(modelName);
-    
+
     if (success) {
       return context.retry();
     }
-    
+
     throw new OllamaError(
       ErrorType.MODEL_NOT_FOUND,
       `Failed to pull model ${modelName}`,
-      { recoverable: false }
+      { recoverable: false },
     );
   }
 }
@@ -442,17 +442,17 @@ class ToolSchemaConverter {
       function: {
         name: trustTool.name,
         description: trustTool.description,
-        parameters: this.convertParameterSchema(trustTool.parameters)
-      }
+        parameters: this.convertParameterSchema(trustTool.parameters),
+      },
     };
   }
-  
+
   private convertParameterSchema(schema: JSONSchema): JSONSchema {
     // Convert Trust CLI schema format to OpenAI format
     return {
       type: 'object',
       properties: schema.properties || {},
-      required: schema.required || []
+      required: schema.required || [],
     };
   }
 }
@@ -464,38 +464,35 @@ class ToolSchemaConverter {
 class ToolExecutionPipeline {
   async executeTool(
     toolCall: FunctionCall,
-    context: ExecutionContext
+    context: ExecutionContext,
   ): Promise<ToolResult> {
     const tool = this.toolRegistry.getTool(toolCall.name);
-    
+
     if (!tool) {
       throw new Error(`Tool not found: ${toolCall.name}`);
     }
-    
+
     // Validate arguments
     const validationResult = this.validateArguments(
-      toolCall.args, 
-      tool.parameters
+      toolCall.args,
+      tool.parameters,
     );
-    
+
     if (!validationResult.valid) {
       throw new Error(`Invalid arguments: ${validationResult.errors}`);
     }
-    
+
     // Execute with timeout and resource limits
     const result = await this.executeWithLimits(tool, toolCall.args);
-    
+
     // Format result for model consumption
     return this.formatResult(result, tool);
   }
-  
-  private async executeWithLimits(
-    tool: TrustTool, 
-    args: any
-  ): Promise<any> {
+
+  private async executeWithLimits(tool: TrustTool, args: any): Promise<any> {
     return Promise.race([
       tool.execute(args),
-      this.createTimeout(30000) // 30 second timeout
+      this.createTimeout(30000), // 30 second timeout
     ]);
   }
 }
@@ -514,7 +511,7 @@ interface ConfigurationLayer {
 
 class ConfigurationManager {
   private layers: ConfigurationLayer[] = [];
-  
+
   constructor() {
     this.addLayer('default', DEFAULT_CONFIG, 0);
     this.addLayer('file', this.loadFileConfig(), 1);
@@ -522,7 +519,7 @@ class ConfigurationManager {
     this.addLayer('cli', {}, 3);
     this.addLayer('runtime', {}, 4);
   }
-  
+
   get<T>(key: string): T {
     // Merge values from all layers, highest priority wins
     return this.layers
@@ -540,31 +537,31 @@ class ConfigurationManager {
 class DynamicConfigManager {
   private watchers: Map<string, ConfigWatcher[]> = new Map();
   private updateQueue: ConfigUpdate[] = [];
-  
+
   watch(path: string, callback: (value: any) => void): void {
     if (!this.watchers.has(path)) {
       this.watchers.set(path, []);
     }
-    
+
     this.watchers.get(path)!.push({
       callback,
-      id: this.generateWatcherId()
+      id: this.generateWatcherId(),
     });
   }
-  
+
   async updateConfig(updates: ConfigUpdate[]): Promise<void> {
     // Validate updates
     const validationResults = await Promise.all(
-      updates.map(update => this.validateUpdate(update))
+      updates.map((update) => this.validateUpdate(update)),
     );
-    
-    if (validationResults.some(result => !result.valid)) {
+
+    if (validationResults.some((result) => !result.valid)) {
       throw new Error('Invalid configuration updates');
     }
-    
+
     // Apply updates atomically
     await this.applyUpdates(updates);
-    
+
     // Notify watchers
     this.notifyWatchers(updates);
   }
@@ -607,18 +604,18 @@ interface OllamaMetrics {
 class MetricsCollector {
   private metrics: OllamaMetrics;
   private collectors: MetricCollector[] = [];
-  
+
   startCollection(): void {
     setInterval(() => {
       this.collectMetrics();
     }, 10000); // Collect every 10 seconds
   }
-  
+
   private async collectMetrics(): Promise<void> {
     const results = await Promise.all(
-      this.collectors.map(collector => collector.collect())
+      this.collectors.map((collector) => collector.collect()),
     );
-    
+
     this.metrics = this.aggregateMetrics(results);
     this.emitMetrics(this.metrics);
   }
@@ -646,22 +643,22 @@ interface HealthResult {
 class HealthMonitor {
   private checks: HealthCheck[] = [];
   private status: Map<string, HealthResult> = new Map();
-  
+
   addCheck(check: HealthCheck): void {
     this.checks.push(check);
     this.scheduleCheck(check);
   }
-  
+
   private scheduleCheck(check: HealthCheck): void {
     setInterval(async () => {
       try {
         const result = await Promise.race([
           check.check(),
-          this.timeout(check.timeout)
+          this.timeout(check.timeout),
         ]);
-        
+
         this.status.set(check.name, result);
-        
+
         if (!result.healthy && check.critical) {
           this.handleCriticalFailure(check, result);
         }
@@ -669,7 +666,7 @@ class HealthMonitor {
         this.status.set(check.name, {
           healthy: false,
           message: String(error),
-          timestamp: Date.now()
+          timestamp: Date.now(),
         });
       }
     }, check.interval);
@@ -693,25 +690,27 @@ interface SecurityContext {
 class SecurityManager {
   async authenticate(request: any): Promise<SecurityContext> {
     const token = this.extractToken(request);
-    
+
     if (!token) {
       throw new Error('No authentication token provided');
     }
-    
+
     const payload = await this.validateToken(token);
-    
+
     return {
       userId: payload.sub,
       roles: payload.roles || [],
       permissions: payload.permissions || [],
       sessionId: payload.sessionId,
-      expiresAt: payload.exp
+      expiresAt: payload.exp,
     };
   }
-  
+
   authorize(context: SecurityContext, requiredPermission: string): boolean {
-    return context.permissions.includes(requiredPermission) ||
-           context.permissions.includes('admin');
+    return (
+      context.permissions.includes(requiredPermission) ||
+      context.permissions.includes('admin')
+    );
   }
 }
 ```
@@ -728,14 +727,14 @@ class RequestSanitizer {
       .replace(/data:/gi, '') // Remove data URLs
       .substring(0, 10000); // Limit length
   }
-  
+
   sanitizeToolArgs(args: any): any {
     if (typeof args !== 'object' || args === null) {
       return args;
     }
-    
+
     const sanitized = {};
-    
+
     for (const [key, value] of Object.entries(args)) {
       if (typeof value === 'string') {
         sanitized[key] = this.sanitizeString(value);
@@ -745,7 +744,7 @@ class RequestSanitizer {
         sanitized[key] = value;
       }
     }
-    
+
     return sanitized;
   }
 }

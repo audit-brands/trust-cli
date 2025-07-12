@@ -24,7 +24,7 @@ describe('ConfigCommandHandler', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    
+
     mockConfig = {
       initialize: vi.fn(),
       get: vi.fn().mockReturnValue({
@@ -81,11 +81,11 @@ describe('ConfigCommandHandler', () => {
     };
 
     MockTrustConfiguration.mockImplementation(() => mockConfig);
-    
+
     // Mock console methods
     mockConsoleLog = vi.spyOn(console, 'log').mockImplementation(() => {});
     mockConsoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
-    
+
     commandHandler = new ConfigCommandHandler();
   });
 
@@ -101,11 +101,21 @@ describe('ConfigCommandHandler', () => {
       await commandHandler.handleCommand(args);
 
       expect(mockConfig.initialize).toHaveBeenCalled();
-      expect(mockConsoleLog).toHaveBeenCalledWith('\n🛡️  Trust CLI - Configuration');
-      expect(mockConsoleLog).toHaveBeenCalledWith('\n🤖 AI Backend Configuration:');
-      expect(mockConsoleLog).toHaveBeenCalledWith('   Preferred Backend: ollama');
-      expect(mockConsoleLog).toHaveBeenCalledWith('\n🤗 HuggingFace Configuration:');
-      expect(mockConsoleLog).toHaveBeenCalledWith('   Fallback Order: ollama → huggingface → cloud');
+      expect(mockConsoleLog).toHaveBeenCalledWith(
+        '\n🛡️  Trust CLI - Configuration',
+      );
+      expect(mockConsoleLog).toHaveBeenCalledWith(
+        '\n🤖 AI Backend Configuration:',
+      );
+      expect(mockConsoleLog).toHaveBeenCalledWith(
+        '   Preferred Backend: ollama',
+      );
+      expect(mockConsoleLog).toHaveBeenCalledWith(
+        '\n🤗 HuggingFace Configuration:',
+      );
+      expect(mockConsoleLog).toHaveBeenCalledWith(
+        '   Fallback Order: ollama → huggingface → cloud',
+      );
     });
 
     it('should display verbose configuration when requested', async () => {
@@ -115,18 +125,27 @@ describe('ConfigCommandHandler', () => {
 
       expect(mockConsoleLog).toHaveBeenCalledWith('   Temperature: 0.1');
       expect(mockConsoleLog).toHaveBeenCalledWith('   Num Predict: 1000');
-      expect(mockConsoleLog).toHaveBeenCalledWith('\n🔒 Privacy Configuration:');
-      expect(mockConsoleLog).toHaveBeenCalledWith('\n⚡ Inference Configuration:');
+      expect(mockConsoleLog).toHaveBeenCalledWith(
+        '\n🔒 Privacy Configuration:',
+      );
+      expect(mockConsoleLog).toHaveBeenCalledWith(
+        '\n⚡ Inference Configuration:',
+      );
     });
   });
 
   describe('get command', () => {
     it('should retrieve specific configuration value', async () => {
-      const args: ConfigCommandArgs = { action: 'get', key: 'ai.preferredBackend' };
+      const args: ConfigCommandArgs = {
+        action: 'get',
+        key: 'ai.preferredBackend',
+      };
 
       await commandHandler.handleCommand(args);
 
-      expect(mockConsoleLog).toHaveBeenCalledWith('ai.preferredBackend: ollama');
+      expect(mockConsoleLog).toHaveBeenCalledWith(
+        'ai.preferredBackend: ollama',
+      );
     });
 
     it('should retrieve nested object value', async () => {
@@ -134,7 +153,9 @@ describe('ConfigCommandHandler', () => {
 
       await commandHandler.handleCommand(args);
 
-      expect(mockConsoleLog).toHaveBeenCalledWith(expect.stringContaining('ai.ollama: {'));
+      expect(mockConsoleLog).toHaveBeenCalledWith(
+        expect.stringContaining('ai.ollama: {'),
+      );
     });
 
     it('should show error for non-existent key', async () => {
@@ -142,7 +163,9 @@ describe('ConfigCommandHandler', () => {
 
       await commandHandler.handleCommand(args);
 
-      expect(mockConsoleError).toHaveBeenCalledWith("❌ Configuration key 'nonexistent.key' not found");
+      expect(mockConsoleError).toHaveBeenCalledWith(
+        "❌ Configuration key 'nonexistent.key' not found",
+      );
       expect(mockConsoleLog).toHaveBeenCalledWith('\n📝 Available keys:');
     });
 
@@ -150,56 +173,62 @@ describe('ConfigCommandHandler', () => {
       const args: ConfigCommandArgs = { action: 'get' };
 
       await expect(commandHandler.handleCommand(args)).rejects.toThrow(
-        'Configuration key required for get command'
+        'Configuration key required for get command',
       );
     });
   });
 
   describe('set command', () => {
     it('should set string configuration value', async () => {
-      const args: ConfigCommandArgs = { 
-        action: 'set', 
-        key: 'ai.preferredBackend', 
-        value: 'huggingface' 
+      const args: ConfigCommandArgs = {
+        action: 'set',
+        key: 'ai.preferredBackend',
+        value: 'huggingface',
       };
 
       await commandHandler.handleCommand(args);
 
       expect(mockConfig.save).toHaveBeenCalled();
-      expect(mockConsoleLog).toHaveBeenCalledWith('✅ Configuration updated: ai.preferredBackend = huggingface');
+      expect(mockConsoleLog).toHaveBeenCalledWith(
+        '✅ Configuration updated: ai.preferredBackend = huggingface',
+      );
     });
 
     it('should set boolean configuration value', async () => {
-      const args: ConfigCommandArgs = { 
-        action: 'set', 
-        key: 'ai.enableFallback', 
-        value: 'false' 
+      const args: ConfigCommandArgs = {
+        action: 'set',
+        key: 'ai.enableFallback',
+        value: 'false',
       };
 
       await commandHandler.handleCommand(args);
 
       expect(mockConfig.save).toHaveBeenCalled();
-      expect(mockConsoleLog).toHaveBeenCalledWith('✅ Configuration updated: ai.enableFallback = false');
+      expect(mockConsoleLog).toHaveBeenCalledWith(
+        '✅ Configuration updated: ai.enableFallback = false',
+      );
     });
 
     it('should set numeric configuration value', async () => {
-      const args: ConfigCommandArgs = { 
-        action: 'set', 
-        key: 'ai.ollama.timeout', 
-        value: '30000' 
+      const args: ConfigCommandArgs = {
+        action: 'set',
+        key: 'ai.ollama.timeout',
+        value: '30000',
       };
 
       await commandHandler.handleCommand(args);
 
       expect(mockConfig.save).toHaveBeenCalled();
-      expect(mockConsoleLog).toHaveBeenCalledWith('✅ Configuration updated: ai.ollama.timeout = 30000');
+      expect(mockConsoleLog).toHaveBeenCalledWith(
+        '✅ Configuration updated: ai.ollama.timeout = 30000',
+      );
     });
 
     it('should throw error when key is missing', async () => {
       const args: ConfigCommandArgs = { action: 'set', value: 'test' };
 
       await expect(commandHandler.handleCommand(args)).rejects.toThrow(
-        'Configuration key and value required for set command'
+        'Configuration key and value required for set command',
       );
     });
 
@@ -207,20 +236,27 @@ describe('ConfigCommandHandler', () => {
       const args: ConfigCommandArgs = { action: 'set', key: 'test.key' };
 
       await expect(commandHandler.handleCommand(args)).rejects.toThrow(
-        'Configuration key and value required for set command'
+        'Configuration key and value required for set command',
       );
     });
   });
 
   describe('backend command', () => {
     it('should set preferred backend', async () => {
-      const args: ConfigCommandArgs = { action: 'backend', backend: 'huggingface' };
+      const args: ConfigCommandArgs = {
+        action: 'backend',
+        backend: 'huggingface',
+      };
 
       await commandHandler.handleCommand(args);
 
-      expect(mockConfig.setPreferredBackend).toHaveBeenCalledWith('huggingface');
+      expect(mockConfig.setPreferredBackend).toHaveBeenCalledWith(
+        'huggingface',
+      );
       expect(mockConfig.save).toHaveBeenCalled();
-      expect(mockConsoleLog).toHaveBeenCalledWith('✅ Preferred AI backend set to: huggingface');
+      expect(mockConsoleLog).toHaveBeenCalledWith(
+        '✅ Preferred AI backend set to: huggingface',
+      );
     });
 
     it('should warn about disabled backend', async () => {
@@ -229,36 +265,44 @@ describe('ConfigCommandHandler', () => {
 
       await commandHandler.handleCommand(args);
 
-      expect(mockConsoleLog).toHaveBeenCalledWith('⚠️  Warning: cloud backend is currently disabled');
+      expect(mockConsoleLog).toHaveBeenCalledWith(
+        '⚠️  Warning: cloud backend is currently disabled',
+      );
     });
 
     it('should throw error when backend is missing', async () => {
       const args: ConfigCommandArgs = { action: 'backend' };
 
       await expect(commandHandler.handleCommand(args)).rejects.toThrow(
-        'Backend name required for backend command'
+        'Backend name required for backend command',
       );
     });
   });
 
   describe('fallback command', () => {
     it('should set fallback order', async () => {
-      const args: ConfigCommandArgs = { 
-        action: 'fallback', 
-        order: ['huggingface', 'ollama', 'cloud'] 
+      const args: ConfigCommandArgs = {
+        action: 'fallback',
+        order: ['huggingface', 'ollama', 'cloud'],
       };
 
       await commandHandler.handleCommand(args);
 
-      expect(mockConfig.setFallbackOrder).toHaveBeenCalledWith(['huggingface', 'ollama', 'cloud']);
+      expect(mockConfig.setFallbackOrder).toHaveBeenCalledWith([
+        'huggingface',
+        'ollama',
+        'cloud',
+      ]);
       expect(mockConfig.save).toHaveBeenCalled();
-      expect(mockConsoleLog).toHaveBeenCalledWith('✅ Fallback order set to: huggingface → ollama → cloud');
+      expect(mockConsoleLog).toHaveBeenCalledWith(
+        '✅ Fallback order set to: huggingface → ollama → cloud',
+      );
     });
 
     it('should show backend status after setting fallback order', async () => {
-      const args: ConfigCommandArgs = { 
-        action: 'fallback', 
-        order: ['ollama', 'huggingface'] 
+      const args: ConfigCommandArgs = {
+        action: 'fallback',
+        order: ['ollama', 'huggingface'],
       };
 
       await commandHandler.handleCommand(args);
@@ -269,13 +313,13 @@ describe('ConfigCommandHandler', () => {
     });
 
     it('should reject invalid backends', async () => {
-      const args: ConfigCommandArgs = { 
-        action: 'fallback', 
-        order: ['invalid-backend', 'ollama'] 
+      const args: ConfigCommandArgs = {
+        action: 'fallback',
+        order: ['invalid-backend', 'ollama'],
       };
 
       await expect(commandHandler.handleCommand(args)).rejects.toThrow(
-        'Invalid backends: invalid-backend. Valid options: ollama, huggingface, cloud'
+        'Invalid backends: invalid-backend. Valid options: ollama, huggingface, cloud',
       );
     });
 
@@ -283,7 +327,7 @@ describe('ConfigCommandHandler', () => {
       const args: ConfigCommandArgs = { action: 'fallback' };
 
       await expect(commandHandler.handleCommand(args)).rejects.toThrow(
-        'Fallback order required for fallback command'
+        'Fallback order required for fallback command',
       );
     });
   });
@@ -291,32 +335,42 @@ describe('ConfigCommandHandler', () => {
   describe('export command', () => {
     it('should export configuration to file', async () => {
       mockFs.writeFile.mockResolvedValue(undefined);
-      const args: ConfigCommandArgs = { action: 'export', file: '/tmp/config.json' };
+      const args: ConfigCommandArgs = {
+        action: 'export',
+        file: '/tmp/config.json',
+      };
 
       await commandHandler.handleCommand(args);
 
       expect(mockFs.writeFile).toHaveBeenCalledWith(
         '/tmp/config.json',
         expect.stringContaining('"preferredBackend": "ollama"'),
-        'utf-8'
+        'utf-8',
       );
-      expect(mockConsoleLog).toHaveBeenCalledWith('✅ Configuration exported to: /tmp/config.json');
+      expect(mockConsoleLog).toHaveBeenCalledWith(
+        '✅ Configuration exported to: /tmp/config.json',
+      );
     });
 
     it('should handle export errors', async () => {
       mockFs.writeFile.mockRejectedValue(new Error('Permission denied'));
-      const args: ConfigCommandArgs = { action: 'export', file: '/invalid/path.json' };
+      const args: ConfigCommandArgs = {
+        action: 'export',
+        file: '/invalid/path.json',
+      };
 
       await commandHandler.handleCommand(args);
 
-      expect(mockConsoleError).toHaveBeenCalledWith('❌ Failed to export configuration: Permission denied');
+      expect(mockConsoleError).toHaveBeenCalledWith(
+        '❌ Failed to export configuration: Permission denied',
+      );
     });
 
     it('should throw error when file path is missing', async () => {
       const args: ConfigCommandArgs = { action: 'export' };
 
       await expect(commandHandler.handleCommand(args)).rejects.toThrow(
-        'Export file path required for export command'
+        'Export file path required for export command',
       );
     });
   });
@@ -328,40 +382,55 @@ describe('ConfigCommandHandler', () => {
         models: { default: 'new-model' },
         privacy: { privacyMode: 'relaxed' },
       };
-      
+
       mockFs.readFile.mockResolvedValue(JSON.stringify(importConfig));
-      const args: ConfigCommandArgs = { action: 'import', file: '/tmp/config.json' };
+      const args: ConfigCommandArgs = {
+        action: 'import',
+        file: '/tmp/config.json',
+      };
 
       await commandHandler.handleCommand(args);
 
       expect(mockFs.readFile).toHaveBeenCalledWith('/tmp/config.json', 'utf-8');
       expect(mockConfig.save).toHaveBeenCalled();
-      expect(mockConsoleLog).toHaveBeenCalledWith('✅ Configuration imported from: /tmp/config.json');
+      expect(mockConsoleLog).toHaveBeenCalledWith(
+        '✅ Configuration imported from: /tmp/config.json',
+      );
     });
 
     it('should reject invalid configuration format', async () => {
       mockFs.readFile.mockResolvedValue('{"invalid": "config"}');
-      const args: ConfigCommandArgs = { action: 'import', file: '/tmp/invalid.json' };
+      const args: ConfigCommandArgs = {
+        action: 'import',
+        file: '/tmp/invalid.json',
+      };
 
       await commandHandler.handleCommand(args);
 
-      expect(mockConsoleError).toHaveBeenCalledWith('❌ Failed to import configuration: Invalid configuration file format');
+      expect(mockConsoleError).toHaveBeenCalledWith(
+        '❌ Failed to import configuration: Invalid configuration file format',
+      );
     });
 
     it('should handle import errors', async () => {
       mockFs.readFile.mockRejectedValue(new Error('File not found'));
-      const args: ConfigCommandArgs = { action: 'import', file: '/missing/config.json' };
+      const args: ConfigCommandArgs = {
+        action: 'import',
+        file: '/missing/config.json',
+      };
 
       await commandHandler.handleCommand(args);
 
-      expect(mockConsoleError).toHaveBeenCalledWith('❌ Failed to import configuration: File not found');
+      expect(mockConsoleError).toHaveBeenCalledWith(
+        '❌ Failed to import configuration: File not found',
+      );
     });
 
     it('should throw error when file path is missing', async () => {
       const args: ConfigCommandArgs = { action: 'import' };
 
       await expect(commandHandler.handleCommand(args)).rejects.toThrow(
-        'Import file path required for import command'
+        'Import file path required for import command',
       );
     });
   });
@@ -372,8 +441,12 @@ describe('ConfigCommandHandler', () => {
 
       await commandHandler.handleCommand(args);
 
-      expect(mockConsoleLog).toHaveBeenCalledWith('⚠️  This will reset all configuration to defaults. Continue? (y/N)');
-      expect(mockConsoleLog).toHaveBeenCalledWith('\n❌ Reset cancelled (interactive prompts not implemented yet)');
+      expect(mockConsoleLog).toHaveBeenCalledWith(
+        '⚠️  This will reset all configuration to defaults. Continue? (y/N)',
+      );
+      expect(mockConsoleLog).toHaveBeenCalledWith(
+        '\n❌ Reset cancelled (interactive prompts not implemented yet)',
+      );
       expect(mockConfig.save).not.toHaveBeenCalled();
     });
   });
@@ -383,7 +456,7 @@ describe('ConfigCommandHandler', () => {
       const args: ConfigCommandArgs = { action: 'unknown' as any };
 
       await expect(commandHandler.handleCommand(args)).rejects.toThrow(
-        'Unknown config action: unknown'
+        'Unknown config action: unknown',
       );
     });
   });

@@ -211,8 +211,8 @@ const App = ({ config, settings, startupWarnings = [] }: AppProps) => {
           `[DEBUG] Refreshed memory content in config: ${memoryContent.substring(0, 200)}...`,
         );
       }
-    } catch (error) {
-      const errorMessage = getErrorMessage(error);
+    } catch (_error) {
+      const errorMessage = getErrorMessage(_error);
       addItem(
         {
           type: MessageType.ERROR,
@@ -220,7 +220,7 @@ const App = ({ config, settings, startupWarnings = [] }: AppProps) => {
         },
         Date.now(),
       );
-      console.error('Error refreshing memory:', error);
+      console.error('Error refreshing memory:', _error);
     }
   }, [config, addItem]);
 
@@ -246,15 +246,18 @@ const App = ({ config, settings, startupWarnings = [] }: AppProps) => {
       try {
         const geminiClient = config.getGeminiClient();
         const contentGenerator = geminiClient.getContentGenerator();
-        
+
         // Check if this is a TrustContentGenerator (has getCurrentBackend method)
-        if (contentGenerator && typeof (contentGenerator as any).getCurrentBackend === 'function') {
+        if (
+          contentGenerator &&
+          typeof (contentGenerator as any).getCurrentBackend === 'function'
+        ) {
           const backend = (contentGenerator as any).getCurrentBackend();
           if (backend !== currentBackend) {
             setCurrentBackend(backend);
           }
         }
-      } catch (error) {
+      } catch (_error) {
         // Silently handle initialization errors - backend will default to 'cloud'
       }
     };
@@ -614,9 +617,9 @@ const App = ({ config, settings, startupWarnings = [] }: AppProps) => {
           key={staticKey}
           items={[
             <Box flexDirection="column" key="header">
-              <Header 
-                terminalWidth={terminalWidth} 
-                customAsciiArt={settings.merged.customCliTitle} 
+              <Header
+                terminalWidth={terminalWidth}
+                customAsciiArt={settings.merged.customCliTitle}
               />
               {!settings.merged.hideTips && <Tips config={config} />}
             </Box>,
@@ -746,9 +749,15 @@ const App = ({ config, settings, startupWarnings = [] }: AppProps) => {
               <StreamingIndicator
                 isStreaming={streamingState === StreamingState.Responding}
                 charactersStreamed={
-                  pendingHistoryItems.find(item => item?.type === 'gemini' || item?.type === 'gemini_content')?.text?.length || 0
+                  pendingHistoryItems.find(
+                    (item) =>
+                      item?.type === 'gemini' ||
+                      item?.type === 'gemini_content',
+                  )?.text?.length || 0
                 }
-                startTime={elapsedTime > 0 ? Date.now() - elapsedTime : undefined}
+                startTime={
+                  elapsedTime > 0 ? Date.now() - elapsedTime : undefined
+                }
               />
               <Box
                 marginTop={1}

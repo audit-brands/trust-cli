@@ -102,7 +102,7 @@ export const PRIVACY_MODES: Record<string, PrivacyModeConfig> = {
       'Strict resource isolation',
     ],
   },
-  
+
   moderate: {
     name: 'moderate',
     description: 'Balanced privacy and functionality',
@@ -139,7 +139,7 @@ export const PRIVACY_MODES: Record<string, PrivacyModeConfig> = {
       'Balanced security and usability',
     ],
   },
-  
+
   open: {
     name: 'open',
     description: 'Maximum functionality for development and testing',
@@ -181,11 +181,18 @@ export const PRIVACY_MODES: Record<string, PrivacyModeConfig> = {
  * Privacy file system constants
  */
 const PRIVACY_CONFIG_DIR = path.join(os.homedir(), '.trustcli', 'privacy');
-const PRIVACY_CONFIG_FILE = path.join(PRIVACY_CONFIG_DIR, 'privacy-config.json');
+const PRIVACY_CONFIG_FILE = path.join(
+  PRIVACY_CONFIG_DIR,
+  'privacy-config.json',
+);
 const AUDIT_LOGS_DIR = path.join(PRIVACY_CONFIG_DIR, 'audit-logs');
 const CURRENT_AUDIT_LOG = path.join(AUDIT_LOGS_DIR, 'current.log');
 const ENCRYPTED_DATA_DIR = path.join(PRIVACY_CONFIG_DIR, 'encrypted');
-const ENCRYPTION_KEY_FILE = path.join(PRIVACY_CONFIG_DIR, 'keys', 'privacy.key');
+const ENCRYPTION_KEY_FILE = path.join(
+  PRIVACY_CONFIG_DIR,
+  'keys',
+  'privacy.key',
+);
 const BACKUPS_DIR = path.join(PRIVACY_CONFIG_DIR, 'backups');
 
 /**
@@ -213,8 +220,8 @@ export class PrivacyManager {
     } else {
       // Fallback for test environments or older Node versions
       return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-        const r = Math.random() * 16 | 0;
-        const v = c === 'x' ? r : (r & 0x3 | 0x8);
+        const r = (Math.random() * 16) | 0;
+        const v = c === 'x' ? r : (r & 0x3) | 0x8;
         return v.toString(16);
       });
     }
@@ -223,14 +230,26 @@ export class PrivacyManager {
   private createMockConfig(): TrustConfiguration {
     return {
       getPrivacyMode: () => 'moderate',
-      setPrivacyMode: (mode: string) => { /* mock implementation */ },
+      setPrivacyMode: (mode: string) => {
+        /* mock implementation */
+      },
       isAuditLoggingEnabled: () => true,
-      setAuditLogging: (enabled: boolean) => { /* mock implementation */ },
+      setAuditLogging: (enabled: boolean) => {
+        /* mock implementation */
+      },
       isModelVerificationEnabled: () => true,
-      setModelVerification: (enabled: boolean) => { /* mock implementation */ },
-      setTransparencySettings: (settings: any) => { /* mock implementation */ },
-      setInferenceSettings: (settings: any) => { /* mock implementation */ },
-      save: async () => { /* mock implementation */ },
+      setModelVerification: (enabled: boolean) => {
+        /* mock implementation */
+      },
+      setTransparencySettings: (settings: any) => {
+        /* mock implementation */
+      },
+      setInferenceSettings: (settings: any) => {
+        /* mock implementation */
+      },
+      save: async () => {
+        /* mock implementation */
+      },
     } as any;
   }
 
@@ -244,7 +263,7 @@ export class PrivacyManager {
       allowCloudSync: false, // Default is false for moderate mode
       auditLogging: true,
       lastUpdated: new Date().toISOString(),
-      version: '1.0.0'
+      version: '1.0.0',
     };
   }
 
@@ -255,28 +274,29 @@ export class PrivacyManager {
     try {
       // Create directory structure
       await this.ensureDirectoryStructure();
-      
+
       // Load existing configuration or create default
       await this.loadPrivacyConfiguration();
-      
+
       // Initialize encryption key
       await this.initializeEncryptionKey();
-      
+
       // Perform cleanup of old data
       await this.performDataRetentionCleanup();
-      
+
       this.initialized = true;
-      
+
       // Log initialization
       await this.logAuditEntry({
         operation: 'privacy_manager_initialized',
         dataType: 'system',
         sanitized: false,
-        details: { mode: this.currentMode.name, sessionId: this.sessionId }
+        details: { mode: this.currentMode.name, sessionId: this.sessionId },
       });
-      
     } catch (error) {
-      throw new Error(`Failed to initialize privacy manager: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `Failed to initialize privacy manager: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
   }
 
@@ -292,7 +312,7 @@ export class PrivacyManager {
       BACKUPS_DIR,
       path.join(AUDIT_LOGS_DIR, 'archived'),
       path.join(ENCRYPTED_DATA_DIR, 'sensitive-data'),
-      path.join(ENCRYPTED_DATA_DIR, 'temp')
+      path.join(ENCRYPTED_DATA_DIR, 'temp'),
     ];
 
     for (const dir of directories) {
@@ -310,7 +330,7 @@ export class PrivacyManager {
       await fs.access(PRIVACY_CONFIG_FILE);
       const configData = await fs.readFile(PRIVACY_CONFIG_FILE, 'utf-8');
       const loadedConfig = JSON.parse(configData) as PrivacyConfigFile;
-      
+
       // Validate configuration
       if (this.validatePrivacyConfig(loadedConfig)) {
         this.privacyConfig = loadedConfig;
@@ -329,13 +349,13 @@ export class PrivacyManager {
    */
   private async savePrivacyConfiguration(): Promise<void> {
     this.privacyConfig.lastUpdated = new Date().toISOString();
-    
+
     // Create backup of existing configuration
     await this.createConfigurationBackup();
-    
+
     const configData = JSON.stringify(this.privacyConfig, null, 2);
     await fs.writeFile(PRIVACY_CONFIG_FILE, configData, 'utf-8');
-    
+
     // Set secure permissions (600 for files)
     await fs.chmod(PRIVACY_CONFIG_FILE, 0o600);
   }
@@ -343,7 +363,7 @@ export class PrivacyManager {
   /**
    * Initialize encryption key
    */
-   private async initializeEncryptionKey(): Promise<void> {
+  private async initializeEncryptionKey(): Promise<void> {
     try {
       await fs.access(ENCRYPTION_KEY_FILE);
       const keyData = await fs.readFile(ENCRYPTION_KEY_FILE);
@@ -376,7 +396,10 @@ export class PrivacyManager {
     try {
       await fs.access(PRIVACY_CONFIG_FILE);
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-      const backupPath = path.join(BACKUPS_DIR, `privacy-config-${timestamp}.json`);
+      const backupPath = path.join(
+        BACKUPS_DIR,
+        `privacy-config-${timestamp}.json`,
+      );
       await fs.copyFile(PRIVACY_CONFIG_FILE, backupPath);
       await fs.chmod(backupPath, 0o600);
     } catch (error) {
@@ -403,7 +426,6 @@ export class PrivacyManager {
     );
   }
 
-
   /**
    * Get privacy settings
    */
@@ -417,7 +439,6 @@ export class PrivacyManager {
     };
   }
 
-
   /**
    * Store original data in encrypted form for compliance
    */
@@ -429,31 +450,35 @@ export class PrivacyManager {
     try {
       const timestamp = Date.now();
       const filename = `original-${timestamp}-${crypto.randomBytes(4).toString('hex')}.enc`;
-      const filepath = path.join(ENCRYPTED_DATA_DIR, 'sensitive-data', filename);
-      
+      const filepath = path.join(
+        ENCRYPTED_DATA_DIR,
+        'sensitive-data',
+        filename,
+      );
+
       const dataString = JSON.stringify(data);
       const encryptedData = await this.encryptData(dataString);
-      
+
       await fs.writeFile(filepath, encryptedData, 'utf-8');
       await fs.chmod(filepath, 0o600);
-      
+
       await this.logAuditEntry({
         operation: 'original_data_stored',
         dataType: 'encrypted',
         sanitized: false,
-        details: { filename, dataLength: dataString.length }
+        details: { filename, dataLength: dataString.length },
       });
     } catch (error) {
       console.warn('Failed to store original data:', error);
     }
   }
 
-
-
   /**
    * Log audit entry
    */
-  private async logAuditEntry(entry: Omit<AuditLogEntry, 'timestamp' | 'sessionId' | 'privacyMode'>): Promise<void> {
+  private async logAuditEntry(
+    entry: Omit<AuditLogEntry, 'timestamp' | 'sessionId' | 'privacyMode'>,
+  ): Promise<void> {
     if (!this.privacyConfig.auditLogging) {
       return;
     }
@@ -462,29 +487,35 @@ export class PrivacyManager {
       timestamp: new Date().toISOString(),
       sessionId: this.sessionId,
       privacyMode: this.currentMode.name,
-      ...entry
+      ...entry,
     };
 
     let logLine = JSON.stringify(auditEntry) + '\n';
-    
+
     // Encrypt audit logs in strict mode
-    if (this.currentMode.name === 'strict' && this.privacyConfig.encryptStorage) {
+    if (
+      this.currentMode.name === 'strict' &&
+      this.privacyConfig.encryptStorage
+    ) {
       try {
         // Don't log encryption of audit logs to prevent infinite loop
         if (entry.operation !== 'audit_log_encrypted') {
-          const encryptedEntry = await this.encryptData(JSON.stringify(auditEntry));
-          logLine = JSON.stringify({
-            encrypted: true,
-            data: encryptedEntry,
-            timestamp: auditEntry.timestamp
-          }) + '\n';
+          const encryptedEntry = await this.encryptData(
+            JSON.stringify(auditEntry),
+          );
+          logLine =
+            JSON.stringify({
+              encrypted: true,
+              data: encryptedEntry,
+              timestamp: auditEntry.timestamp,
+            }) + '\n';
         }
       } catch (encryptError) {
         // Fall back to unencrypted if encryption fails
         console.warn('Failed to encrypt audit log entry:', encryptError);
       }
     }
-    
+
     try {
       await fs.appendFile(CURRENT_AUDIT_LOG, logLine, 'utf-8');
       await fs.chmod(CURRENT_AUDIT_LOG, 0o600);
@@ -507,7 +538,10 @@ export class PrivacyManager {
     const stringData = String(data);
 
     // In open mode, don't encrypt data
-    if (this.currentMode.name === 'open' || !this.privacyConfig.encryptStorage) {
+    if (
+      this.currentMode.name === 'open' ||
+      !this.privacyConfig.encryptStorage
+    ) {
       return stringData;
     }
 
@@ -521,38 +555,55 @@ export class PrivacyManager {
         // Fallback to simple base64 for test environments
         const result = Buffer.from(stringData).toString('base64');
         // Don't log encryption of audit logs to prevent infinite loop
-        if (!stringData.includes('"operation"') || !stringData.includes('"privacyMode"')) {
+        if (
+          !stringData.includes('"operation"') ||
+          !stringData.includes('"privacyMode"')
+        ) {
           await this.logAuditEntry({
             operation: 'data_encrypted',
             dataType: 'sensitive',
             sanitized: true,
-            details: { dataLength: stringData.length, method: 'base64-fallback' }
+            details: {
+              dataLength: stringData.length,
+              method: 'base64-fallback',
+            },
           });
         }
         return result;
       }
 
       const iv = crypto.randomBytes(16);
-      const cipher = crypto.createCipheriv('aes-256-gcm', this.encryptionKey, iv);
-      
+      const cipher = crypto.createCipheriv(
+        'aes-256-gcm',
+        this.encryptionKey,
+        iv,
+      );
+
       let encrypted = cipher.update(stringData, 'utf8', 'hex');
       encrypted += cipher.final('hex');
-      
+
       const authTag = cipher.getAuthTag();
-      
+
       // Combine IV, auth tag, and encrypted data
-      const result = Buffer.concat([iv, authTag, Buffer.from(encrypted, 'hex')]).toString('base64');
-      
+      const result = Buffer.concat([
+        iv,
+        authTag,
+        Buffer.from(encrypted, 'hex'),
+      ]).toString('base64');
+
       // Don't log encryption of audit logs to prevent infinite loop
-      if (!stringData.includes('"operation"') || !stringData.includes('"privacyMode"')) {
+      if (
+        !stringData.includes('"operation"') ||
+        !stringData.includes('"privacyMode"')
+      ) {
         await this.logAuditEntry({
           operation: 'data_encrypted',
           dataType: 'sensitive',
           sanitized: true,
-          details: { dataLength: stringData.length, method: 'aes-256-gcm' }
+          details: { dataLength: stringData.length, method: 'aes-256-gcm' },
         });
       }
-      
+
       return result;
     } catch (error) {
       // Fallback to base64 if encryption fails
@@ -561,7 +612,11 @@ export class PrivacyManager {
         operation: 'data_encrypted',
         dataType: 'sensitive',
         sanitized: true,
-        details: { dataLength: stringData.length, method: 'base64-fallback', error: error instanceof Error ? error.message : String(error) }
+        details: {
+          dataLength: stringData.length,
+          method: 'base64-fallback',
+          error: error instanceof Error ? error.message : String(error),
+        },
       });
       return result;
     }
@@ -584,7 +639,7 @@ export class PrivacyManager {
           operation: 'data_decrypted',
           dataType: 'sensitive',
           sanitized: false,
-          details: { dataLength: result.length, method: 'base64-fallback' }
+          details: { dataLength: result.length, method: 'base64-fallback' },
         });
         return result;
       }
@@ -593,20 +648,24 @@ export class PrivacyManager {
       const iv = combined.subarray(0, 16);
       const authTag = combined.subarray(16, 32);
       const encrypted = combined.subarray(32);
-      
-      const decipher = crypto.createDecipheriv('aes-256-gcm', this.encryptionKey, iv);
+
+      const decipher = crypto.createDecipheriv(
+        'aes-256-gcm',
+        this.encryptionKey,
+        iv,
+      );
       decipher.setAuthTag(authTag);
-      
+
       let decrypted = decipher.update(encrypted, undefined, 'utf8');
       decrypted += decipher.final('utf8');
-      
+
       await this.logAuditEntry({
         operation: 'data_decrypted',
         dataType: 'sensitive',
         sanitized: false,
-        details: { dataLength: decrypted.length, method: 'aes-256-gcm' }
+        details: { dataLength: decrypted.length, method: 'aes-256-gcm' },
       });
-      
+
       return decrypted;
     } catch (error) {
       // Try base64 fallback
@@ -616,7 +675,7 @@ export class PrivacyManager {
           operation: 'data_decrypted',
           dataType: 'sensitive',
           sanitized: false,
-          details: { dataLength: result.length, method: 'base64-fallback' }
+          details: { dataLength: result.length, method: 'base64-fallback' },
         });
         return result;
       } catch (fallbackError) {
@@ -624,7 +683,9 @@ export class PrivacyManager {
           operation: 'data_decryption_failed',
           dataType: 'sensitive',
           sanitized: false,
-          details: { error: error instanceof Error ? error.message : String(error) }
+          details: {
+            error: error instanceof Error ? error.message : String(error),
+          },
         });
         throw new Error('Failed to decrypt data');
       }
@@ -635,7 +696,6 @@ export class PrivacyManager {
    * Set data retention period
    */
 
-
   /**
    * Perform data retention cleanup
    */
@@ -644,22 +704,21 @@ export class PrivacyManager {
       auditLogs: this.privacyConfig.dataRetention,
       encryptedData: this.privacyConfig.dataRetention,
       tempFiles: 24, // 24 hours for temp files
-      sanitizedData: this.privacyConfig.dataRetention
+      sanitizedData: this.privacyConfig.dataRetention,
     };
 
     try {
       // Cleanup old audit logs
       await this.cleanupOldAuditLogs(policy.auditLogs);
-      
+
       // Cleanup old encrypted data
       await this.cleanupOldEncryptedData(policy.encryptedData);
-      
+
       // Cleanup temporary files
       await this.cleanupTempFiles(policy.tempFiles);
-      
+
       // Cleanup old backups (keep only last 10)
       await this.cleanupOldBackups();
-      
     } catch (error) {
       console.warn('Data retention cleanup encountered errors:', error);
     }
@@ -680,7 +739,7 @@ export class PrivacyManager {
       for (const file of files) {
         const filePath = path.join(archivedLogsDir, file);
         const stats = await fs.stat(filePath);
-        
+
         if (stats.mtime < cutoffDate) {
           await this.secureDelete(filePath);
           deletedCount++;
@@ -692,7 +751,7 @@ export class PrivacyManager {
           operation: 'audit_logs_cleaned',
           dataType: 'system',
           sanitized: false,
-          details: { deletedFiles: deletedCount, retentionDays }
+          details: { deletedFiles: deletedCount, retentionDays },
         });
       }
     } catch (error) {
@@ -715,7 +774,7 @@ export class PrivacyManager {
       for (const file of files) {
         const filePath = path.join(sensitiveDataDir, file);
         const stats = await fs.stat(filePath);
-        
+
         if (stats.mtime < cutoffDate) {
           await this.secureDelete(filePath);
           deletedCount++;
@@ -727,7 +786,7 @@ export class PrivacyManager {
           operation: 'encrypted_data_cleaned',
           dataType: 'system',
           sanitized: false,
-          details: { deletedFiles: deletedCount, retentionDays }
+          details: { deletedFiles: deletedCount, retentionDays },
         });
       }
     } catch (error) {
@@ -750,7 +809,7 @@ export class PrivacyManager {
       for (const file of files) {
         const filePath = path.join(tempDir, file);
         const stats = await fs.stat(filePath);
-        
+
         if (stats.mtime < cutoffDate) {
           await this.secureDelete(filePath);
           deletedCount++;
@@ -762,7 +821,7 @@ export class PrivacyManager {
           operation: 'temp_files_cleaned',
           dataType: 'system',
           sanitized: false,
-          details: { deletedFiles: deletedCount, retentionHours }
+          details: { deletedFiles: deletedCount, retentionHours },
         });
       }
     } catch (error) {
@@ -777,11 +836,11 @@ export class PrivacyManager {
     try {
       const files = await fs.readdir(BACKUPS_DIR);
       const backupFiles = files
-        .filter(file => file.startsWith('privacy-config-'))
-        .map(file => ({
+        .filter((file) => file.startsWith('privacy-config-'))
+        .map((file) => ({
           name: file,
           path: path.join(BACKUPS_DIR, file),
-          mtime: 0
+          mtime: 0,
         }));
 
       // Get modification times
@@ -795,7 +854,7 @@ export class PrivacyManager {
 
       // Keep only the latest 10 backups
       const filesToDelete = backupFiles.slice(10);
-      
+
       for (const backup of filesToDelete) {
         await this.secureDelete(backup.path);
       }
@@ -805,7 +864,7 @@ export class PrivacyManager {
           operation: 'old_backups_cleaned',
           dataType: 'system',
           sanitized: false,
-          details: { deletedBackups: filesToDelete.length }
+          details: { deletedBackups: filesToDelete.length },
         });
       }
     } catch (error) {
@@ -851,8 +910,13 @@ export class PrivacyManager {
       settings: this.getPrivacySettings(),
       dataRetentionDays: this.privacyConfig.dataRetention,
       encryptionEnabled: this.privacyConfig.encryptStorage,
-      dataTypes: ['user_inputs', 'model_responses', 'system_logs', 'performance_metrics'],
-      recommendations: this.getSecurityRecommendations()
+      dataTypes: [
+        'user_inputs',
+        'model_responses',
+        'system_logs',
+        'performance_metrics',
+      ],
+      recommendations: this.getSecurityRecommendations(),
     };
   }
 
@@ -866,21 +930,21 @@ export class PrivacyManager {
           'Privacy mode is set to maximum security',
           'All external connections are disabled',
           'Data encryption is enabled',
-          'Consider regular security audits'
+          'Consider regular security audits',
         ];
       case 'moderate':
         return [
           'Consider enabling stricter privacy mode for sensitive data',
           'Review data retention policies regularly',
           'Monitor external model download sources',
-          'Enable additional audit logging if needed'
+          'Enable additional audit logging if needed',
         ];
       case 'open':
         return [
           'Consider switching to moderate or strict mode for production',
           'Enable data encryption for sensitive information',
           'Review sharing and telemetry settings',
-          'Implement regular security monitoring'
+          'Implement regular security monitoring',
         ];
       default:
         return ['Review current privacy configuration'];
@@ -899,16 +963,19 @@ export class PrivacyManager {
    */
   scheduleRetentionCleanup(intervalHours: number = 24): NodeJS.Timer {
     // Run cleanup immediately
-    this.performDataRetentionCleanup().catch(error => {
+    this.performDataRetentionCleanup().catch((error) => {
       console.warn('Scheduled retention cleanup failed:', error);
     });
 
     // Schedule periodic cleanup
-    return setInterval(() => {
-      this.performDataRetentionCleanup().catch(error => {
-        console.warn('Scheduled retention cleanup failed:', error);
-      });
-    }, intervalHours * 60 * 60 * 1000);
+    return setInterval(
+      () => {
+        this.performDataRetentionCleanup().catch((error) => {
+          console.warn('Scheduled retention cleanup failed:', error);
+        });
+      },
+      intervalHours * 60 * 60 * 1000,
+    );
   }
 
   /**
@@ -930,7 +997,7 @@ export class PrivacyManager {
         const filePath = path.join(encryptedDataDir, file);
         const stats = await fs.stat(filePath);
         totalSize += stats.size;
-        
+
         if (!lastModified || stats.mtime > lastModified) {
           lastModified = stats.mtime;
         }
@@ -938,20 +1005,22 @@ export class PrivacyManager {
 
       // Get key age
       const keyStats = await fs.stat(ENCRYPTION_KEY_FILE);
-      const keyAgeDays = Math.floor((Date.now() - keyStats.mtime.getTime()) / (1000 * 60 * 60 * 24));
+      const keyAgeDays = Math.floor(
+        (Date.now() - keyStats.mtime.getTime()) / (1000 * 60 * 60 * 24),
+      );
 
       return {
         totalEncryptedFiles: files.length,
         totalEncryptedSize: totalSize,
         encryptionKeyAge: keyAgeDays,
-        lastEncryption: lastModified?.toISOString() || null
+        lastEncryption: lastModified?.toISOString() || null,
       };
     } catch (error) {
       return {
         totalEncryptedFiles: 0,
         totalEncryptedSize: 0,
         encryptionKeyAge: 0,
-        lastEncryption: null
+        lastEncryption: null,
       };
     }
   }
@@ -972,7 +1041,9 @@ export class PrivacyManager {
         this.config.setAuditLogging(newMode.settings.privacy.auditLogging);
       }
       if (newMode.settings.privacy.modelVerification !== undefined) {
-        this.config.setModelVerification(newMode.settings.privacy.modelVerification);
+        this.config.setModelVerification(
+          newMode.settings.privacy.modelVerification,
+        );
       }
     }
 
@@ -986,7 +1057,7 @@ export class PrivacyManager {
 
     // Save the configuration
     await this.config.save();
-    
+
     // Update current mode
     this.currentMode = newMode;
   }
@@ -1027,14 +1098,18 @@ export class PrivacyManager {
   /**
    * Validate model download request
    */
-  validateModelDownload(modelName: string): { allowed: boolean; reason?: string } {
+  validateModelDownload(modelName: string): {
+    allowed: boolean;
+    reason?: string;
+  } {
     if (this.currentMode.name === 'strict') {
       return {
         allowed: false,
-        reason: 'Model downloads disabled in strict privacy mode. Switch to moderate or open mode.',
+        reason:
+          'Model downloads disabled in strict privacy mode. Switch to moderate or open mode.',
       };
     }
-    
+
     return { allowed: true };
   }
 
@@ -1042,16 +1117,22 @@ export class PrivacyManager {
    * Validate model loading request
    */
   validateModelLoad(modelPath: string): { allowed: boolean; reason?: string } {
-    if (this.currentMode.name === 'strict' && this.config.isModelVerificationEnabled()) {
+    if (
+      this.currentMode.name === 'strict' &&
+      this.config.isModelVerificationEnabled()
+    ) {
       // In strict mode, ensure model is verified
       // This would integrate with the model verification system
       return { allowed: true }; // Assume verification happens elsewhere
     }
-    
+
     return { allowed: true };
   }
 
-  private checkStrictModeOperation(operation: string): { allowed: boolean; reason?: string } {
+  private checkStrictModeOperation(operation: string): {
+    allowed: boolean;
+    reason?: string;
+  } {
     const restrictedOperations = [
       'external_download',
       'network_request',
@@ -1070,7 +1151,10 @@ export class PrivacyManager {
     return { allowed: true };
   }
 
-  private checkModerateModeOperation(operation: string): { allowed: boolean; reason?: string } {
+  private checkModerateModeOperation(operation: string): {
+    allowed: boolean;
+    reason?: string;
+  } {
     const restrictedOperations = [
       'unverified_model_load', // Still require verification in moderate mode
     ];
@@ -1093,14 +1177,14 @@ export class PrivacyManager {
       privacyConfig: this.privacyConfig,
       mode: this.currentMode.name,
       exportedAt: new Date().toISOString(),
-      version: '1.0.0'
+      version: '1.0.0',
     };
 
     await this.logAuditEntry({
       operation: 'privacy_config_exported',
       dataType: 'configuration',
       sanitized: false,
-      details: { exportedAt: exportData.exportedAt }
+      details: { exportedAt: exportData.exportedAt },
     });
 
     return JSON.stringify(exportData, null, 2);
@@ -1112,8 +1196,11 @@ export class PrivacyManager {
   async importPrivacyConfig(configData: string): Promise<void> {
     try {
       const importData = JSON.parse(configData);
-      
-      if (!importData.privacyConfig || !this.validatePrivacyConfig(importData.privacyConfig)) {
+
+      if (
+        !importData.privacyConfig ||
+        !this.validatePrivacyConfig(importData.privacyConfig)
+      ) {
         throw new Error('Invalid privacy configuration format');
       }
 
@@ -1123,7 +1210,7 @@ export class PrivacyManager {
       // Import the configuration
       this.privacyConfig = importData.privacyConfig;
       this.currentMode = PRIVACY_MODES[this.privacyConfig.mode];
-      
+
       // Save the imported configuration
       await this.savePrivacyConfiguration();
 
@@ -1131,14 +1218,15 @@ export class PrivacyManager {
         operation: 'privacy_config_imported',
         dataType: 'configuration',
         sanitized: false,
-        details: { 
+        details: {
           importedMode: this.privacyConfig.mode,
-          importedAt: new Date().toISOString()
-        }
+          importedAt: new Date().toISOString(),
+        },
       });
-
     } catch (error) {
-      throw new Error(`Failed to import privacy configuration: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `Failed to import privacy configuration: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
   }
 
@@ -1148,12 +1236,15 @@ export class PrivacyManager {
   async getAuditLogs(limit: number = 100): Promise<AuditLogEntry[]> {
     try {
       const logData = await fs.readFile(CURRENT_AUDIT_LOG, 'utf-8');
-      const lines = logData.trim().split('\n').filter(line => line.length > 0);
-      
+      const lines = logData
+        .trim()
+        .split('\n')
+        .filter((line) => line.length > 0);
+
       // Parse the last 'limit' entries
       const entries: AuditLogEntry[] = [];
       const startIndex = Math.max(0, lines.length - limit);
-      
+
       for (let i = startIndex; i < lines.length; i++) {
         try {
           const entry = JSON.parse(lines[i]) as AuditLogEntry;
@@ -1177,20 +1268,23 @@ export class PrivacyManager {
   async rotateAuditLog(): Promise<void> {
     try {
       await fs.access(CURRENT_AUDIT_LOG);
-      
+
       const timestamp = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-      const archivedPath = path.join(AUDIT_LOGS_DIR, 'archived', `audit-${timestamp}.log`);
-      
+      const archivedPath = path.join(
+        AUDIT_LOGS_DIR,
+        'archived',
+        `audit-${timestamp}.log`,
+      );
+
       await fs.rename(CURRENT_AUDIT_LOG, archivedPath);
       await fs.chmod(archivedPath, 0o600);
-      
+
       await this.logAuditEntry({
         operation: 'audit_log_rotated',
         dataType: 'system',
         sanitized: false,
-        details: { archivedFile: `audit-${timestamp}.log` }
+        details: { archivedFile: `audit-${timestamp}.log` },
       });
-      
     } catch (error) {
       // Current log doesn't exist, which is fine
     }
@@ -1215,7 +1309,7 @@ export class PrivacyManager {
       encryptionEnabled: this.privacyConfig.encryptStorage,
       lastConfigUpdate: this.privacyConfig.lastUpdated,
       sessionId: this.sessionId,
-      initialized: this.initialized
+      initialized: this.initialized,
     };
   }
 
@@ -1225,7 +1319,7 @@ export class PrivacyManager {
   async setPrivacyMode(mode: 'strict' | 'moderate' | 'open'): Promise<void> {
     this.privacyConfig.mode = mode;
     this.currentMode = PRIVACY_MODES[mode];
-    
+
     // Update privacy config based on mode
     switch (mode) {
       case 'strict':
@@ -1250,7 +1344,7 @@ export class PrivacyManager {
         this.privacyConfig.dataRetention = 90; // Longer retention in open mode
         break;
     }
-    
+
     if (this.initialized) {
       await this.savePrivacyConfiguration();
     }
@@ -1291,9 +1385,9 @@ export class PrivacyManager {
     if (days <= 0) {
       throw new Error('Data retention period must be positive');
     }
-    
+
     this.privacyConfig.dataRetention = days;
-    
+
     if (this.initialized) {
       await this.savePrivacyConfiguration();
     }
@@ -1307,7 +1401,10 @@ export class PrivacyManager {
       return data; // No sanitization in open mode
     }
 
-    return this.recursiveSanitize(data, this.currentMode.name === 'strict') as T;
+    return this.recursiveSanitize(
+      data,
+      this.currentMode.name === 'strict',
+    ) as T;
   }
 
   /**
@@ -1323,7 +1420,7 @@ export class PrivacyManager {
     }
 
     if (Array.isArray(obj)) {
-      return obj.map(item => this.recursiveSanitize(item, strict));
+      return obj.map((item) => this.recursiveSanitize(item, strict));
     }
 
     if (typeof obj === 'object') {
@@ -1353,8 +1450,10 @@ export class PrivacyManager {
     ];
 
     // Check if the string contains sensitive information
-    const isSensitive = sensitivePatterns.some(pattern => pattern.test(value));
-    
+    const isSensitive = sensitivePatterns.some((pattern) =>
+      pattern.test(value),
+    );
+
     if (isSensitive) {
       const maskedLength = Math.min(8, Math.floor(value.length / 2));
       const mask = '[REDACTED]';
@@ -1367,7 +1466,10 @@ export class PrivacyManager {
   /**
    * Generate detailed audit report with analytics
    */
-  async generateDetailedAuditReport(startDate?: Date, endDate?: Date): Promise<{
+  async generateDetailedAuditReport(
+    startDate?: Date,
+    endDate?: Date,
+  ): Promise<{
     metadata: {
       reportGeneratedAt: string;
       sessionId: string;
@@ -1390,7 +1492,7 @@ export class PrivacyManager {
   }> {
     const logs = await this.readAuditLogs(startDate, endDate);
     const analytics = this.analyzeAuditLogs(logs);
-    
+
     return {
       metadata: {
         reportGeneratedAt: new Date().toISOString(),
@@ -1398,67 +1500,76 @@ export class PrivacyManager {
         privacyMode: this.currentMode.name,
         period: {
           startDate: startDate?.toISOString() || 'All time',
-          endDate: endDate?.toISOString() || 'Present'
+          endDate: endDate?.toISOString() || 'Present',
         },
-        totalEntries: logs.length
+        totalEntries: logs.length,
       },
       summary: {
         operationCounts: analytics.operationCounts,
         dataTypeBreakdown: analytics.dataTypeBreakdown,
         sanitizationStats: analytics.sanitizationStats,
-        privacyModeHistory: analytics.privacyModeHistory
+        privacyModeHistory: analytics.privacyModeHistory,
       },
       compliance: {
         dataRetentionCompliance: this.checkDataRetentionCompliance(),
         encryptionStatus: this.privacyConfig.encryptStorage,
         auditLoggingEnabled: this.privacyConfig.auditLogging,
-        lastCleanup: analytics.lastCleanup
+        lastCleanup: analytics.lastCleanup,
       },
       security: {
         sensitiviDataExposures: analytics.sensitiveDataExposures,
         encryptionEvents: analytics.encryptionEvents,
-        failedOperations: analytics.failedOperations
+        failedOperations: analytics.failedOperations,
       },
       recommendations: this.getAuditRecommendations(analytics),
-      rawLogs: logs.slice(0, 100) // Include first 100 entries for debugging
+      rawLogs: logs.slice(0, 100), // Include first 100 entries for debugging
     };
   }
 
   /**
    * Read audit logs from file system
    */
-  private async readAuditLogs(startDate?: Date, endDate?: Date): Promise<AuditLogEntry[]> {
+  private async readAuditLogs(
+    startDate?: Date,
+    endDate?: Date,
+  ): Promise<AuditLogEntry[]> {
     const logs: AuditLogEntry[] = [];
-    
+
     try {
       // Read current audit log
       const currentLogContent = await fs.readFile(CURRENT_AUDIT_LOG, 'utf-8');
       const currentEntries = await Promise.all(
-        currentLogContent.split('\n')
-          .filter(line => line.trim())
-          .map(async line => {
+        currentLogContent
+          .split('\n')
+          .filter((line) => line.trim())
+          .map(async (line) => {
             try {
               const parsed = JSON.parse(line);
-              
+
               // Check if the entry is encrypted
               if (parsed.encrypted && parsed.data) {
                 try {
                   const decryptedData = await this.decryptData(parsed.data);
                   return JSON.parse(decryptedData) as AuditLogEntry;
                 } catch (decryptError) {
-                  console.warn('Failed to decrypt audit log entry:', decryptError);
+                  console.warn(
+                    'Failed to decrypt audit log entry:',
+                    decryptError,
+                  );
                   return null;
                 }
               }
-              
+
               return parsed as AuditLogEntry;
             } catch {
               return null;
             }
-          })
+          }),
       );
-      
-      const validEntries = currentEntries.filter(entry => entry !== null) as AuditLogEntry[];
+
+      const validEntries = currentEntries.filter(
+        (entry) => entry !== null,
+      ) as AuditLogEntry[];
 
       logs.push(...validEntries);
 
@@ -1471,31 +1582,39 @@ export class PrivacyManager {
             const filePath = path.join(archivedLogsDir, file);
             const content = await fs.readFile(filePath, 'utf-8');
             const entries = await Promise.all(
-              content.split('\n')
-                .filter(line => line.trim())
-                .map(async line => {
+              content
+                .split('\n')
+                .filter((line) => line.trim())
+                .map(async (line) => {
                   try {
                     const parsed = JSON.parse(line);
-                    
+
                     // Check if the entry is encrypted
                     if (parsed.encrypted && parsed.data) {
                       try {
-                        const decryptedData = await this.decryptData(parsed.data);
+                        const decryptedData = await this.decryptData(
+                          parsed.data,
+                        );
                         return JSON.parse(decryptedData) as AuditLogEntry;
                       } catch (decryptError) {
-                        console.warn('Failed to decrypt archived audit log entry:', decryptError);
+                        console.warn(
+                          'Failed to decrypt archived audit log entry:',
+                          decryptError,
+                        );
                         return null;
                       }
                     }
-                    
+
                     return parsed as AuditLogEntry;
                   } catch {
                     return null;
                   }
-                })
+                }),
             );
-            
-            const validArchivedEntries = entries.filter(entry => entry !== null) as AuditLogEntry[];
+
+            const validArchivedEntries = entries.filter(
+              (entry) => entry !== null,
+            ) as AuditLogEntry[];
             logs.push(...validArchivedEntries);
           }
         }
@@ -1506,7 +1625,7 @@ export class PrivacyManager {
       // Filter by date range if specified
       let filteredLogs = logs;
       if (startDate || endDate) {
-        filteredLogs = logs.filter(entry => {
+        filteredLogs = logs.filter((entry) => {
           const entryDate = new Date(entry.timestamp);
           if (startDate && entryDate < startDate) return false;
           if (endDate && entryDate > endDate) return false;
@@ -1514,7 +1633,10 @@ export class PrivacyManager {
         });
       }
 
-      return filteredLogs.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+      return filteredLogs.sort(
+        (a, b) =>
+          new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
+      );
     } catch (error) {
       console.warn('Failed to read audit logs:', error);
       return [];
@@ -1550,35 +1672,41 @@ export class PrivacyManager {
 
     for (const entry of logs) {
       // Count operations
-      operationCounts[entry.operation] = (operationCounts[entry.operation] || 0) + 1;
-      
+      operationCounts[entry.operation] =
+        (operationCounts[entry.operation] || 0) + 1;
+
       // Count data types
-      dataTypeBreakdown[entry.dataType] = (dataTypeBreakdown[entry.dataType] || 0) + 1;
-      
+      dataTypeBreakdown[entry.dataType] =
+        (dataTypeBreakdown[entry.dataType] || 0) + 1;
+
       // Track privacy modes
-      privacyModeHistory[entry.privacyMode] = (privacyModeHistory[entry.privacyMode] || 0) + 1;
-      
+      privacyModeHistory[entry.privacyMode] =
+        (privacyModeHistory[entry.privacyMode] || 0) + 1;
+
       // Track sanitization
       if (entry.sanitized) {
         sanitizedCount++;
       }
       totalDataProcessed++;
-      
+
       // Identify sensitive data exposures
       if (entry.operation.includes('sensitive') || entry.details?.error) {
         sensitiveDataExposures.push(entry);
       }
-      
+
       // Track encryption events
-      if (entry.operation.includes('encrypt') || entry.operation.includes('decrypt')) {
+      if (
+        entry.operation.includes('encrypt') ||
+        entry.operation.includes('decrypt')
+      ) {
         encryptionEvents.push(entry);
       }
-      
+
       // Track failed operations
       if (entry.details?.error) {
         failedOperations.push(entry);
       }
-      
+
       // Track cleanup operations
       if (entry.operation.includes('cleanup')) {
         lastCleanup = entry.timestamp;
@@ -1592,12 +1720,15 @@ export class PrivacyManager {
       sanitizationStats: {
         sanitizedCount,
         totalDataProcessed,
-        sanitizationRate: totalDataProcessed > 0 ? (sanitizedCount / totalDataProcessed * 100).toFixed(2) : 0
+        sanitizationRate:
+          totalDataProcessed > 0
+            ? ((sanitizedCount / totalDataProcessed) * 100).toFixed(2)
+            : 0,
       },
       sensitiveDataExposures: sensitiveDataExposures.slice(0, 10), // Last 10 exposures
       encryptionEvents: encryptionEvents.slice(-10), // Last 10 encryption events
       failedOperations: failedOperations.slice(-10), // Last 10 failed operations
-      lastCleanup
+      lastCleanup,
     };
   }
 
@@ -1613,34 +1744,46 @@ export class PrivacyManager {
       policyDays: retentionDays,
       cutoffDate: cutoffDate.toISOString(),
       status: 'compliant', // This would be calculated by checking actual file ages
-      lastEnforced: new Date().toISOString()
+      lastEnforced: new Date().toISOString(),
     };
   }
 
   /**
    * Get audit-based recommendations
    */
-  private getAuditRecommendations(analytics: ReturnType<typeof this.analyzeAuditLogs>): string[] {
+  private getAuditRecommendations(
+    analytics: ReturnType<typeof this.analyzeAuditLogs>,
+  ): string[] {
     const recommendations: string[] = [];
 
     if (analytics.failedOperations.length > 5) {
-      recommendations.push('High number of failed operations detected - review system stability');
+      recommendations.push(
+        'High number of failed operations detected - review system stability',
+      );
     }
 
     if (Number(analytics.sanitizationStats.sanitizationRate) < 50) {
-      recommendations.push('Low sanitization rate - consider enabling stricter privacy mode');
+      recommendations.push(
+        'Low sanitization rate - consider enabling stricter privacy mode',
+      );
     }
 
     if (analytics.sensitiveDataExposures.length > 0) {
-      recommendations.push('Sensitive data exposures detected - review data handling procedures');
+      recommendations.push(
+        'Sensitive data exposures detected - review data handling procedures',
+      );
     }
 
     if (!analytics.lastCleanup) {
-      recommendations.push('No recent cleanup operations - schedule regular data retention cleanup');
+      recommendations.push(
+        'No recent cleanup operations - schedule regular data retention cleanup',
+      );
     }
 
     if (analytics.encryptionEvents.length === 0) {
-      recommendations.push('No encryption activity detected - consider enabling data encryption');
+      recommendations.push(
+        'No encryption activity detected - consider enabling data encryption',
+      );
     }
 
     return recommendations;
@@ -1651,7 +1794,7 @@ export class PrivacyManager {
    */
   async generateComplianceReport(): Promise<Record<string, unknown>> {
     const auditReport = await this.generateDetailedAuditReport();
-    
+
     return {
       complianceFramework: 'Privacy and Data Protection',
       reportDate: new Date().toISOString(),
@@ -1659,45 +1802,63 @@ export class PrivacyManager {
         privacyMode: this.currentMode.name,
         encryptionEnabled: this.privacyConfig.encryptStorage,
         auditLoggingEnabled: this.privacyConfig.auditLogging,
-        dataRetentionPolicy: `${this.privacyConfig.dataRetention} days`
+        dataRetentionPolicy: `${this.privacyConfig.dataRetention} days`,
       },
       dataProcessingActivities: {
         totalOperations: auditReport.metadata.totalEntries,
         dataTypes: Object.keys(auditReport.summary.dataTypeBreakdown),
-        sanitizationRate: auditReport.summary.sanitizationStats.sanitizationRate + '%'
+        sanitizationRate:
+          auditReport.summary.sanitizationStats.sanitizationRate + '%',
       },
       securityMeasures: {
-        encryption: this.privacyConfig.encryptStorage ? 'AES-256-GCM' : 'Disabled',
-        dataMinimization: auditReport.summary.sanitizationStats.sanitizedCount > 0,
+        encryption: this.privacyConfig.encryptStorage
+          ? 'AES-256-GCM'
+          : 'Disabled',
+        dataMinimization:
+          auditReport.summary.sanitizationStats.sanitizedCount > 0,
         auditTrail: this.privacyConfig.auditLogging,
-        accessControls: 'File permissions (600/700)'
+        accessControls: 'File permissions (600/700)',
       },
       incidents: {
         failedOperations: auditReport.security.failedOperations.length,
-        sensitiveDataExposures: auditReport.security.sensitiviDataExposures.length,
-        lastIncidentDate: auditReport.security.failedOperations[0]?.timestamp || 'None'
+        sensitiveDataExposures:
+          auditReport.security.sensitiviDataExposures.length,
+        lastIncidentDate:
+          auditReport.security.failedOperations[0]?.timestamp || 'None',
       },
       recommendations: auditReport.recommendations,
       attestation: {
         certifiedBy: 'Trust CLI Privacy Manager',
         certificationDate: new Date().toISOString(),
-        validityPeriod: '1 year'
-      }
+        validityPeriod: '1 year',
+      },
     };
   }
 
   /**
    * Export audit logs for external analysis
    */
-  async exportAuditLogs(format: 'json' | 'csv' = 'json', startDate?: Date, endDate?: Date): Promise<string> {
+  async exportAuditLogs(
+    format: 'json' | 'csv' = 'json',
+    startDate?: Date,
+    endDate?: Date,
+  ): Promise<string> {
     const logs = await this.readAuditLogs(startDate, endDate);
-    
+
     if (format === 'json') {
       return JSON.stringify(logs, null, 2);
     } else if (format === 'csv') {
-      const headers = ['timestamp', 'sessionId', 'operation', 'privacyMode', 'dataType', 'sanitized', 'details'];
+      const headers = [
+        'timestamp',
+        'sessionId',
+        'operation',
+        'privacyMode',
+        'dataType',
+        'sanitized',
+        'details',
+      ];
       const csvLines = [headers.join(',')];
-      
+
       for (const log of logs) {
         const row = [
           log.timestamp,
@@ -1706,14 +1867,14 @@ export class PrivacyManager {
           log.privacyMode,
           log.dataType,
           log.sanitized.toString(),
-          JSON.stringify(log.details).replace(/"/g, '""')
+          JSON.stringify(log.details).replace(/"/g, '""'),
         ];
         csvLines.push(row.join(','));
       }
-      
+
       return csvLines.join('\n');
     }
-    
+
     return '';
   }
 }
@@ -1727,15 +1888,19 @@ export function getPrivacyManager(config?: TrustConfiguration): PrivacyManager {
   if (!globalPrivacyManager && config) {
     globalPrivacyManager = new PrivacyManager(config);
   }
-  
+
   if (!globalPrivacyManager) {
-    throw new Error('Privacy manager not initialized. Provide a configuration.');
+    throw new Error(
+      'Privacy manager not initialized. Provide a configuration.',
+    );
   }
-  
+
   return globalPrivacyManager;
 }
 
-export function initializePrivacyManager(config: TrustConfiguration): PrivacyManager {
+export function initializePrivacyManager(
+  config: TrustConfiguration,
+): PrivacyManager {
   globalPrivacyManager = new PrivacyManager(config);
   return globalPrivacyManager;
 }

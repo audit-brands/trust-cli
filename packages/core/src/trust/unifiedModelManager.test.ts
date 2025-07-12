@@ -5,7 +5,12 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { UnifiedModelManager, UnifiedModel, TaskType, HardwareConstraints } from './unifiedModelManager.js';
+import {
+  UnifiedModelManager,
+  UnifiedModel,
+  TaskType,
+  HardwareConstraints,
+} from './unifiedModelManager.js';
 import { TrustConfiguration } from '../config/trustConfig.js';
 
 // Mock dependencies
@@ -45,20 +50,24 @@ vi.mock('./modelManager.js', () => ({
 
 vi.mock('./ollamaClient.js', () => ({
   OllamaClient: vi.fn().mockImplementation(() => ({
-    listModels: vi.fn().mockResolvedValue([
-      'qwen2.5:1.5b',
-      'llama3.2:3b',
-      'phi3.5:3.8b-mini-instruct',
-    ]),
+    listModels: vi
+      .fn()
+      .mockResolvedValue([
+        'qwen2.5:1.5b',
+        'llama3.2:3b',
+        'phi3.5:3.8b-mini-instruct',
+      ]),
   })),
 }));
 
 vi.mock('../config/trustConfig.js', () => ({
   TrustConfiguration: vi.fn().mockImplementation(() => ({
     initialize: vi.fn(),
-    isBackendEnabled: vi.fn().mockImplementation((backend: string) => {
-      return ['ollama', 'huggingface'].includes(backend);
-    }),
+    isBackendEnabled: vi
+      .fn()
+      .mockImplementation((backend: string) =>
+        ['ollama', 'huggingface'].includes(backend),
+      ),
   })),
 }));
 
@@ -78,9 +87,9 @@ describe('UnifiedModelManager', () => {
       const models = await manager.discoverAllModels();
 
       expect(models).toHaveLength(5); // 2 HuggingFace + 3 Ollama
-      
+
       // Check HuggingFace models
-      const hfModels = models.filter(m => m.backend === 'huggingface');
+      const hfModels = models.filter((m) => m.backend === 'huggingface');
       expect(hfModels).toHaveLength(2);
       expect(hfModels[0]).toMatchObject({
         name: 'phi-3.5-mini-instruct',
@@ -92,7 +101,7 @@ describe('UnifiedModelManager', () => {
       });
 
       // Check Ollama models
-      const ollamaModels = models.filter(m => m.backend === 'ollama');
+      const ollamaModels = models.filter((m) => m.backend === 'ollama');
       expect(ollamaModels).toHaveLength(3);
       expect(ollamaModels[0]).toMatchObject({
         name: 'qwen2.5:1.5b',
@@ -105,25 +114,25 @@ describe('UnifiedModelManager', () => {
 
     it('should use cached models when cache is valid', async () => {
       await manager.initialize();
-      
+
       // First call
       const models1 = await manager.discoverAllModels();
-      
+
       // Second call should use cache
       const models2 = await manager.discoverAllModels();
-      
+
       expect(models1).toBe(models2); // Same reference, indicating cache usage
     });
 
     it('should force refresh when requested', async () => {
       await manager.initialize();
-      
+
       // First call
       await manager.discoverAllModels();
-      
+
       // Force refresh
       const models = await manager.discoverAllModels(true);
-      
+
       expect(models).toHaveLength(5);
     });
   });
@@ -138,21 +147,25 @@ describe('UnifiedModelManager', () => {
 
     it('should filter by task type', () => {
       const codingModels = manager.filterModels(testModels, 'coding');
-      
+
       // Models with 'phi' or 'code' in name should score high for coding
       expect(codingModels.length).toBeGreaterThan(0);
-      expect(codingModels.some(m => m.name.includes('phi'))).toBe(true);
+      expect(codingModels.some((m) => m.name.includes('phi'))).toBe(true);
     });
 
     it('should filter by hardware constraints - RAM', () => {
       const constraints: HardwareConstraints = {
         availableRAM: 2, // 2GB limit
       };
-      
-      const filteredModels = manager.filterModels(testModels, undefined, constraints);
-      
+
+      const filteredModels = manager.filterModels(
+        testModels,
+        undefined,
+        constraints,
+      );
+
       // Should only include models requiring 2GB or less
-      filteredModels.forEach(model => {
+      filteredModels.forEach((model) => {
         const ramReq = manager['parseRAMRequirement'](model.ramRequirement);
         expect(ramReq).toBeLessThanOrEqual(2);
       });
@@ -162,10 +175,14 @@ describe('UnifiedModelManager', () => {
       const constraints: HardwareConstraints = {
         maxDownloadSize: 2000000000, // 2GB limit
       };
-      
-      const filteredModels = manager.filterModels(testModels, undefined, constraints);
-      
-      filteredModels.forEach(model => {
+
+      const filteredModels = manager.filterModels(
+        testModels,
+        undefined,
+        constraints,
+      );
+
+      filteredModels.forEach((model) => {
         const size = model.metadata?.expectedSize || 0;
         expect(size).toBeLessThanOrEqual(2000000000);
       });
@@ -174,10 +191,10 @@ describe('UnifiedModelManager', () => {
     it('should filter by availability', () => {
       // Mark one model as unavailable
       testModels[0].available = false;
-      
+
       const filteredModels = manager.filterModels(testModels);
-      
-      expect(filteredModels.every(m => m.available)).toBe(true);
+
+      expect(filteredModels.every((m) => m.available)).toBe(true);
       expect(filteredModels.length).toBe(testModels.length - 1);
     });
   });
@@ -192,21 +209,21 @@ describe('UnifiedModelManager', () => {
 
     it('should select model with highest combined score', () => {
       const bestModel = manager.selectBestModel(testModels);
-      
+
       expect(bestModel).toBeTruthy();
       expect(bestModel?.trustScore).toBeGreaterThan(0);
     });
 
     it('should consider task suitability in selection', () => {
       const bestCodingModel = manager.selectBestModel(testModels, 'coding');
-      
+
       expect(bestCodingModel).toBeTruthy();
       expect(bestCodingModel?.taskSuitability?.coding).toBeGreaterThan(6);
     });
 
     it('should return null for empty model list', () => {
       const bestModel = manager.selectBestModel([]);
-      
+
       expect(bestModel).toBeNull();
     });
   });
@@ -215,7 +232,7 @@ describe('UnifiedModelManager', () => {
     it('should group models by backend', async () => {
       await manager.initialize();
       const grouped = await manager.getModelsByBackend();
-      
+
       expect(grouped).toHaveProperty('huggingface');
       expect(grouped).toHaveProperty('ollama');
       expect(grouped.huggingface).toHaveLength(2);
@@ -225,20 +242,32 @@ describe('UnifiedModelManager', () => {
 
   describe('task suitability inference', () => {
     it('should score coding models highly for coding tasks', () => {
-      const suitability = manager['inferTaskSuitability']('phi-3.5-mini-instruct', 'phi', 'coding model');
-      
+      const suitability = manager['inferTaskSuitability'](
+        'phi-3.5-mini-instruct',
+        'phi',
+        'coding model',
+      );
+
       expect(suitability.coding).toBeGreaterThanOrEqual(9);
     });
 
     it('should score reasoning models highly for reasoning tasks', () => {
-      const suitability = manager['inferTaskSuitability']('qwen2.5-reasoning', 'qwen', 'reasoning model');
-      
+      const suitability = manager['inferTaskSuitability'](
+        'qwen2.5-reasoning',
+        'qwen',
+        'reasoning model',
+      );
+
       expect(suitability.reasoning).toBeGreaterThanOrEqual(9);
     });
 
     it('should provide balanced scores for general models', () => {
-      const suitability = manager['inferTaskSuitability']('general-assistant', 'unknown', 'general purpose');
-      
+      const suitability = manager['inferTaskSuitability'](
+        'general-assistant',
+        'unknown',
+        'general purpose',
+      );
+
       expect(suitability.general).toBeGreaterThanOrEqual(7);
     });
   });
@@ -267,9 +296,9 @@ describe('UnifiedModelManager', () => {
     it('should clear cache when requested', async () => {
       await manager.initialize();
       await manager.discoverAllModels();
-      
+
       manager.clearCache();
-      
+
       // Cache should be cleared
       expect(manager['cachedModels']).toHaveLength(0);
       expect(manager['lastCacheUpdate']).toBe(0);

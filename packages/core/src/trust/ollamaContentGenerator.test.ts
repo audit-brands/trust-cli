@@ -28,10 +28,10 @@ describe('OllamaContentGenerator', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    
+
     mockConfig = {} as Config;
     mockToolRegistry = {} as ToolRegistry;
-    
+
     mockOllamaClient = {
       checkConnection: vi.fn().mockResolvedValue(true),
       isModelAvailable: vi.fn().mockResolvedValue(true),
@@ -43,15 +43,15 @@ describe('OllamaContentGenerator', () => {
       setModel: vi.fn(),
       preheatModel: vi.fn().mockResolvedValue(undefined),
     };
-    
+
     mockOllamaToolRegistry = {
       getToolDefinitions: vi.fn().mockReturnValue([]),
       executeTool: vi.fn(),
     };
-    
+
     MockOllamaClient.mockImplementation(() => mockOllamaClient);
     MockOllamaToolRegistry.mockImplementation(() => mockOllamaToolRegistry);
-    
+
     generator = new OllamaContentGenerator(mockConfig, mockToolRegistry);
   });
 
@@ -60,7 +60,9 @@ describe('OllamaContentGenerator', () => {
       await generator.initialize();
 
       expect(mockOllamaClient.checkConnection).toHaveBeenCalled();
-      expect(mockOllamaClient.isModelAvailable).toHaveBeenCalledWith('qwen2.5:1.5b');
+      expect(mockOllamaClient.isModelAvailable).toHaveBeenCalledWith(
+        'qwen2.5:1.5b',
+      );
       expect(mockOllamaClient.createSystemPrompt).toHaveBeenCalled();
     });
 
@@ -68,7 +70,7 @@ describe('OllamaContentGenerator', () => {
       mockOllamaClient.checkConnection.mockResolvedValueOnce(false);
 
       await expect(generator.initialize()).rejects.toThrow(
-        'Ollama is not running. Please start Ollama with: ollama serve'
+        'Ollama is not running. Please start Ollama with: ollama serve',
       );
     });
 
@@ -79,7 +81,7 @@ describe('OllamaContentGenerator', () => {
 
       expect(mockOllamaClient.pullModel).toHaveBeenCalledWith(
         'qwen2.5:1.5b',
-        expect.any(Function)
+        expect.any(Function),
       );
     });
 
@@ -88,7 +90,7 @@ describe('OllamaContentGenerator', () => {
       mockOllamaClient.pullModel.mockResolvedValueOnce(false);
 
       await expect(generator.initialize()).rejects.toThrow(
-        'Failed to pull model qwen2.5:1.5b. Please run: ollama pull qwen2.5:1.5b'
+        'Failed to pull model qwen2.5:1.5b. Please run: ollama pull qwen2.5:1.5b',
       );
     });
   });
@@ -101,10 +103,12 @@ describe('OllamaContentGenerator', () => {
     it('should generate content without tool calls', async () => {
       const request: GenerateContentParameters = {
         model: 'test',
-        contents: [{
-          role: 'user',
-          parts: [{ text: 'Hello, how are you?' }],
-        }],
+        contents: [
+          {
+            role: 'user',
+            parts: [{ text: 'Hello, how are you?' }],
+          },
+        ],
       };
 
       mockOllamaClient.chatCompletion.mockResolvedValueOnce({
@@ -123,20 +127,24 @@ describe('OllamaContentGenerator', () => {
     it('should handle tool calls in generation', async () => {
       const request: GenerateContentParameters = {
         model: 'test',
-        contents: [{
-          role: 'user',
-          parts: [{ text: 'Read the file test.txt' }],
-        }],
+        contents: [
+          {
+            role: 'user',
+            parts: [{ text: 'Read the file test.txt' }],
+          },
+        ],
       };
 
       // First response with tool call
       mockOllamaClient.chatCompletion.mockResolvedValueOnce({
         content: '',
-        toolCalls: [{
-          name: 'read_file',
-          args: { path: 'test.txt' },
-          id: 'call_123',
-        }],
+        toolCalls: [
+          {
+            name: 'read_file',
+            args: { path: 'test.txt' },
+            id: 'call_123',
+          },
+        ],
         finishReason: 'tool_calls',
       });
 
@@ -159,25 +167,32 @@ describe('OllamaContentGenerator', () => {
       expect(response.functionCalls).toHaveLength(1);
       expect(response.functionCalls![0].name).toBe('read_file');
       expect(mockOllamaClient.chatCompletion).toHaveBeenCalledTimes(2);
-      expect(mockOllamaToolRegistry.executeTool).toHaveBeenCalledWith('read_file', { path: 'test.txt' });
+      expect(mockOllamaToolRegistry.executeTool).toHaveBeenCalledWith(
+        'read_file',
+        { path: 'test.txt' },
+      );
     });
 
     it('should handle tool execution errors', async () => {
       const request: GenerateContentParameters = {
         model: 'test',
-        contents: [{
-          role: 'user',
-          parts: [{ text: 'Read a nonexistent file' }],
-        }],
+        contents: [
+          {
+            role: 'user',
+            parts: [{ text: 'Read a nonexistent file' }],
+          },
+        ],
       };
 
       mockOllamaClient.chatCompletion.mockResolvedValueOnce({
         content: '',
-        toolCalls: [{
-          name: 'read_file',
-          args: { path: 'nonexistent.txt' },
-          id: 'call_456',
-        }],
+        toolCalls: [
+          {
+            name: 'read_file',
+            args: { path: 'nonexistent.txt' },
+            id: 'call_456',
+          },
+        ],
         finishReason: 'tool_calls',
       });
 
@@ -199,28 +214,36 @@ describe('OllamaContentGenerator', () => {
     });
 
     it('should respect max tool calls limit', async () => {
-      const customGenerator = new OllamaContentGenerator(mockConfig, mockToolRegistry, {
-        maxToolCalls: 2,
-      });
+      const customGenerator = new OllamaContentGenerator(
+        mockConfig,
+        mockToolRegistry,
+        {
+          maxToolCalls: 2,
+        },
+      );
       await customGenerator.initialize();
 
       const request: GenerateContentParameters = {
         model: 'test',
-        contents: [{
-          role: 'user',
-          parts: [{ text: 'Do multiple operations' }],
-        }],
+        contents: [
+          {
+            role: 'user',
+            parts: [{ text: 'Do multiple operations' }],
+          },
+        ],
       };
 
       // Mock continuous tool calls
       for (let i = 0; i < 3; i++) {
         mockOllamaClient.chatCompletion.mockResolvedValueOnce({
           content: '',
-          toolCalls: [{
-            name: `tool_${i}`,
-            args: {},
-            id: `call_${i}`,
-          }],
+          toolCalls: [
+            {
+              name: `tool_${i}`,
+              args: {},
+              id: `call_${i}`,
+            },
+          ],
           finishReason: 'tool_calls',
         });
 
@@ -240,13 +263,17 @@ describe('OllamaContentGenerator', () => {
     it('should handle generation errors', async () => {
       const request: GenerateContentParameters = {
         model: 'test',
-        contents: [{
-          role: 'user',
-          parts: [{ text: 'Hello' }],
-        }],
+        contents: [
+          {
+            role: 'user',
+            parts: [{ text: 'Hello' }],
+          },
+        ],
       };
 
-      mockOllamaClient.chatCompletion.mockRejectedValueOnce(new Error('API error'));
+      mockOllamaClient.chatCompletion.mockRejectedValueOnce(
+        new Error('API error'),
+      );
 
       const response = await generator.generateContent(request);
 
@@ -263,10 +290,12 @@ describe('OllamaContentGenerator', () => {
     it('should generate content stream', async () => {
       const request: GenerateContentParameters = {
         model: 'test',
-        contents: [{
-          role: 'user',
-          parts: [{ text: 'Tell me a story' }],
-        }],
+        contents: [
+          {
+            role: 'user',
+            parts: [{ text: 'Tell me a story' }],
+          },
+        ],
       };
 
       mockOllamaClient.chatCompletion.mockResolvedValueOnce({
@@ -277,16 +306,16 @@ describe('OllamaContentGenerator', () => {
 
       const stream = await generator.generateContentStream(request);
       const chunks = [];
-      
+
       for await (const chunk of stream) {
         chunks.push(chunk);
       }
 
       expect(chunks.length).toBeGreaterThan(0);
-      
+
       // First chunk should be the "thinking" response
       expect(chunks[0].text).toBe('🤔 Thinking...');
-      
+
       // Final chunk should contain the actual content
       const finalChunk = chunks[chunks.length - 1];
       expect(finalChunk.text).toBe('Once upon a time...');
@@ -318,10 +347,12 @@ describe('OllamaContentGenerator', () => {
     it('should count tokens', async () => {
       const request = {
         model: 'test-model',
-        contents: [{
-          role: 'user',
-          parts: [{ text: 'Hello world' }],
-        }],
+        contents: [
+          {
+            role: 'user',
+            parts: [{ text: 'Hello world' }],
+          },
+        ],
       };
 
       const result = await generator.countTokens(request);
@@ -331,7 +362,7 @@ describe('OllamaContentGenerator', () => {
 
     it('should get conversation history', () => {
       const history = generator.getConversationHistory();
-      
+
       expect(history).toHaveLength(1); // System message
       expect(history[0].role).toBe('system');
     });
@@ -339,13 +370,13 @@ describe('OllamaContentGenerator', () => {
     it('should clear conversation history', () => {
       generator.clearConversationHistory();
       const history = generator.getConversationHistory();
-      
+
       expect(history).toHaveLength(1); // System message remains
     });
 
     it('should throw error for embedding', async () => {
       await expect(generator.embedContent({} as any)).rejects.toThrow(
-        'Embedding not supported by Ollama content generator'
+        'Embedding not supported by Ollama content generator',
       );
     });
   });
@@ -371,7 +402,7 @@ describe('OllamaContentGenerator', () => {
 
       expect(mockOllamaClient.pullModel).toHaveBeenCalledWith(
         'llama3.2:3b',
-        expect.any(Function)
+        expect.any(Function),
       );
       expect(mockOllamaClient.setModel).toHaveBeenCalledWith('llama3.2:3b');
     });
@@ -381,7 +412,7 @@ describe('OllamaContentGenerator', () => {
       mockOllamaClient.pullModel.mockResolvedValueOnce(false);
 
       await expect(generator.switchModel('invalid-model')).rejects.toThrow(
-        'Failed to pull model invalid-model'
+        'Failed to pull model invalid-model',
       );
     });
   });

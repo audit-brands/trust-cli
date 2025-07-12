@@ -4,7 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { describe, it, expect, beforeEach, vi, type MockedFunction } from 'vitest';
+import {
+  describe,
+  it,
+  expect,
+  beforeEach,
+  vi,
+  type MockedFunction,
+} from 'vitest';
 import { TrustContentGenerator } from './trustContentGenerator.js';
 import { TrustModelManagerImpl } from './modelManager.js';
 import { TrustNodeLlamaClient } from './nodeLlamaClient.js';
@@ -32,7 +39,7 @@ describe('TrustContentGenerator with Ollama', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    
+
     mockModelManager = {
       initialize: vi.fn(),
       getCurrentModel: vi.fn(),
@@ -55,7 +62,9 @@ describe('TrustContentGenerator with Ollama', () => {
 
     mockTrustConfig = {
       initialize: vi.fn(),
-      getFallbackOrder: vi.fn().mockReturnValue(['ollama', 'huggingface', 'cloud']),
+      getFallbackOrder: vi
+        .fn()
+        .mockReturnValue(['ollama', 'huggingface', 'cloud']),
       isFallbackEnabled: vi.fn().mockReturnValue(true),
       isBackendEnabled: vi.fn().mockReturnValue(true),
       getOllamaConfig: vi.fn().mockReturnValue({
@@ -104,7 +113,9 @@ describe('TrustContentGenerator with Ollama', () => {
     });
 
     it('should fall back to HuggingFace when Ollama unavailable', async () => {
-      mockOllamaGenerator.initialize.mockRejectedValue(new Error('Ollama not running'));
+      mockOllamaGenerator.initialize.mockRejectedValue(
+        new Error('Ollama not running'),
+      );
       mockModelManager.getCurrentModel.mockReturnValue({
         name: 'test-model',
         path: '/test/models/test-model.gguf',
@@ -120,7 +131,11 @@ describe('TrustContentGenerator with Ollama', () => {
     });
 
     it('should respect fallback order configuration', async () => {
-      mockTrustConfig.getFallbackOrder.mockReturnValue(['huggingface', 'ollama', 'cloud']);
+      mockTrustConfig.getFallbackOrder.mockReturnValue([
+        'huggingface',
+        'ollama',
+        'cloud',
+      ]);
       mockModelManager.getCurrentModel.mockReturnValue(null);
       mockOllamaGenerator.initialize.mockResolvedValue(undefined);
 
@@ -131,8 +146,8 @@ describe('TrustContentGenerator with Ollama', () => {
     });
 
     it('should respect disabled backends', async () => {
-      mockTrustConfig.isBackendEnabled.mockImplementation((backend: string) => 
-         backend !== 'ollama' // Ollama disabled
+      mockTrustConfig.isBackendEnabled.mockImplementation(
+        (backend: string) => backend !== 'ollama', // Ollama disabled
       );
       mockModelManager.getCurrentModel.mockReturnValue(null);
 
@@ -144,7 +159,9 @@ describe('TrustContentGenerator with Ollama', () => {
 
     it('should stop trying backends when fallback disabled', async () => {
       mockTrustConfig.isFallbackEnabled.mockReturnValue(false);
-      mockOllamaGenerator.initialize.mockRejectedValue(new Error('Ollama not running'));
+      mockOllamaGenerator.initialize.mockRejectedValue(
+        new Error('Ollama not running'),
+      );
 
       await contentGenerator.initialize();
 
@@ -162,21 +179,25 @@ describe('TrustContentGenerator with Ollama', () => {
     it('should use Ollama for content generation when available', async () => {
       const request: GenerateContentParameters = {
         model: 'test-model',
-        contents: [{
-          parts: [{ text: 'Hello, how are you?' }],
-          role: 'user'
-        }]
+        contents: [
+          {
+            parts: [{ text: 'Hello, how are you?' }],
+            role: 'user',
+          },
+        ],
       };
 
       const mockResponse = {
-        candidates: [{
-          content: {
-            parts: [{ text: 'Hello! I am doing well, thank you!' }],
-            role: 'model'
+        candidates: [
+          {
+            content: {
+              parts: [{ text: 'Hello! I am doing well, thank you!' }],
+              role: 'model',
+            },
+            finishReason: 'STOP',
+            index: 0,
           },
-          finishReason: 'STOP',
-          index: 0,
-        }],
+        ],
         text: 'Hello! I am doing well, thank you!',
       };
 
@@ -192,10 +213,12 @@ describe('TrustContentGenerator with Ollama', () => {
     it('should use Ollama for streaming when available', async () => {
       const request: GenerateContentParameters = {
         model: 'test-model',
-        contents: [{
-          parts: [{ text: 'Tell me a story' }],
-          role: 'user'
-        }]
+        contents: [
+          {
+            parts: [{ text: 'Tell me a story' }],
+            role: 'user',
+          },
+        ],
       };
 
       const mockGenerator = (async function* () {
@@ -208,7 +231,9 @@ describe('TrustContentGenerator with Ollama', () => {
 
       const result = await contentGenerator.generateContentStream(request);
 
-      expect(mockOllamaGenerator.generateContentStream).toHaveBeenCalledWith(request);
+      expect(mockOllamaGenerator.generateContentStream).toHaveBeenCalledWith(
+        request,
+      );
       expect(result).toBe(mockGenerator);
     });
   });
@@ -226,20 +251,30 @@ describe('TrustContentGenerator with Ollama', () => {
 
     it('should update backend preference and reinitialize', async () => {
       mockOllamaGenerator.initialize.mockResolvedValue(undefined);
-      
+
       await contentGenerator.setBackendPreference('huggingface');
 
-      expect(mockTrustConfig.setPreferredBackend).toHaveBeenCalledWith('huggingface');
+      expect(mockTrustConfig.setPreferredBackend).toHaveBeenCalledWith(
+        'huggingface',
+      );
       expect(mockTrustConfig.save).toHaveBeenCalled();
       expect(mockTrustConfig.initialize).toHaveBeenCalledWith(); // Called during reinit
     });
 
     it('should update fallback order and reinitialize', async () => {
       mockOllamaGenerator.initialize.mockResolvedValue(undefined);
-      
-      await contentGenerator.setFallbackOrder(['huggingface', 'ollama', 'cloud']);
 
-      expect(mockTrustConfig.setFallbackOrder).toHaveBeenCalledWith(['huggingface', 'ollama', 'cloud']);
+      await contentGenerator.setFallbackOrder([
+        'huggingface',
+        'ollama',
+        'cloud',
+      ]);
+
+      expect(mockTrustConfig.setFallbackOrder).toHaveBeenCalledWith([
+        'huggingface',
+        'ollama',
+        'cloud',
+      ]);
       expect(mockTrustConfig.save).toHaveBeenCalled();
       expect(mockTrustConfig.initialize).toHaveBeenCalledWith(); // Called during reinit
     });
@@ -268,7 +303,9 @@ describe('TrustContentGenerator with Ollama', () => {
 
   describe('error handling', () => {
     it('should handle initialization errors gracefully', async () => {
-      mockOllamaGenerator.initialize.mockRejectedValue(new Error('Network error'));
+      mockOllamaGenerator.initialize.mockRejectedValue(
+        new Error('Network error'),
+      );
       mockModelManager.initialize.mockRejectedValue(new Error('No models'));
       mockTrustConfig.getCloudConfig.mockReturnValue({ enabled: false });
 
@@ -279,20 +316,24 @@ describe('TrustContentGenerator with Ollama', () => {
     });
 
     it('should throw error when no backend available for generation', async () => {
-      mockOllamaGenerator.initialize.mockRejectedValue(new Error('Not available'));
+      mockOllamaGenerator.initialize.mockRejectedValue(
+        new Error('Not available'),
+      );
       mockModelClient.isModelLoaded.mockReturnValue(false);
       await contentGenerator.initialize();
 
       const request: GenerateContentParameters = {
         model: 'test-model',
-        contents: [{
-          parts: [{ text: 'Hello' }],
-          role: 'user'
-        }]
+        contents: [
+          {
+            parts: [{ text: 'Hello' }],
+            role: 'user',
+          },
+        ],
       };
 
       await expect(contentGenerator.generateContent(request)).rejects.toThrow(
-        'No AI backend available'
+        'No AI backend available',
       );
     });
   });

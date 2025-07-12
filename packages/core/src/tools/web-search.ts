@@ -99,24 +99,25 @@ export class WebSearchTool extends BaseTool<
     if (!params.query || params.query.trim() === '') {
       return "The 'query' parameter cannot be empty.";
     }
-    
+
     // Check for simple arithmetic expressions
     const query = params.query.trim().toLowerCase();
     const simpleArithmeticPattern = /^[\d\s+\-*/().]+$/;
-    const basicMathQuestions = /^(what is|calculate|compute|solve|evaluate)\s+[\d\s+\-*/().]+$/;
-    
+    const basicMathQuestions =
+      /^(what is|calculate|compute|solve|evaluate)\s+[\d\s+\-*/().]+$/;
+
     if (simpleArithmeticPattern.test(query) || basicMathQuestions.test(query)) {
-      return "Web search is not needed for basic arithmetic. This calculation can be solved directly without searching the internet.";
+      return 'Web search is not needed for basic arithmetic. This calculation can be solved directly without searching the internet.';
     }
-    
+
     // Check for simple yes/no logic questions about numbers
     const primeCheck = /^(is\s+)?\d+\s+(a\s+)?prime(\s+number)?$/;
     const evenOddCheck = /^(is\s+)?\d+\s+(even|odd)$/;
-    
+
     if (primeCheck.test(query) || evenOddCheck.test(query)) {
-      return "Web search is not needed for basic number properties. This can be determined through calculation.";
+      return 'Web search is not needed for basic number properties. This can be determined through calculation.';
     }
-    
+
     return null;
   }
 

@@ -7,6 +7,7 @@ Trust CLI supports several environment variables to customize its behavior:
 Controls debug output and logging.
 
 **Usage:**
+
 ```bash
 DEBUG=1 trust [command]
 DEBUG=true trust [command]
@@ -14,6 +15,7 @@ DEBUG=verbose trust [command]
 ```
 
 **Examples:**
+
 ```bash
 # Enable debug mode
 DEBUG=1 trust --help
@@ -29,11 +31,13 @@ DEBUG=verbose trust "What is the weather today?"
 Customize the CLI title/branding displayed in the header.
 
 **Usage:**
+
 ```bash
 CLI_TITLE="My Custom Title" trust [command]
 ```
 
 **Examples:**
+
 ```bash
 # Simple text title
 CLI_TITLE="My AI Assistant" trust
@@ -53,6 +57,7 @@ Environment variables are processed in the following priority order:
 3. Default Trust CLI ASCII art (lowest priority)
 
 For debug mode:
+
 1. `--debug` CLI flag
 2. **DEBUG** environment variable
 3. Default debug mode (disabled)
@@ -82,18 +87,21 @@ Trust CLI now supports intelligent context compression that preserves recent con
 ```
 
 **How it works:**
+
 - When conversations grow too large, Trust CLI compresses older history while preserving recent exchanges
 - Default: 6 recent turns (3 complete user-assistant exchanges) are preserved
 - Older history is compressed into a structured summary
 - Recent history maintains conversational flow and context
 
 **Benefits:**
+
 - Better conversation continuity
 - Maintains recent context for follow-up questions
 - Reduces token usage while preserving important information
 - Configurable based on your needs
 
 **Configuration:**
+
 - `preserveRecentTurns`: Number of recent conversation turns to preserve (default: 6)
 - Set to 0 to disable recent history preservation (classic compression)
 - Higher values preserve more recent context but use more tokens

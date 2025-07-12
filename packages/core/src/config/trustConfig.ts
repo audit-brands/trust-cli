@@ -152,7 +152,9 @@ export class TrustConfiguration {
     return { ...this.config.transparency };
   }
 
-  setTransparencySettings(settings: Partial<TrustConfig['transparency']>): void {
+  setTransparencySettings(
+    settings: Partial<TrustConfig['transparency']>,
+  ): void {
     this.config.transparency = { ...this.config.transparency, ...settings };
   }
 
@@ -193,7 +195,9 @@ export class TrustConfiguration {
     return { ...this.config.ai.huggingface };
   }
 
-  setHuggingFaceConfig(config: Partial<TrustConfig['ai']['huggingface']>): void {
+  setHuggingFaceConfig(
+    config: Partial<TrustConfig['ai']['huggingface']>,
+  ): void {
     this.config.ai.huggingface = { ...this.config.ai.huggingface, ...config };
   }
 
@@ -232,7 +236,11 @@ export class TrustConfiguration {
   /**
    * Enhanced auth validation methods based on upstream Gemini CLI improvements
    */
-  validateAuthConfiguration(): { isValid: boolean; errors: string[]; warnings: string[] } {
+  validateAuthConfiguration(): {
+    isValid: boolean;
+    errors: string[];
+    warnings: string[];
+  } {
     const errors: string[] = [];
     const warnings: string[] = [];
 
@@ -241,32 +249,47 @@ export class TrustConfiguration {
     const googleApiKey = process.env.GOOGLE_API_KEY;
     const googleCloudProject = process.env.GOOGLE_CLOUD_PROJECT;
     const googleCloudLocation = process.env.GOOGLE_CLOUD_LOCATION;
-    const googleApplicationCredentials = process.env.GOOGLE_APPLICATION_CREDENTIALS;
 
     // Detect potentially confusing configurations
     if (geminiApiKey && googleApiKey) {
-      warnings.push('Both GEMINI_API_KEY and GOOGLE_API_KEY are set. GEMINI_API_KEY takes precedence for Gemini API access.');
+      warnings.push(
+        'Both GEMINI_API_KEY and GOOGLE_API_KEY are set. GEMINI_API_KEY takes precedence for Gemini API access.',
+      );
     }
 
     if (geminiApiKey && (googleCloudProject || googleCloudLocation)) {
-      warnings.push('GEMINI_API_KEY is set along with Google Cloud settings. This may cause authentication confusion.');
+      warnings.push(
+        'GEMINI_API_KEY is set along with Google Cloud settings. This may cause authentication confusion.',
+      );
     }
 
     if (googleApiKey && !googleCloudProject) {
-      warnings.push('GOOGLE_API_KEY is set but GOOGLE_CLOUD_PROJECT is missing. Vertex AI may not work properly.');
+      warnings.push(
+        'GOOGLE_API_KEY is set but GOOGLE_CLOUD_PROJECT is missing. Vertex AI may not work properly.',
+      );
     }
 
     if (googleCloudProject && !googleCloudLocation) {
-      errors.push('GOOGLE_CLOUD_PROJECT is set but GOOGLE_CLOUD_LOCATION is missing. Both are required for Vertex AI.');
+      errors.push(
+        'GOOGLE_CLOUD_PROJECT is set but GOOGLE_CLOUD_LOCATION is missing. Both are required for Vertex AI.',
+      );
     }
 
     // Check for valid backend configurations
-    if (this.isBackendEnabled('huggingface') && !geminiApiKey && !googleApiKey) {
-      warnings.push('HuggingFace backend is enabled but no API key is configured.');
+    if (
+      this.isBackendEnabled('huggingface') &&
+      !geminiApiKey &&
+      !googleApiKey
+    ) {
+      warnings.push(
+        'HuggingFace backend is enabled but no API key is configured.',
+      );
     }
 
     if (this.isBackendEnabled('cloud') && !googleCloudProject) {
-      errors.push('Cloud backend is enabled but Google Cloud configuration is incomplete.');
+      errors.push(
+        'Cloud backend is enabled but Google Cloud configuration is incomplete.',
+      );
     }
 
     return {
@@ -279,7 +302,12 @@ export class TrustConfiguration {
   /**
    * Get auth type based on current environment and configuration
    */
-  getAuthType(): 'gemini-api-key' | 'vertex-ai' | 'oauth-personal' | 'cloud-shell' | 'none' {
+  getAuthType():
+    | 'gemini-api-key'
+    | 'vertex-ai'
+    | 'oauth-personal'
+    | 'cloud-shell'
+    | 'none' {
     const geminiApiKey = process.env.GEMINI_API_KEY;
     const googleApiKey = process.env.GOOGLE_API_KEY;
     const googleCloudProject = process.env.GOOGLE_CLOUD_PROJECT;
@@ -315,30 +343,44 @@ export class TrustConfiguration {
     const authType = this.getAuthType();
 
     if (authType === 'none') {
-      suggestions.push('No authentication configured. Set GEMINI_API_KEY for Gemini API or configure Google Cloud credentials for Vertex AI.');
+      suggestions.push(
+        'No authentication configured. Set GEMINI_API_KEY for Gemini API or configure Google Cloud credentials for Vertex AI.',
+      );
     }
 
     if (authValidation.errors.length > 0) {
-      suggestions.push('Fix configuration errors: ' + authValidation.errors.join(', '));
+      suggestions.push(
+        'Fix configuration errors: ' + authValidation.errors.join(', '),
+      );
     }
 
     if (authValidation.warnings.length > 0) {
-      suggestions.push('Consider resolving warnings: ' + authValidation.warnings.join(', '));
+      suggestions.push(
+        'Consider resolving warnings: ' + authValidation.warnings.join(', '),
+      );
     }
 
     // Specific suggestions based on auth type
     switch (authType) {
       case 'gemini-api-key':
-        suggestions.push('Using Gemini API Key authentication. Ensure the key has proper permissions.');
+        suggestions.push(
+          'Using Gemini API Key authentication. Ensure the key has proper permissions.',
+        );
         break;
       case 'vertex-ai':
-        suggestions.push('Using Vertex AI authentication. Verify project and location settings.');
+        suggestions.push(
+          'Using Vertex AI authentication. Verify project and location settings.',
+        );
         break;
       case 'oauth-personal':
-        suggestions.push('Using OAuth authentication. Run `trust auth setup` if having issues.');
+        suggestions.push(
+          'Using OAuth authentication. Run `trust auth setup` if having issues.',
+        );
         break;
       case 'cloud-shell':
-        suggestions.push('Using Cloud Shell authentication. Should work automatically.');
+        suggestions.push(
+          'Using Cloud Shell authentication. Should work automatically.',
+        );
         break;
     }
 

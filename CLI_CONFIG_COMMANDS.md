@@ -116,7 +116,7 @@ Reset configuration to defaults (interactive):
 trust config reset
 ```
 
-*Note: Interactive prompts are not yet implemented. Currently shows what would be reset.*
+_Note: Interactive prompts are not yet implemented. Currently shows what would be reset._
 
 ## Configuration Structure
 
@@ -171,6 +171,7 @@ trust config get inference.stream            # true
 ### Quick Setup for Different Use Cases
 
 **Local-First Setup (Ollama)**:
+
 ```bash
 trust config backend ollama
 trust config set ai.ollama.defaultModel llama3.2:3b
@@ -179,6 +180,7 @@ trust config fallback ollama huggingface
 ```
 
 **Performance Optimization**:
+
 ```bash
 trust config set ai.ollama.timeout 30000
 trust config set ai.ollama.concurrency 4
@@ -187,6 +189,7 @@ trust config set inference.maxTokens 1000
 ```
 
 **Privacy-Focused Setup**:
+
 ```bash
 trust config set privacy.privacyMode strict
 trust config set privacy.auditLogging false
@@ -198,11 +201,13 @@ trust config backend huggingface
 ### Backup and Restore
 
 **Backup Current Configuration**:
+
 ```bash
 trust config export ~/.trustcli-backup-$(date +%Y%m%d).json
 ```
 
 **Team Configuration Sharing**:
+
 ```bash
 # Export team settings
 trust config export ./team-trust-config.json
@@ -214,6 +219,7 @@ trust config import ./team-trust-config.json
 ## Available Configuration Keys
 
 ### AI Settings
+
 - `ai.preferredBackend`
 - `ai.enableFallback`
 - `ai.fallbackOrder`
@@ -231,22 +237,26 @@ trust config import ./team-trust-config.json
 - `ai.cloud.provider`
 
 ### Model Settings
+
 - `models.default`
 - `models.directory`
 - `models.autoVerify`
 
 ### Privacy Settings
+
 - `privacy.privacyMode`
 - `privacy.auditLogging`
 - `privacy.modelVerification`
 
 ### Inference Settings
+
 - `inference.temperature`
 - `inference.topP`
 - `inference.maxTokens`
 - `inference.stream`
 
 ### Transparency Settings
+
 - `transparency.logPrompts`
 - `transparency.logResponses`
 - `transparency.showModelInfo`

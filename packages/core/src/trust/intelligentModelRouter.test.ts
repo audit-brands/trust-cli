@@ -5,7 +5,12 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { IntelligentModelRouter, ModelRoutingDecision, RoutingConfig, SystemResources } from './intelligentModelRouter.js';
+import {
+  IntelligentModelRouter,
+  ModelRoutingDecision,
+  RoutingConfig,
+  SystemResources,
+} from './intelligentModelRouter.js';
 import { UnifiedModel, TaskType } from './unifiedModelManager.js';
 import { TrustConfiguration } from '../config/trustConfig.js';
 
@@ -57,14 +62,16 @@ vi.mock('./unifiedModelManager.js', () => ({
     ]),
     filterModels: vi.fn().mockImplementation((models, task, constraints) => {
       let filtered = models.filter((m: UnifiedModel) => m.available);
-      
+
       if (constraints?.availableRAM) {
         filtered = filtered.filter((m: UnifiedModel) => {
-          const ramReq = parseFloat(m.ramRequirement?.match(/(\d+)/)?.[1] || '8');
+          const ramReq = parseFloat(
+            m.ramRequirement?.match(/(\d+)/)?.[1] || '8',
+          );
           return ramReq <= constraints.availableRAM!;
         });
       }
-      
+
       return filtered;
     }),
   })),
@@ -107,7 +114,7 @@ describe('IntelligentModelRouter', () => {
   describe('routeToOptimalModel', () => {
     it('should complete the full 4-step routing process', async () => {
       await router.initialize();
-      
+
       const decision = await router.routeToOptimalModel({
         task: 'coding',
         hardwareConstraints: { availableRAM: 6 },
@@ -148,7 +155,7 @@ describe('IntelligentModelRouter', () => {
 
     it('should select coding-optimized model for coding tasks', async () => {
       await router.initialize();
-      
+
       const decision = await router.routeToOptimalModel({
         task: 'coding',
         hardwareConstraints: { availableRAM: 8 },
@@ -161,7 +168,7 @@ describe('IntelligentModelRouter', () => {
 
     it('should select reasoning-optimized model for reasoning tasks', async () => {
       await router.initialize();
-      
+
       const decision = await router.routeToOptimalModel({
         task: 'reasoning',
         hardwareConstraints: { availableRAM: 8 },
@@ -174,19 +181,21 @@ describe('IntelligentModelRouter', () => {
 
     it('should respect hardware constraints', async () => {
       await router.initialize();
-      
+
       const decision = await router.routeToOptimalModel({
         hardwareConstraints: { availableRAM: 2.5 }, // Very limited RAM
       });
 
       // Should only select models that fit in 2.5GB
-      const selectedRAM = parseFloat(decision.selectedModel.ramRequirement?.match(/(\d+)/)?.[1] || '0');
+      const selectedRAM = parseFloat(
+        decision.selectedModel.ramRequirement?.match(/(\d+)/)?.[1] || '0',
+      );
       expect(selectedRAM).toBeLessThanOrEqual(2.5);
     });
 
     it('should handle preferred backends', async () => {
       await router.initialize();
-      
+
       const decision = await router.routeToOptimalModel({
         preferredBackends: ['ollama'],
         hardwareConstraints: { availableRAM: 8 },
@@ -198,7 +207,7 @@ describe('IntelligentModelRouter', () => {
 
     it('should apply minimum trust score filtering', async () => {
       await router.initialize();
-      
+
       const decision = await router.routeToOptimalModel({
         minimumTrustScore: 9.0,
         hardwareConstraints: { availableRAM: 8 },
@@ -210,7 +219,7 @@ describe('IntelligentModelRouter', () => {
 
     it('should provide detailed step information', async () => {
       await router.initialize();
-      
+
       const decision = await router.routeToOptimalModel({
         task: 'coding',
       });
@@ -218,15 +227,19 @@ describe('IntelligentModelRouter', () => {
       expect(decision.step1_consolidation.totalModels).toBe(4);
       expect(decision.step2_filtering.availabilityFiltered).toBe(1); // One unavailable model
       expect(decision.step3_selection.topCandidates.length).toBeGreaterThan(0);
-      expect(decision.step4_routing.targetBackend).toBe(decision.selectedModel.backend);
+      expect(decision.step4_routing.targetBackend).toBe(
+        decision.selectedModel.backend,
+      );
     });
 
     it('should throw error when no suitable models found', async () => {
       await router.initialize();
-      
-      await expect(router.routeToOptimalModel({
-        hardwareConstraints: { availableRAM: 0.5 }, // Impossible constraint
-      })).rejects.toThrow('No suitable models found after filtering');
+
+      await expect(
+        router.routeToOptimalModel({
+          hardwareConstraints: { availableRAM: 0.5 }, // Impossible constraint
+        }),
+      ).rejects.toThrow('No suitable models found after filtering');
     });
   });
 
@@ -275,7 +288,8 @@ describe('IntelligentModelRouter', () => {
       const recommendation = await router.getRoutingRecommendation();
 
       const systemRAM = recommendation.systemInfo.availableRAM;
-      const recommendedRAM = recommendation.recommended.hardwareConstraints?.availableRAM;
+      const recommendedRAM =
+        recommendation.recommended.hardwareConstraints?.availableRAM;
 
       // Should leave buffer for system
       expect(recommendedRAM).toBeLessThan(systemRAM);
@@ -285,7 +299,9 @@ describe('IntelligentModelRouter', () => {
     it('should include preferred backends for system capabilities', async () => {
       const recommendation = await router.getRoutingRecommendation();
 
-      expect(recommendation.recommended.preferredBackends).toContain('huggingface');
+      expect(recommendation.recommended.preferredBackends).toContain(
+        'huggingface',
+      );
       // Should contain ollama for systems with enough RAM (mock has 8GB available)
       expect(recommendation.recommended.preferredBackends).toContain('ollama');
     });
@@ -294,14 +310,14 @@ describe('IntelligentModelRouter', () => {
   describe('model scoring', () => {
     it('should score models based on multiple factors', async () => {
       await router.initialize();
-      
+
       const decision = await router.routeToOptimalModel({
         task: 'coding',
         hardwareConstraints: { availableRAM: 8 },
       });
 
       const topCandidate = decision.step3_selection.topCandidates[0];
-      
+
       expect(topCandidate.breakdown).toHaveProperty('trust');
       expect(topCandidate.breakdown).toHaveProperty('task_suitability');
       expect(topCandidate.breakdown).toHaveProperty('performance');
@@ -309,14 +325,14 @@ describe('IntelligentModelRouter', () => {
       expect(topCandidate.breakdown).toHaveProperty('efficiency');
 
       // All score components should be positive
-      Object.values(topCandidate.breakdown).forEach(score => {
+      Object.values(topCandidate.breakdown).forEach((score) => {
         expect(score).toBeGreaterThanOrEqual(0);
       });
     });
 
     it('should prioritize task suitability when task is specified', async () => {
       await router.initialize();
-      
+
       const codingDecision = await router.routeToOptimalModel({
         task: 'coding',
         hardwareConstraints: { availableRAM: 8 },
@@ -329,17 +345,21 @@ describe('IntelligentModelRouter', () => {
 
       // Different tasks should potentially select different models
       // (though this depends on the specific models available)
-      expect(codingDecision.step3_selection.topCandidates[0].breakdown.task_suitability)
-        .toBeGreaterThan(0);
-      expect(reasoningDecision.step3_selection.topCandidates[0].breakdown.task_suitability)
-        .toBeGreaterThan(0);
+      expect(
+        codingDecision.step3_selection.topCandidates[0].breakdown
+          .task_suitability,
+      ).toBeGreaterThan(0);
+      expect(
+        reasoningDecision.step3_selection.topCandidates[0].breakdown
+          .task_suitability,
+      ).toBeGreaterThan(0);
     });
   });
 
   describe('reasoning generation', () => {
     it('should provide clear reasoning for model selection', async () => {
       await router.initialize();
-      
+
       const decision = await router.routeToOptimalModel({
         task: 'coding',
         hardwareConstraints: { availableRAM: 8 },
@@ -352,7 +372,7 @@ describe('IntelligentModelRouter', () => {
 
     it('should mention hardware constraints in reasoning when applied', async () => {
       await router.initialize();
-      
+
       const decision = await router.routeToOptimalModel({
         hardwareConstraints: { availableRAM: 4 },
       });
@@ -364,7 +384,7 @@ describe('IntelligentModelRouter', () => {
   describe('performance metrics', () => {
     it('should track performance of each routing step', async () => {
       await router.initialize();
-      
+
       const decision = await router.routeToOptimalModel();
 
       // All steps should have measurable duration
@@ -375,11 +395,12 @@ describe('IntelligentModelRouter', () => {
       expect(decision.totalDuration).toBeGreaterThanOrEqual(0);
 
       // Total duration should be sum of all steps (approximately)
-      const stepSum = decision.step1_consolidation.duration + 
-                     decision.step2_filtering.duration + 
-                     decision.step3_selection.duration + 
-                     decision.step4_routing.duration;
-      
+      const stepSum =
+        decision.step1_consolidation.duration +
+        decision.step2_filtering.duration +
+        decision.step3_selection.duration +
+        decision.step4_routing.duration;
+
       expect(decision.totalDuration).toBeGreaterThanOrEqual(stepSum);
     });
   });

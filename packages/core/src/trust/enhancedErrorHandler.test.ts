@@ -5,7 +5,11 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { EnhancedErrorHandler, EnhancedError, ErrorSolution } from './enhancedErrorHandler.js';
+import {
+  EnhancedErrorHandler,
+  EnhancedError,
+  ErrorSolution,
+} from './enhancedErrorHandler.js';
 import { TrustConfiguration } from '../config/trustConfig.js';
 
 // Mock TrustConfiguration
@@ -45,7 +49,7 @@ describe('EnhancedErrorHandler', () => {
     it('should process model not found errors', async () => {
       const error = 'Model "qwen2.5:7b" not found';
       const enhancedError = await handler.processError(error);
-      
+
       expect(enhancedError).toMatchObject({
         type: 'model_not_found',
         severity: 'medium',
@@ -56,7 +60,7 @@ describe('EnhancedErrorHandler', () => {
         relatedCommands: expect.arrayContaining(['trust model list']),
         estimatedFixTime: '2-10 minutes',
       });
-      
+
       expect(enhancedError.solutions.length).toBeGreaterThan(0);
       expect(enhancedError.solutions[0]).toMatchObject({
         type: expect.stringMatching(/^(immediate|short_term|long_term)$/),
@@ -72,7 +76,7 @@ describe('EnhancedErrorHandler', () => {
     it('should process backend unavailable errors', async () => {
       const error = 'Connection refused to Ollama backend';
       const enhancedError = await handler.processError(error);
-      
+
       expect(enhancedError).toMatchObject({
         type: 'backend_unavailable',
         severity: 'high',
@@ -85,19 +89,21 @@ describe('EnhancedErrorHandler', () => {
     it('should process resource insufficient errors', async () => {
       const error = 'Out of memory: insufficient RAM to load model';
       const enhancedError = await handler.processError(error);
-      
+
       expect(enhancedError).toMatchObject({
         type: 'insufficient_resources',
         severity: 'high',
         title: 'Insufficient System Resources',
-        relatedCommands: expect.arrayContaining(['trust model-enhanced resource-check']),
+        relatedCommands: expect.arrayContaining([
+          'trust model-enhanced resource-check',
+        ]),
       });
     });
 
     it('should process configuration errors', async () => {
       const error = 'Configuration invalid: missing API key';
       const enhancedError = await handler.processError(error);
-      
+
       expect(enhancedError).toMatchObject({
         type: 'configuration_invalid',
         severity: 'medium',
@@ -109,7 +115,7 @@ describe('EnhancedErrorHandler', () => {
     it('should process network errors', async () => {
       const error = 'Network timeout: could not reach HuggingFace API';
       const enhancedError = await handler.processError(error);
-      
+
       expect(enhancedError).toMatchObject({
         type: 'network_error',
         severity: 'medium',
@@ -121,7 +127,7 @@ describe('EnhancedErrorHandler', () => {
     it('should process permission errors', async () => {
       const error = 'Permission denied: cannot write to ~/.trust/config.json';
       const enhancedError = await handler.processError(error);
-      
+
       expect(enhancedError).toMatchObject({
         type: 'permission_denied',
         severity: 'medium',
@@ -133,37 +139,43 @@ describe('EnhancedErrorHandler', () => {
     it('should process routing failed errors', async () => {
       const error = 'Intelligent routing failed: no suitable model found';
       const enhancedError = await handler.processError(error);
-      
+
       expect(enhancedError).toMatchObject({
         type: 'routing_failed',
         severity: 'medium',
         title: 'Model Routing Failed',
-        relatedCommands: expect.arrayContaining(['trust model-enhanced smart-recommend']),
+        relatedCommands: expect.arrayContaining([
+          'trust model-enhanced smart-recommend',
+        ]),
       });
     });
 
     it('should handle Error objects', async () => {
       const error = new Error('Model "phi3.5" not found');
       const enhancedError = await handler.processError(error);
-      
+
       expect(enhancedError.type).toBe('model_not_found');
-      expect(enhancedError.context?.originalError).toBe('Model "phi3.5" not found');
+      expect(enhancedError.context?.originalError).toBe(
+        'Model "phi3.5" not found',
+      );
       expect(enhancedError.context?.stackTrace).toBeDefined();
     });
 
     it('should handle generic errors gracefully', async () => {
       const error = 'Some unknown error that does not match any pattern';
       const enhancedError = await handler.processError(error);
-      
+
       expect(enhancedError).toMatchObject({
         type: 'generic',
         severity: 'medium',
         title: 'Unexpected Error',
-        description: expect.stringContaining('could not be automatically classified'),
+        description: expect.stringContaining(
+          'could not be automatically classified',
+        ),
         cause: error,
         solutions: expect.any(Array),
       });
-      
+
       expect(enhancedError.solutions.length).toBeGreaterThan(0);
     });
 
@@ -171,7 +183,7 @@ describe('EnhancedErrorHandler', () => {
       const error = 'Model not found';
       const context = { userId: 'test-user', sessionId: '123' };
       const enhancedError = await handler.processError(error, context);
-      
+
       expect(enhancedError.context).toMatchObject({
         ...context,
         originalError: error,
@@ -186,16 +198,16 @@ describe('EnhancedErrorHandler', () => {
 
     it('should process multiple errors and prioritize by severity', async () => {
       const errors = [
-        'Model not found',                    // medium severity
-        'Out of memory',                      // high severity  
-        'Network timeout',                    // medium severity
-        'Connection refused',                 // high severity
+        'Model not found', // medium severity
+        'Out of memory', // high severity
+        'Network timeout', // medium severity
+        'Connection refused', // high severity
       ];
-      
+
       const enhancedErrors = await handler.processErrors(errors);
-      
+
       expect(enhancedErrors).toHaveLength(4);
-      
+
       // Should be sorted by severity (high first)
       expect(enhancedErrors[0].severity).toBe('high');
       expect(enhancedErrors[1].severity).toBe('high');
@@ -209,11 +221,11 @@ describe('EnhancedErrorHandler', () => {
         'Connection refused',
         'Unknown error',
       ];
-      
+
       const enhancedErrors = await handler.processErrors(errors);
-      
+
       expect(enhancedErrors).toHaveLength(3);
-      enhancedErrors.forEach(error => {
+      enhancedErrors.forEach((error) => {
         expect(error).toMatchObject({
           type: expect.any(String),
           severity: expect.any(String),
@@ -228,18 +240,18 @@ describe('EnhancedErrorHandler', () => {
 
   describe('contextual help', () => {
     it('should provide contextual help for all error types', () => {
-      const errorTypes: EnhancedError['type'][] = [
+      const errorTypes: Array<EnhancedError['type']> = [
         'model_not_found',
-        'backend_unavailable', 
+        'backend_unavailable',
         'insufficient_resources',
         'configuration_invalid',
         'network_error',
         'permission_denied',
         'routing_failed',
-        'generic'
+        'generic',
       ];
-      
-      errorTypes.forEach(type => {
+
+      errorTypes.forEach((type) => {
         const help = handler.getContextualHelp(type);
         expect(help).toBeTruthy();
         expect(help.length).toBeGreaterThan(10);
@@ -261,7 +273,7 @@ describe('EnhancedErrorHandler', () => {
       const error = 'Model "test-model" not found';
       const enhancedError = await handler.processError(error);
       const report = handler.generateErrorReport(enhancedError);
-      
+
       expect(report).toContain('❌');
       expect(report).toContain('Model Not Found');
       expect(report).toContain('Severity:');
@@ -276,10 +288,10 @@ describe('EnhancedErrorHandler', () => {
       const error = 'Connection refused';
       const enhancedError = await handler.processError(error);
       const report = handler.generateErrorReport(enhancedError);
-      
+
       expect(report).toContain('Commands:');
       expect(report).toContain('Time:');
-      enhancedError.solutions.forEach(solution => {
+      enhancedError.solutions.forEach((solution) => {
         expect(report).toContain(solution.title);
       });
     });
@@ -289,7 +301,7 @@ describe('EnhancedErrorHandler', () => {
       const context = { testParam: 'value', sessionId: '123' };
       const enhancedError = await handler.processError(error, context);
       const report = handler.generateErrorReport(enhancedError);
-      
+
       expect(report).toContain('Context Information:');
       expect(report).toContain('testParam');
       expect(report).toContain('sessionId');
@@ -302,7 +314,7 @@ describe('EnhancedErrorHandler', () => {
       const error = 'Model not found';
       const enhancedError = await handler.processError(error);
       const report = handler.generateErrorReport(enhancedError);
-      
+
       if (enhancedError.documentation) {
         expect(report).toContain('Documentation:');
         expect(report).toContain(enhancedError.documentation);
@@ -318,18 +330,18 @@ describe('EnhancedErrorHandler', () => {
     it('should generate appropriate solutions for model not found', async () => {
       const error = 'Model "qwen2.5:7b" not found';
       const enhancedError = await handler.processError(error);
-      
+
       const solutions = enhancedError.solutions;
       expect(solutions.length).toBeGreaterThan(0);
-      
+
       // Should have immediate solution
-      const immediateSolution = solutions.find(s => s.type === 'immediate');
+      const immediateSolution = solutions.find((s) => s.type === 'immediate');
       expect(immediateSolution).toBeDefined();
       expect(immediateSolution!.commands.length).toBeGreaterThan(0);
-      
+
       // Should include model download command
-      const downloadSolution = solutions.find(s => 
-        s.commands.some(cmd => cmd.includes('qwen2.5:7b'))
+      const downloadSolution = solutions.find((s) =>
+        s.commands.some((cmd) => cmd.includes('qwen2.5:7b')),
       );
       expect(downloadSolution).toBeDefined();
     });
@@ -337,10 +349,10 @@ describe('EnhancedErrorHandler', () => {
     it('should generate backend-specific solutions', async () => {
       const error = 'Connection refused to backend';
       const enhancedError = await handler.processError(error);
-      
+
       const solutions = enhancedError.solutions;
-      const startServiceSolution = solutions.find(s => 
-        s.commands.some(cmd => cmd.includes('ollama serve'))
+      const startServiceSolution = solutions.find((s) =>
+        s.commands.some((cmd) => cmd.includes('ollama serve')),
       );
       expect(startServiceSolution).toBeDefined();
     });
@@ -348,10 +360,10 @@ describe('EnhancedErrorHandler', () => {
     it('should generate resource-aware solutions', async () => {
       const error = 'Out of memory loading model';
       const enhancedError = await handler.processError(error);
-      
+
       const solutions = enhancedError.solutions;
-      const resourceSolution = solutions.find(s => 
-        s.commands.some(cmd => cmd.includes('resource-check'))
+      const resourceSolution = solutions.find((s) =>
+        s.commands.some((cmd) => cmd.includes('resource-check')),
       );
       expect(resourceSolution).toBeDefined();
     });
@@ -359,13 +371,13 @@ describe('EnhancedErrorHandler', () => {
     it('should include automated solutions where appropriate', async () => {
       const error = 'Intelligent routing failed';
       const enhancedError = await handler.processError(error);
-      
-      const automatedSolution = enhancedError.solutions.find(s => s.automated);
+
+      const automatedSolution = enhancedError.solutions.find(
+        (s) => s.automated,
+      );
       expect(automatedSolution).toBeDefined();
       expect(automatedSolution!.commands).toEqual(
-        expect.arrayContaining([
-          expect.stringMatching(/smart-recommend/)
-        ])
+        expect.arrayContaining([expect.stringMatching(/smart-recommend/)]),
       );
     });
   });
@@ -383,7 +395,7 @@ describe('EnhancedErrorHandler', () => {
         'No such model: test-model',
         'model test-model not found',
       ];
-      
+
       for (const pattern of patterns) {
         const enhancedError = await handler.processError(pattern);
         expect(enhancedError.type).toBe('model_not_found');
@@ -398,7 +410,7 @@ describe('EnhancedErrorHandler', () => {
         'Server not responding',
         'ECONNREFUSED',
       ];
-      
+
       for (const pattern of patterns) {
         const enhancedError = await handler.processError(pattern);
         expect(enhancedError.type).toBe('backend_unavailable');
@@ -413,7 +425,7 @@ describe('EnhancedErrorHandler', () => {
         'Disk is full',
         'RAM limit exceeded',
       ];
-      
+
       for (const pattern of patterns) {
         const enhancedError = await handler.processError(pattern);
         expect(enhancedError.type).toBe('insufficient_resources');
@@ -426,15 +438,21 @@ describe('EnhancedErrorHandler', () => {
         'connection REFUSED',
         'Out Of Memory',
       ];
-      
+
       const enhancedErrors = await handler.processErrors(patterns);
-      
+
       // Errors are sorted by severity, so high severity comes first
       // backend_unavailable and insufficient_resources are both "high" severity
       // model_not_found is "medium" severity
-      expect(enhancedErrors.find(e => e.type === 'model_not_found')).toBeDefined();
-      expect(enhancedErrors.find(e => e.type === 'backend_unavailable')).toBeDefined();
-      expect(enhancedErrors.find(e => e.type === 'insufficient_resources')).toBeDefined();
+      expect(
+        enhancedErrors.find((e) => e.type === 'model_not_found'),
+      ).toBeDefined();
+      expect(
+        enhancedErrors.find((e) => e.type === 'backend_unavailable'),
+      ).toBeDefined();
+      expect(
+        enhancedErrors.find((e) => e.type === 'insufficient_resources'),
+      ).toBeDefined();
     });
   });
 

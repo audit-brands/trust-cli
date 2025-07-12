@@ -4,11 +4,22 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { globalPerformanceMonitor, ModelProfiler, HardwareOptimizer } from '@trust-cli/trust-cli-core';
+import {
+  globalPerformanceMonitor,
+  ModelProfiler,
+  HardwareOptimizer,
+} from '@trust-cli/trust-cli-core';
 import chalk from 'chalk';
 
 export interface PerformanceCommandArgs {
-  action: 'status' | 'report' | 'watch' | 'optimize' | 'profile' | 'recommend' | 'regression';
+  action:
+    | 'status'
+    | 'report'
+    | 'watch'
+    | 'optimize'
+    | 'profile'
+    | 'recommend'
+    | 'regression';
   verbose?: boolean;
   watch?: boolean;
   interval?: number;
@@ -24,7 +35,10 @@ class PerformanceCommandHandler {
 
   constructor() {
     this.hardwareOptimizer = new HardwareOptimizer(globalPerformanceMonitor);
-    this.modelProfiler = new ModelProfiler(globalPerformanceMonitor, this.hardwareOptimizer);
+    this.modelProfiler = new ModelProfiler(
+      globalPerformanceMonitor,
+      this.hardwareOptimizer,
+    );
   }
 
   async handleCommand(args: PerformanceCommandArgs): Promise<void> {
@@ -62,35 +76,43 @@ class PerformanceCommandHandler {
       console.log('\n⚡ System Status');
       console.log('─'.repeat(30));
       console.log(globalPerformanceMonitor.formatCompactStatus());
-      
+
       const metrics = globalPerformanceMonitor.getSystemMetrics();
       const stats = globalPerformanceMonitor.getInferenceStats();
-      
+
       console.log('\n🖥️  Quick Overview:');
-      console.log(`   Memory Available: ${this.formatBytes(metrics.memoryUsage.available)}`);
-      console.log(`   CPU Cores: ${(await import('os')).default.cpus().length}`);
+      console.log(
+        `   Memory Available: ${this.formatBytes(metrics.memoryUsage.available)}`,
+      );
+      console.log(
+        `   CPU Cores: ${(await import('os')).default.cpus().length}`,
+      );
       console.log(`   Total Inferences: ${stats.totalInferences}`);
-      
+
       if (stats.averageTokensPerSecond > 0) {
-        console.log(`   Average Speed: ${stats.averageTokensPerSecond.toFixed(1)} tokens/sec`);
+        console.log(
+          `   Average Speed: ${stats.averageTokensPerSecond.toFixed(1)} tokens/sec`,
+        );
       }
-      
+
       console.log('\n💡 Use "trust perf report" for detailed information');
       console.log('💡 Use "trust perf watch" to monitor in real-time');
     }
   }
 
-  private async showReport(format?: string, output?: string): Promise<void> {
+  private async showReport(_format?: string, _output?: string): Promise<void> {
     console.log(globalPerformanceMonitor.formatSystemReport());
-    
+
     const stats = globalPerformanceMonitor.getInferenceStats();
     if (stats.recentMetrics.length > 0) {
       console.log('📊 Recent Inference History:');
       console.log('─'.repeat(50));
-      
+
       stats.recentMetrics.slice(-5).forEach((metric, index) => {
         console.log(`   ${index + 1}. ${metric.modelName}`);
-        console.log(`      Speed: ${metric.tokensPerSecond.toFixed(1)} tokens/sec`);
+        console.log(
+          `      Speed: ${metric.tokensPerSecond.toFixed(1)} tokens/sec`,
+        );
         console.log(`      Time: ${metric.inferenceTime}ms`);
         console.log(`      Tokens: ${metric.totalTokens}`);
         console.log('');
@@ -103,20 +125,24 @@ class PerformanceCommandHandler {
     console.log('Time      | CPU  | Memory | Heap Used | Load Avg');
     console.log('─'.repeat(55));
 
-    const stopMonitoring = globalPerformanceMonitor.monitorResourceUsage((usage) => {
-      const metrics = globalPerformanceMonitor.getSystemMetrics();
-      const timestamp = new Date().toLocaleTimeString();
-      const memoryPercent = (metrics.memoryUsage.used / metrics.memoryUsage.total) * 100;
-      const loadAvg = metrics.loadAverage[0].toFixed(2);
-      
-      process.stdout.write('\r');
-      process.stdout.write(
-        `${timestamp} | ${usage.cpuPercent.toFixed(0).padStart(3)}% | ` +
-        `${memoryPercent.toFixed(0).padStart(5)}% | ` +
-        `${this.formatBytes(metrics.nodeMemory.heapUsed).padStart(8)} | ` +
-        `${loadAvg.padStart(7)}`
-      );
-    }, interval);
+    const stopMonitoring = globalPerformanceMonitor.monitorResourceUsage(
+      (usage) => {
+        const metrics = globalPerformanceMonitor.getSystemMetrics();
+        const timestamp = new Date().toLocaleTimeString();
+        const memoryPercent =
+          (metrics.memoryUsage.used / metrics.memoryUsage.total) * 100;
+        const loadAvg = metrics.loadAverage[0].toFixed(2);
+
+        process.stdout.write('\r');
+        process.stdout.write(
+          `${timestamp} | ${usage.cpuPercent.toFixed(0).padStart(3)}% | ` +
+            `${memoryPercent.toFixed(0).padStart(5)}% | ` +
+            `${this.formatBytes(metrics.nodeMemory.heapUsed).padStart(8)} | ` +
+            `${loadAvg.padStart(7)}`,
+        );
+      },
+      interval,
+    );
 
     // Handle Ctrl+C gracefully
     process.on('SIGINT', () => {
@@ -132,19 +158,20 @@ class PerformanceCommandHandler {
   private async showOptimizationSuggestions(): Promise<void> {
     console.log('\n🎯 System Optimization Suggestions');
     console.log('═'.repeat(50));
-    
+
     const optimal = globalPerformanceMonitor.getOptimalModelSettings();
     const metrics = globalPerformanceMonitor.getSystemMetrics();
-    const memoryPercent = (metrics.memoryUsage.used / metrics.memoryUsage.total) * 100;
-    
+    const memoryPercent =
+      (metrics.memoryUsage.used / metrics.memoryUsage.total) * 100;
+
     console.log('\n🚀 Recommended Model Settings:');
     console.log(`   Max RAM Allocation: ${optimal.recommendedRAM}GB`);
     console.log(`   Context Size: ${optimal.maxContextSize} tokens`);
     console.log(`   Quantization: ${optimal.preferredQuantization}`);
     console.log(`   Expected Speed: ${optimal.estimatedSpeed}`);
-    
+
     console.log('\n⚠️  System Analysis:');
-    
+
     if (memoryPercent > 80) {
       console.log('   🔴 High memory usage detected');
       console.log('      → Consider using smaller models or Q4 quantization');
@@ -156,7 +183,7 @@ class PerformanceCommandHandler {
       console.log('   🟢 Low memory usage');
       console.log('      → You can safely use larger models');
     }
-    
+
     if (metrics.cpuUsage > 80) {
       console.log('   🔴 High CPU usage detected');
       console.log('      → Reduce context size for faster inference');
@@ -164,7 +191,7 @@ class PerformanceCommandHandler {
     } else {
       console.log('   🟢 CPU usage is optimal');
     }
-    
+
     const os = await import('os');
     const cpuCores = os.default.cpus().length;
     if (cpuCores <= 4) {
@@ -172,9 +199,9 @@ class PerformanceCommandHandler {
       console.log('      → Use Q4_K_M quantization for better performance');
       console.log('      → Keep context size under 4096 tokens');
     }
-    
+
     console.log('\n💡 Recommendations:');
-    
+
     if (optimal.estimatedSpeed === 'slow') {
       console.log('   → Use qwen2.5-1.5b-instruct for fastest performance');
       console.log('   → Keep prompts short and focused');
@@ -185,9 +212,11 @@ class PerformanceCommandHandler {
       console.log('   → llama-3.1-8b-instruct for highest quality');
       console.log('   → System can handle longer contexts efficiently');
     }
-    
+
     console.log('\n🔧 Performance Tips:');
-    console.log('   • Use "trust model recommend <task>" for task-specific models');
+    console.log(
+      '   • Use "trust model recommend <task>" for task-specific models',
+    );
     console.log('   • Monitor performance with "trust perf watch"');
     console.log('   • Verify model integrity with "trust model verify"');
   }
@@ -209,22 +238,42 @@ class PerformanceCommandHandler {
     console.log('═'.repeat(60));
 
     console.log(chalk.green('\n🚀 Performance Metrics:'));
-    console.log(`   Average Speed: ${profile.performance.averageTokensPerSecond.toFixed(2)} tokens/sec`);
-    console.log(`   Peak Speed: ${profile.performance.peakTokensPerSecond.toFixed(2)} tokens/sec`);
-    console.log(`   Average Latency: ${profile.performance.averageLatency.toFixed(0)}ms`);
-    console.log(`   Throughput Efficiency: ${profile.performance.throughputEfficiency.toFixed(2)} tokens/sec/GB`);
+    console.log(
+      `   Average Speed: ${profile.performance.averageTokensPerSecond.toFixed(2)} tokens/sec`,
+    );
+    console.log(
+      `   Peak Speed: ${profile.performance.peakTokensPerSecond.toFixed(2)} tokens/sec`,
+    );
+    console.log(
+      `   Average Latency: ${profile.performance.averageLatency.toFixed(0)}ms`,
+    );
+    console.log(
+      `   Throughput Efficiency: ${profile.performance.throughputEfficiency.toFixed(2)} tokens/sec/GB`,
+    );
 
     console.log(chalk.blue('\n💾 Resource Usage:'));
-    console.log(`   Base Memory: ${(profile.resources.baseMemoryMB / 1024).toFixed(1)}GB`);
-    console.log(`   CPU Utilization: ${profile.resources.cpuUtilization.toFixed(1)}%`);
+    console.log(
+      `   Base Memory: ${(profile.resources.baseMemoryMB / 1024).toFixed(1)}GB`,
+    );
+    console.log(
+      `   CPU Utilization: ${profile.resources.cpuUtilization.toFixed(1)}%`,
+    );
     if (profile.resources.gpuUtilization) {
-      console.log(`   GPU Utilization: ${profile.resources.gpuUtilization.toFixed(1)}%`);
+      console.log(
+        `   GPU Utilization: ${profile.resources.gpuUtilization.toFixed(1)}%`,
+      );
     }
 
     console.log(chalk.magenta('\n✨ Quality Metrics:'));
-    console.log(`   Consistency Score: ${(profile.quality.consistencyScore * 100).toFixed(1)}%`);
-    console.log(`   Error Rate: ${(profile.quality.errorRate * 100).toFixed(2)}%`);
-    console.log(`   Context Adherence: ${(profile.quality.contextAdherence * 100).toFixed(1)}%`);
+    console.log(
+      `   Consistency Score: ${(profile.quality.consistencyScore * 100).toFixed(1)}%`,
+    );
+    console.log(
+      `   Error Rate: ${(profile.quality.errorRate * 100).toFixed(2)}%`,
+    );
+    console.log(
+      `   Context Adherence: ${(profile.quality.contextAdherence * 100).toFixed(1)}%`,
+    );
 
     console.log(chalk.cyan('\n⚙️ Optimal Settings:'));
     console.log(`   Context Size: ${profile.usage.optimalContextSize} tokens`);
@@ -250,13 +299,20 @@ class PerformanceCommandHandler {
     }
 
     // Generate optimization recommendations
-    const optimizations = await this.modelProfiler.generateOptimizationRecommendations(modelName);
+    const optimizations =
+      await this.modelProfiler.generateOptimizationRecommendations(modelName);
     if (optimizations.length > 0) {
       console.log(chalk.green('\n🎯 Optimization Opportunities:'));
       optimizations.slice(0, 3).forEach((opt, i) => {
-        const priorityColor = opt.priority === 'high' ? chalk.red : 
-                             opt.priority === 'medium' ? chalk.yellow : chalk.blue;
-        console.log(`   ${i + 1}. ${priorityColor(opt.title)} [${opt.priority}]`);
+        const priorityColor =
+          opt.priority === 'high'
+            ? chalk.red
+            : opt.priority === 'medium'
+              ? chalk.yellow
+              : chalk.blue;
+        console.log(
+          `   ${i + 1}. ${priorityColor(opt.title)} [${opt.priority}]`,
+        );
         console.log(`      ${opt.description}`);
         console.log(`      ${opt.implementation}`);
         console.log(`      Expected: ${opt.expectedImprovement}`);
@@ -265,13 +321,15 @@ class PerformanceCommandHandler {
     }
   }
 
-  private async showWorkloadRecommendations(workloadType?: string): Promise<void> {
+  private async showWorkloadRecommendations(
+    workloadType?: string,
+  ): Promise<void> {
     const workloadPatterns = ['chat', 'coding', 'analysis'];
-    
+
     if (!workloadType) {
       console.log(chalk.blue('\n🎯 Available Workload Types:'));
       console.log('   • chat - Interactive conversations');
-      console.log('   • coding - Code generation and debugging');  
+      console.log('   • coding - Code generation and debugging');
       console.log('   • analysis - Document analysis and reasoning');
       console.log('\nUse --workload <type> to get specific recommendations');
       return;
@@ -283,15 +341,22 @@ class PerformanceCommandHandler {
       return;
     }
 
-    console.log(chalk.blue(`\n🎯 Model Recommendations for ${workloadType.toUpperCase()} workload`));
+    console.log(
+      chalk.blue(
+        `\n🎯 Model Recommendations for ${workloadType.toUpperCase()} workload`,
+      ),
+    );
     console.log('═'.repeat(60));
 
     // This would get recommendations from the profiler
     // For now, show example recommendations based on workload type
-    const recommendations = this.getWorkloadExampleRecommendations(workloadType);
-    
+    const recommendations =
+      this.getWorkloadExampleRecommendations(workloadType);
+
     recommendations.forEach((rec, i) => {
-      console.log(chalk.green(`\n${i + 1}. ${rec.model} (Score: ${rec.score}/100)`));
+      console.log(
+        chalk.green(`\n${i + 1}. ${rec.model} (Score: ${rec.score}/100)`),
+      );
       console.log(`   Reason: ${rec.reason}`);
       console.log(`   Speed: ${rec.performance.speed} tokens/sec`);
       console.log(`   Memory: ${rec.performance.memory}GB`);
@@ -313,7 +378,7 @@ class PerformanceCommandHandler {
     console.log('═'.repeat(50));
 
     const regressions = await this.modelProfiler.detectPerformanceRegressions();
-    
+
     if (regressions.length === 0) {
       console.log(chalk.green('✅ No performance regressions detected!'));
       console.log('All models are performing within expected parameters.');
@@ -321,19 +386,27 @@ class PerformanceCommandHandler {
     }
 
     regressions.forEach((regression, i) => {
-      const severityColor = regression.significance === 'major' ? chalk.red :
-                           regression.significance === 'moderate' ? chalk.yellow : chalk.blue;
-      
-      console.log(severityColor(`\n${i + 1}. ${regression.modelName} - ${regression.metric.toUpperCase()}`));
+      const severityColor =
+        regression.significance === 'major'
+          ? chalk.red
+          : regression.significance === 'moderate'
+            ? chalk.yellow
+            : chalk.blue;
+
+      console.log(
+        severityColor(
+          `\n${i + 1}. ${regression.modelName} - ${regression.metric.toUpperCase()}`,
+        ),
+      );
       console.log(`   Severity: ${regression.significance}`);
       console.log(`   Previous: ${regression.previousValue.toFixed(2)}`);
       console.log(`   Current: ${regression.currentValue.toFixed(2)}`);
       console.log(`   Degradation: ${regression.degradation.toFixed(1)}%`);
       console.log(`   Detected: ${regression.detected.toLocaleString()}`);
-      
+
       if (regression.possibleCauses.length > 0) {
         console.log('   Possible causes:');
-        regression.possibleCauses.forEach(cause => {
+        regression.possibleCauses.forEach((cause) => {
           console.log(`   • ${cause}`);
         });
       }
@@ -430,17 +503,19 @@ class PerformanceCommandHandler {
     const units = ['B', 'KB', 'MB', 'GB'];
     let size = bytes;
     let unitIndex = 0;
-    
+
     while (size >= 1024 && unitIndex < units.length - 1) {
       size /= 1024;
       unitIndex++;
     }
-    
+
     return `${size.toFixed(1)}${units[unitIndex]}`;
   }
 }
 
-export async function handlePerformanceCommand(args: PerformanceCommandArgs): Promise<void> {
+export async function handlePerformanceCommand(
+  args: PerformanceCommandArgs,
+): Promise<void> {
   const handler = new PerformanceCommandHandler();
   await handler.handleCommand(args);
 }

@@ -9,6 +9,8 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   test: {
     reporters: ['default', 'junit'],
+    minWorkers: 1,
+    maxWorkers: 1,
     silent: true,
     setupFiles: ['./test-setup.ts'],
     outputFile: {

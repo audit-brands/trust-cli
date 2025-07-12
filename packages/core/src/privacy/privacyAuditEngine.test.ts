@@ -5,7 +5,12 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { PrivacyAuditEngine, PrivacyAuditConfig, ComplianceFramework, PrivacyAuditReport } from './privacyAuditEngine.js';
+import {
+  PrivacyAuditEngine,
+  PrivacyAuditConfig,
+  ComplianceFramework,
+  PrivacyAuditReport,
+} from './privacyAuditEngine.js';
 import { PrivacyManager, PrivacyConfig } from '../trust/privacyManager.js';
 import { PerformanceMonitor } from '../trust/performanceMonitor.js';
 
@@ -16,12 +21,12 @@ vi.mock('fs/promises', () => ({
   readFile: vi.fn().mockResolvedValue('{}'),
   writeFile: vi.fn().mockResolvedValue(undefined),
   stat: vi.fn().mockResolvedValue({
-    mode: parseInt('700', 8)
-  })
+    mode: parseInt('700', 8),
+  }),
 }));
 
 vi.mock('os', () => ({
-  homedir: vi.fn().mockReturnValue('/home/test')
+  homedir: vi.fn().mockReturnValue('/home/test'),
 }));
 
 describe('PrivacyAuditEngine', () => {
@@ -38,13 +43,13 @@ describe('PrivacyAuditEngine', () => {
     allowCloudSync: false,
     auditLogging: true,
     lastUpdated: new Date().toISOString(),
-    version: '1.0.0'
+    version: '1.0.0',
   };
 
   beforeEach(() => {
     mockPerformanceMonitor = {} as PerformanceMonitor;
     mockPrivacyManager = {
-      getPrivacyConfig: vi.fn().mockResolvedValue(mockPrivacyConfig)
+      getPrivacyConfig: vi.fn().mockResolvedValue(mockPrivacyConfig),
     } as any;
     auditEngine = new PrivacyAuditEngine(mockPrivacyManager);
   });
@@ -52,19 +57,23 @@ describe('PrivacyAuditEngine', () => {
   describe('Privacy Configuration Audit', () => {
     it('should detect open privacy mode as high risk', async () => {
       const openModeConfig = { ...mockPrivacyConfig, mode: 'open' as const };
-      vi.mocked(mockPrivacyManager.getPrivacyConfig).mockResolvedValue(openModeConfig);
+      vi.mocked(mockPrivacyManager.getPrivacyConfig).mockResolvedValue(
+        openModeConfig,
+      );
 
       const config: PrivacyAuditConfig = {
         frameworks: ['gdpr'],
         depth: 'basic',
         includeSystemAnalysis: false,
         includeDataFlow: false,
-        includeRiskAssessment: false
+        includeRiskAssessment: false,
       };
 
       const report = await auditEngine.conductAudit(config);
-      
-      const openModeFindings = report.findings.filter(f => f.id === 'privacy-mode-open');
+
+      const openModeFindings = report.findings.filter(
+        (f) => f.id === 'privacy-mode-open',
+      );
       expect(openModeFindings).toHaveLength(1);
       expect(openModeFindings[0].level).toBe('high');
       expect(openModeFindings[0].framework).toContain('gdpr');
@@ -72,19 +81,23 @@ describe('PrivacyAuditEngine', () => {
 
     it('should detect disabled storage encryption as critical', async () => {
       const unencryptedConfig = { ...mockPrivacyConfig, encryptStorage: false };
-      vi.mocked(mockPrivacyManager.getPrivacyConfig).mockResolvedValue(unencryptedConfig);
+      vi.mocked(mockPrivacyManager.getPrivacyConfig).mockResolvedValue(
+        unencryptedConfig,
+      );
 
       const config: PrivacyAuditConfig = {
         frameworks: ['gdpr', 'hipaa'],
         depth: 'basic',
         includeSystemAnalysis: false,
         includeDataFlow: false,
-        includeRiskAssessment: false
+        includeRiskAssessment: false,
       };
 
       const report = await auditEngine.conductAudit(config);
-      
-      const encryptionFindings = report.findings.filter(f => f.id === 'storage-encryption-disabled');
+
+      const encryptionFindings = report.findings.filter(
+        (f) => f.id === 'storage-encryption-disabled',
+      );
       expect(encryptionFindings).toHaveLength(1);
       expect(encryptionFindings[0].level).toBe('critical');
       expect(encryptionFindings[0].framework).toContain('gdpr');
@@ -93,19 +106,23 @@ describe('PrivacyAuditEngine', () => {
 
     it('should detect disabled audit logging as high risk', async () => {
       const noAuditConfig = { ...mockPrivacyConfig, auditLogging: false };
-      vi.mocked(mockPrivacyManager.getPrivacyConfig).mockResolvedValue(noAuditConfig);
+      vi.mocked(mockPrivacyManager.getPrivacyConfig).mockResolvedValue(
+        noAuditConfig,
+      );
 
       const config: PrivacyAuditConfig = {
         frameworks: ['sox'],
         depth: 'basic',
         includeSystemAnalysis: false,
         includeDataFlow: false,
-        includeRiskAssessment: false
+        includeRiskAssessment: false,
       };
 
       const report = await auditEngine.conductAudit(config);
-      
-      const auditFindings = report.findings.filter(f => f.id === 'audit-logging-disabled');
+
+      const auditFindings = report.findings.filter(
+        (f) => f.id === 'audit-logging-disabled',
+      );
       expect(auditFindings).toHaveLength(1);
       expect(auditFindings[0].level).toBe('high');
       expect(auditFindings[0].framework).toContain('sox');
@@ -113,19 +130,23 @@ describe('PrivacyAuditEngine', () => {
 
     it('should detect excessive data retention as medium risk', async () => {
       const longRetentionConfig = { ...mockPrivacyConfig, dataRetention: 400 };
-      vi.mocked(mockPrivacyManager.getPrivacyConfig).mockResolvedValue(longRetentionConfig);
+      vi.mocked(mockPrivacyManager.getPrivacyConfig).mockResolvedValue(
+        longRetentionConfig,
+      );
 
       const config: PrivacyAuditConfig = {
         frameworks: ['gdpr'],
         depth: 'basic',
         includeSystemAnalysis: false,
         includeDataFlow: false,
-        includeRiskAssessment: false
+        includeRiskAssessment: false,
       };
 
       const report = await auditEngine.conductAudit(config);
-      
-      const retentionFindings = report.findings.filter(f => f.id === 'excessive-data-retention');
+
+      const retentionFindings = report.findings.filter(
+        (f) => f.id === 'excessive-data-retention',
+      );
       expect(retentionFindings).toHaveLength(1);
       expect(retentionFindings[0].level).toBe('medium');
       expect(retentionFindings[0].framework).toContain('gdpr');
@@ -139,11 +160,11 @@ describe('PrivacyAuditEngine', () => {
         depth: 'standard',
         includeSystemAnalysis: false,
         includeDataFlow: true,
-        includeRiskAssessment: false
+        includeRiskAssessment: false,
       };
 
       const report = await auditEngine.conductAudit(config);
-      
+
       expect(report.complianceStatus.gdpr).toBeDefined();
       expect(report.complianceStatus.gdpr.score).toBeGreaterThan(0);
       expect(report.complianceStatus.gdpr.score).toBeLessThanOrEqual(100);
@@ -155,11 +176,11 @@ describe('PrivacyAuditEngine', () => {
         depth: 'standard',
         includeSystemAnalysis: false,
         includeDataFlow: false,
-        includeRiskAssessment: false
+        includeRiskAssessment: false,
       };
 
       const report = await auditEngine.conductAudit(config);
-      
+
       expect(report.complianceStatus.gdpr).toBeDefined();
       expect(report.complianceStatus.ccpa).toBeDefined();
       expect(report.complianceStatus.hipaa).toBeDefined();
@@ -167,23 +188,25 @@ describe('PrivacyAuditEngine', () => {
     });
 
     it('should calculate compliance scores based on findings', async () => {
-      const criticalConfig = { 
-        ...mockPrivacyConfig, 
+      const criticalConfig = {
+        ...mockPrivacyConfig,
         encryptStorage: false, // Critical finding
-        auditLogging: false    // High finding
+        auditLogging: false, // High finding
       };
-      vi.mocked(mockPrivacyManager.getPrivacyConfig).mockResolvedValue(criticalConfig);
+      vi.mocked(mockPrivacyManager.getPrivacyConfig).mockResolvedValue(
+        criticalConfig,
+      );
 
       const config: PrivacyAuditConfig = {
         frameworks: ['gdpr'],
         depth: 'basic',
         includeSystemAnalysis: false,
         includeDataFlow: false,
-        includeRiskAssessment: false
+        includeRiskAssessment: false,
       };
 
       const report = await auditEngine.conductAudit(config);
-      
+
       // Should have low compliance score due to critical findings
       expect(report.complianceStatus.gdpr.score).toBeLessThan(70);
       expect(report.complianceStatus.gdpr.compliant).toBe(false);
@@ -198,15 +221,15 @@ describe('PrivacyAuditEngine', () => {
         depth: 'comprehensive',
         includeSystemAnalysis: true,
         includeDataFlow: false,
-        includeRiskAssessment: false
+        includeRiskAssessment: false,
       };
 
       const report = await auditEngine.conductAudit(config);
-      
+
       expect(report.scope.includeSystemAnalysis).toBe(true);
       // Should have system-level findings
-      const systemFindings = report.findings.filter(f => 
-        f.evidence?.type === 'file' || f.evidence?.type === 'system'
+      const systemFindings = report.findings.filter(
+        (f) => f.evidence?.type === 'file' || f.evidence?.type === 'system',
       );
       expect(systemFindings.length).toBeGreaterThanOrEqual(0);
     });
@@ -215,7 +238,7 @@ describe('PrivacyAuditEngine', () => {
       // Mock insecure file permissions
       const fs = await import('fs/promises');
       vi.mocked(fs.stat).mockResolvedValue({
-        mode: parseInt('755', 8) // Insecure permissions
+        mode: parseInt('755', 8), // Insecure permissions
       } as any);
 
       const config: PrivacyAuditConfig = {
@@ -223,13 +246,13 @@ describe('PrivacyAuditEngine', () => {
         depth: 'standard',
         includeSystemAnalysis: true,
         includeDataFlow: false,
-        includeRiskAssessment: false
+        includeRiskAssessment: false,
       };
 
       const report = await auditEngine.conductAudit(config);
-      
-      const permissionFindings = report.findings.filter(f => 
-        f.id === 'file-permissions-privacy-dir'
+
+      const permissionFindings = report.findings.filter(
+        (f) => f.id === 'file-permissions-privacy-dir',
       );
       expect(permissionFindings).toHaveLength(1);
       expect(permissionFindings[0].level).toBe('high');
@@ -243,11 +266,11 @@ describe('PrivacyAuditEngine', () => {
         depth: 'comprehensive',
         includeSystemAnalysis: false,
         includeDataFlow: true,
-        includeRiskAssessment: false
+        includeRiskAssessment: false,
       };
 
       const report = await auditEngine.conductAudit(config);
-      
+
       expect(report.scope.includeDataFlow).toBe(true);
       expect(report.dataFlowAnalysis).toBeDefined();
       expect(report.dataFlowAnalysis?.dataProcessingActivities).toBeDefined();
@@ -260,16 +283,16 @@ describe('PrivacyAuditEngine', () => {
         depth: 'comprehensive',
         includeSystemAnalysis: false,
         includeDataFlow: true,
-        includeRiskAssessment: false
+        includeRiskAssessment: false,
       };
 
       const report = await auditEngine.conductAudit(config);
-      
+
       expect(report.dataFlowAnalysis).toBeDefined();
-      
+
       // Should identify missing data subject rights
-      const accessRightFindings = report.findings.filter(f => 
-        f.id === 'data-subject-access-right'
+      const accessRightFindings = report.findings.filter(
+        (f) => f.id === 'data-subject-access-right',
       );
       expect(accessRightFindings).toHaveLength(1);
       expect(accessRightFindings[0].level).toBe('high');
@@ -283,36 +306,42 @@ describe('PrivacyAuditEngine', () => {
         depth: 'comprehensive',
         includeSystemAnalysis: false,
         includeDataFlow: false,
-        includeRiskAssessment: true
+        includeRiskAssessment: true,
       };
 
       const report = await auditEngine.conductAudit(config);
-      
+
       expect(report.scope.includeRiskAssessment).toBe(true);
       expect(report.riskAssessment).toBeDefined();
       expect(report.riskAssessment?.overallRiskLevel).toBeDefined();
-      expect(report.riskAssessment?.privacyImpactScore).toBeGreaterThanOrEqual(0);
-      expect(report.riskAssessment?.privacyImpactScore).toBeLessThanOrEqual(100);
+      expect(report.riskAssessment?.privacyImpactScore).toBeGreaterThanOrEqual(
+        0,
+      );
+      expect(report.riskAssessment?.privacyImpactScore).toBeLessThanOrEqual(
+        100,
+      );
     });
 
     it('should calculate risk levels based on findings', async () => {
-      const criticalConfig = { 
-        ...mockPrivacyConfig, 
+      const criticalConfig = {
+        ...mockPrivacyConfig,
         encryptStorage: false,
-        auditLogging: false
+        auditLogging: false,
       };
-      vi.mocked(mockPrivacyManager.getPrivacyConfig).mockResolvedValue(criticalConfig);
+      vi.mocked(mockPrivacyManager.getPrivacyConfig).mockResolvedValue(
+        criticalConfig,
+      );
 
       const config: PrivacyAuditConfig = {
         frameworks: ['gdpr'],
         depth: 'comprehensive',
         includeSystemAnalysis: false,
         includeDataFlow: false,
-        includeRiskAssessment: true
+        includeRiskAssessment: true,
       };
 
       const report = await auditEngine.conductAudit(config);
-      
+
       expect(report.riskAssessment).toBeDefined();
       expect(report.riskAssessment!.overallRiskLevel).toBe('critical');
       expect(report.riskAssessment!.privacyImpactScore).toBeLessThan(75); // More lenient threshold
@@ -326,11 +355,11 @@ describe('PrivacyAuditEngine', () => {
         depth: 'comprehensive',
         includeSystemAnalysis: true,
         includeDataFlow: true,
-        includeRiskAssessment: true
+        includeRiskAssessment: true,
       };
 
       const report = await auditEngine.conductAudit(config);
-      
+
       expect(report.id).toBeDefined();
       expect(report.timestamp).toBeInstanceOf(Date);
       expect(report.duration).toBeGreaterThanOrEqual(0); // Duration can be 0 in fast tests
@@ -342,30 +371,32 @@ describe('PrivacyAuditEngine', () => {
     });
 
     it('should sort findings by severity', async () => {
-      const mixedConfig = { 
-        ...mockPrivacyConfig, 
+      const mixedConfig = {
+        ...mockPrivacyConfig,
         encryptStorage: false, // Critical
-        mode: 'open' as const,    // High
-        dataRetention: 400     // Medium
+        mode: 'open' as const, // High
+        dataRetention: 400, // Medium
       };
-      vi.mocked(mockPrivacyManager.getPrivacyConfig).mockResolvedValue(mixedConfig);
+      vi.mocked(mockPrivacyManager.getPrivacyConfig).mockResolvedValue(
+        mixedConfig,
+      );
 
       const config: PrivacyAuditConfig = {
         frameworks: ['gdpr'],
         depth: 'standard',
         includeSystemAnalysis: false,
         includeDataFlow: false,
-        includeRiskAssessment: false
+        includeRiskAssessment: false,
       };
 
       const report = await auditEngine.conductAudit(config);
-      
+
       // Findings should be sorted by severity (critical first)
-      const levels = report.findings.map(f => f.level);
+      const levels = report.findings.map((f) => f.level);
       const criticalIndex = levels.indexOf('critical');
       const highIndex = levels.indexOf('high');
       const mediumIndex = levels.indexOf('medium');
-      
+
       if (criticalIndex !== -1 && highIndex !== -1) {
         expect(criticalIndex).toBeLessThan(highIndex);
       }
@@ -380,12 +411,12 @@ describe('PrivacyAuditEngine', () => {
         depth: 'basic',
         includeSystemAnalysis: false,
         includeDataFlow: false,
-        includeRiskAssessment: false
+        includeRiskAssessment: false,
       };
 
       const report = await auditEngine.conductAudit(config);
       const textReport = auditEngine.formatReportAsText(report);
-      
+
       expect(textReport).toContain('Privacy Audit Report');
       expect(textReport).toContain('Compliance Score');
       expect(textReport).toContain('Summary:');
@@ -398,21 +429,23 @@ describe('PrivacyAuditEngine', () => {
       const customCheck = {
         name: 'Custom Test Check',
         description: 'A test custom check',
-        check: vi.fn().mockResolvedValue([{
-          id: 'custom-test',
-          level: 'medium' as const,
-          framework: [] as ComplianceFramework[],
-          title: 'Custom Test Finding',
-          description: 'Test finding from custom check',
-          impact: 'Test impact',
-          recommendation: 'Test recommendation',
-          remediation: {
-            steps: ['Test step'],
-            effort: 'low' as const,
-            priority: 3
+        check: vi.fn().mockResolvedValue([
+          {
+            id: 'custom-test',
+            level: 'medium' as const,
+            framework: [] as ComplianceFramework[],
+            title: 'Custom Test Finding',
+            description: 'Test finding from custom check',
+            impact: 'Test impact',
+            recommendation: 'Test recommendation',
+            remediation: {
+              steps: ['Test step'],
+              effort: 'low' as const,
+              priority: 3,
+            },
+            timestamp: new Date(),
           },
-          timestamp: new Date()
-        }])
+        ]),
       };
 
       const config: PrivacyAuditConfig = {
@@ -421,13 +454,15 @@ describe('PrivacyAuditEngine', () => {
         includeSystemAnalysis: false,
         includeDataFlow: false,
         includeRiskAssessment: false,
-        customChecks: [customCheck]
+        customChecks: [customCheck],
       };
 
       const report = await auditEngine.conductAudit(config);
-      
+
       expect(customCheck.check).toHaveBeenCalledWith(mockPrivacyConfig);
-      const customFindings = report.findings.filter(f => f.id === 'custom-test');
+      const customFindings = report.findings.filter(
+        (f) => f.id === 'custom-test',
+      );
       expect(customFindings).toHaveLength(1);
       expect(customFindings[0].title).toBe('Custom Test Finding');
     });
@@ -436,7 +471,7 @@ describe('PrivacyAuditEngine', () => {
       const failingCheck = {
         name: 'Failing Check',
         description: 'A check that fails',
-        check: vi.fn().mockRejectedValue(new Error('Custom check failed'))
+        check: vi.fn().mockRejectedValue(new Error('Custom check failed')),
       };
 
       const config: PrivacyAuditConfig = {
@@ -445,13 +480,13 @@ describe('PrivacyAuditEngine', () => {
         includeSystemAnalysis: false,
         includeDataFlow: false,
         includeRiskAssessment: false,
-        customChecks: [failingCheck]
+        customChecks: [failingCheck],
       };
 
       const report = await auditEngine.conductAudit(config);
-      
-      const errorFindings = report.findings.filter(f => 
-        f.id.startsWith('custom-check-error')
+
+      const errorFindings = report.findings.filter((f) =>
+        f.id.startsWith('custom-check-error'),
       );
       expect(errorFindings).toHaveLength(1);
       expect(errorFindings[0].title).toBe('Custom Check Error');
@@ -468,36 +503,41 @@ describe('PrivacyAuditEngine', () => {
     it('should load and sort audit history by timestamp', async () => {
       // Create a new engine instance for this test to avoid mock conflicts
       const testEngine = new PrivacyAuditEngine(mockPrivacyManager);
-      
+
       // Mock file system to return audit files
       const fs = await import('fs/promises');
-      
+
       // Clear and setup mocks properly
       vi.clearAllMocks();
-      
+
       // Mock successful directory read and file reads
-      vi.mocked(fs.readdir).mockResolvedValue(['audit-1.json', 'audit-2.json'] as any);
-      
-      const report1 = { 
+      vi.mocked(fs.readdir).mockResolvedValue([
+        'audit-1.json',
+        'audit-2.json',
+      ] as any);
+
+      const report1 = {
         timestamp: '2023-01-01T00:00:00.000Z',
         id: 'audit-1',
-        summary: { complianceScore: 80 }
+        summary: { complianceScore: 80 },
       };
-      const report2 = { 
+      const report2 = {
         timestamp: '2023-01-02T00:00:00.000Z',
-        id: 'audit-2', 
-        summary: { complianceScore: 90 }
+        id: 'audit-2',
+        summary: { complianceScore: 90 },
       };
-      
+
       vi.mocked(fs.readFile)
         .mockResolvedValueOnce(JSON.stringify(report1))
         .mockResolvedValueOnce(JSON.stringify(report2));
 
       const history = await testEngine.getAuditHistory();
-      
+
       expect(history).toHaveLength(2);
       // Should be sorted by timestamp (newest first)
-      expect(new Date(history[0].timestamp).getTime()).toBeGreaterThan(new Date(history[1].timestamp).getTime());
+      expect(new Date(history[0].timestamp).getTime()).toBeGreaterThan(
+        new Date(history[1].timestamp).getTime(),
+      );
       expect(history[0].id).toBe('audit-2'); // newer should be first
       expect(history[1].id).toBe('audit-1'); // older should be second
     });
@@ -505,34 +545,42 @@ describe('PrivacyAuditEngine', () => {
 
   describe('Summary Calculations', () => {
     it('should calculate audit summary correctly', async () => {
-      const mixedConfig = { 
-        ...mockPrivacyConfig, 
+      const mixedConfig = {
+        ...mockPrivacyConfig,
         encryptStorage: false, // Critical
-        auditLogging: false,   // High
-        dataRetention: 400     // Medium
+        auditLogging: false, // High
+        dataRetention: 400, // Medium
       };
-      vi.mocked(mockPrivacyManager.getPrivacyConfig).mockResolvedValue(mixedConfig);
+      vi.mocked(mockPrivacyManager.getPrivacyConfig).mockResolvedValue(
+        mixedConfig,
+      );
 
       const config: PrivacyAuditConfig = {
         frameworks: ['gdpr', 'hipaa'],
         depth: 'standard',
         includeSystemAnalysis: false,
         includeDataFlow: false,
-        includeRiskAssessment: false
+        includeRiskAssessment: false,
       };
 
       const report = await auditEngine.conductAudit(config);
-      
+
       expect(report.summary.totalFindings).toBeGreaterThan(0);
       expect(report.summary.criticalFindings).toBeGreaterThan(0);
       expect(report.summary.highFindings).toBeGreaterThan(0);
       expect(report.summary.complianceScore).toBeLessThan(100);
-      
+
       // Summary counts should match findings
-      const actualCritical = report.findings.filter(f => f.level === 'critical').length;
-      const actualHigh = report.findings.filter(f => f.level === 'high').length;
-      const actualMedium = report.findings.filter(f => f.level === 'medium').length;
-      
+      const actualCritical = report.findings.filter(
+        (f) => f.level === 'critical',
+      ).length;
+      const actualHigh = report.findings.filter(
+        (f) => f.level === 'high',
+      ).length;
+      const actualMedium = report.findings.filter(
+        (f) => f.level === 'medium',
+      ).length;
+
       expect(report.summary.criticalFindings).toBe(actualCritical);
       expect(report.summary.highFindings).toBe(actualHigh);
       expect(report.summary.mediumFindings).toBe(actualMedium);

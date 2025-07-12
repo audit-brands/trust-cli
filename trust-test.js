@@ -4,11 +4,11 @@
  * Simple test CLI for Trust
  */
 
-import { 
+import {
   TrustConfiguration,
   TrustContentGenerator,
   AuthType,
-  createContentGenerator
+  createContentGenerator,
 } from './packages/core/dist/index.js';
 
 async function main() {
@@ -61,20 +61,24 @@ Examples:
 }
 
 async function showModels(config) {
-  const { TrustModelManagerImpl } = await import('./packages/core/dist/index.js');
+  const { TrustModelManagerImpl } = await import(
+    './packages/core/dist/index.js'
+  );
   const modelManager = new TrustModelManagerImpl(config.getModelsDirectory());
   await modelManager.initialize();
-  
+
   const models = modelManager.listAvailableModels();
   const currentModel = modelManager.getCurrentModel();
-  
+
   console.log('\n📦 Available Models:');
   console.log('─'.repeat(60));
-  
-  models.forEach(model => {
+
+  models.forEach((model) => {
     const current = currentModel?.name === model.name ? ' (current)' : '';
     console.log(`${model.name}${current}`);
-    console.log(`  Size: ${model.parameters} | RAM: ${model.ramRequirement} | Trust: ${model.trustScore}/10`);
+    console.log(
+      `  Size: ${model.parameters} | RAM: ${model.ramRequirement} | Trust: ${model.trustScore}/10`,
+    );
     console.log(`  ${model.description}`);
     console.log();
   });
@@ -87,24 +91,32 @@ async function showConfig(config) {
   console.log(`Default Model: ${settings.models.default}`);
   console.log(`Models Directory: ${settings.models.directory}`);
   console.log(`Privacy Mode: ${settings.privacy.privacyMode}`);
-  console.log(`Model Verification: ${settings.privacy.modelVerification ? 'enabled' : 'disabled'}`);
-  console.log(`Audit Logging: ${settings.privacy.auditLogging ? 'enabled' : 'disabled'}`);
+  console.log(
+    `Model Verification: ${settings.privacy.modelVerification ? 'enabled' : 'disabled'}`,
+  );
+  console.log(
+    `Audit Logging: ${settings.privacy.auditLogging ? 'enabled' : 'disabled'}`,
+  );
   console.log();
-  
+
   console.log('Inference Settings:');
   console.log(`  Temperature: ${settings.inference.temperature}`);
   console.log(`  Max Tokens: ${settings.inference.maxTokens}`);
-  console.log(`  Streaming: ${settings.inference.stream ? 'enabled' : 'disabled'}`);
+  console.log(
+    `  Streaming: ${settings.inference.stream ? 'enabled' : 'disabled'}`,
+  );
   console.log();
 }
 
 async function recommendModel(config, task) {
-  const { TrustModelManagerImpl } = await import('./packages/core/dist/index.js');
+  const { TrustModelManagerImpl } = await import(
+    './packages/core/dist/index.js'
+  );
   const modelManager = new TrustModelManagerImpl(config.getModelsDirectory());
   await modelManager.initialize();
-  
+
   const recommended = modelManager.getRecommendedModel(task, 16); // Assume 16GB available
-  
+
   console.log(`\n🎯 Recommended model for "${task}":`);
   if (recommended) {
     console.log(`${recommended.name} - ${recommended.description}`);
@@ -124,7 +136,9 @@ async function testChat(config, message) {
 
   console.log(`\n💬 Testing chat with Trust (placeholder mode):`);
   console.log(`User: ${message}`);
-  console.log(`Assistant: I'm a placeholder response! The actual model isn't loaded yet, but the Trust system is ready. To enable real chat, download a model file and update the system to load it.`);
+  console.log(
+    `Assistant: I'm a placeholder response! The actual model isn't loaded yet, but the Trust system is ready. To enable real chat, download a model file and update the system to load it.`,
+  );
   console.log();
   console.log('📝 To enable real chat:');
   console.log('   1. Download a model file (e.g., from Hugging Face)');

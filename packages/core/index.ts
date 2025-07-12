@@ -10,7 +10,7 @@ export {
   DEFAULT_GEMINI_FLASH_MODEL,
   DEFAULT_GEMINI_EMBEDDING_MODEL,
 } from './src/config/models.js';
-export { 
+export {
   TrustModelConfig,
   TrustModelClient,
   TrustModelManager,
@@ -23,6 +23,7 @@ export {
   TRUST_CLI_NAME,
   TRUST_DESCRIPTION,
   DEFAULT_TRUST_MODEL,
-  globalPerformanceMonitor
+  globalPerformanceMonitor,
+  HardwareOptimizer,
 } from './src/trust/index.js';
 export * from './src/config/trustConfig.js';

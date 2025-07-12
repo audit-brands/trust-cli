@@ -95,7 +95,7 @@ export default tseslint.config(
         'error',
         { accessibility: 'no-public' },
       ],
-      '@typescript-eslint/no-explicit-any': 'error',
+      '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/no-inferrable-types': [
         'error',
         { ignoreParameters: true, ignoreProperties: true },

@@ -63,9 +63,7 @@ export async function runNonInteractive(
   let currentMessages: Content[] = [{ role: 'user', parts: [{ text: input }] }];
 
   try {
-    let loopCount = 0;
     while (true) {
-      loopCount++;
       const functionCalls: FunctionCall[] = [];
 
       const responseStream = await chat.sendMessageStream({

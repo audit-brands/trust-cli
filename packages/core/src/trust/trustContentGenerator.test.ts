@@ -4,13 +4,23 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { describe, it, expect, beforeEach, vi, type MockedFunction } from 'vitest';
+import {
+  describe,
+  it,
+  expect,
+  beforeEach,
+  vi,
+  type MockedFunction,
+} from 'vitest';
 import { TrustContentGenerator } from './trustContentGenerator.js';
 import { TrustModelManagerImpl } from './modelManager.js';
 import { TrustNodeLlamaClient } from './nodeLlamaClient.js';
 import { TrustConfiguration } from '../config/trustConfig.js';
 import { OllamaContentGenerator } from './ollamaContentGenerator.js';
-import type { GenerateContentParameters, CountTokensParameters } from '@google/genai';
+import type {
+  GenerateContentParameters,
+  CountTokensParameters,
+} from '@google/genai';
 
 // Mock dependencies
 vi.mock('./modelManager.js');
@@ -32,7 +42,7 @@ describe('TrustContentGenerator', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    
+
     mockModelManager = {
       initialize: vi.fn(),
       getCurrentModel: vi.fn(),
@@ -55,7 +65,9 @@ describe('TrustContentGenerator', () => {
 
     mockTrustConfig = {
       initialize: vi.fn(),
-      getFallbackOrder: vi.fn().mockReturnValue(['huggingface', 'ollama', 'cloud']), // HuggingFace first for these tests
+      getFallbackOrder: vi
+        .fn()
+        .mockReturnValue(['huggingface', 'ollama', 'cloud']), // HuggingFace first for these tests
       isFallbackEnabled: vi.fn().mockReturnValue(true),
       isBackendEnabled: vi.fn().mockReturnValue(true),
       getHuggingFaceConfig: vi.fn().mockReturnValue({
@@ -75,7 +87,9 @@ describe('TrustContentGenerator', () => {
     };
 
     mockOllamaGenerator = {
-      initialize: vi.fn().mockRejectedValue(new Error('Ollama not available for these tests')),
+      initialize: vi
+        .fn()
+        .mockRejectedValue(new Error('Ollama not available for these tests')),
       generateContent: vi.fn(),
       generateContentStream: vi.fn(),
     };
@@ -109,7 +123,7 @@ describe('TrustContentGenerator', () => {
         quantization: 'Q4_K_M',
         trustScore: 8,
         ramRequirement: 2,
-        tasks: ['coding', 'writing']
+        tasks: ['coding', 'writing'],
       };
 
       mockModelManager.getCurrentModel.mockReturnValue(mockModel);
@@ -117,7 +131,10 @@ describe('TrustContentGenerator', () => {
 
       await contentGenerator.initialize();
 
-      expect(mockModelClient.loadModel).toHaveBeenCalledWith(mockModel.path, mockModel);
+      expect(mockModelClient.loadModel).toHaveBeenCalledWith(
+        mockModel.path,
+        mockModel,
+      );
     });
 
     it('should fall back to recommended model if default fails', async () => {
@@ -130,7 +147,7 @@ describe('TrustContentGenerator', () => {
         quantization: 'Q4_K_M',
         trustScore: 8,
         ramRequirement: 2,
-        tasks: ['coding', 'writing']
+        tasks: ['coding', 'writing'],
       };
 
       const recommendedModel = {
@@ -142,7 +159,7 @@ describe('TrustContentGenerator', () => {
         quantization: 'Q4_K_M',
         trustScore: 9,
         ramRequirement: 2,
-        tasks: ['coding', 'writing']
+        tasks: ['coding', 'writing'],
       };
 
       mockModelManager.getCurrentModel.mockReturnValue(mockModel);
@@ -154,8 +171,13 @@ describe('TrustContentGenerator', () => {
 
       await contentGenerator.initialize();
 
-      expect(mockModelClient.loadModel).toHaveBeenCalledWith(recommendedModel.path, recommendedModel);
-      expect(mockModelManager.switchModel).toHaveBeenCalledWith(recommendedModel.name);
+      expect(mockModelClient.loadModel).toHaveBeenCalledWith(
+        recommendedModel.path,
+        recommendedModel,
+      );
+      expect(mockModelManager.switchModel).toHaveBeenCalledWith(
+        recommendedModel.name,
+      );
     });
   });
 
@@ -169,10 +191,12 @@ describe('TrustContentGenerator', () => {
     it('should generate content from text prompt', async () => {
       const request: GenerateContentParameters = {
         model: 'test-model',
-        contents: [{
-          parts: [{ text: 'Hello, how are you?' }],
-          role: 'user'
-        }]
+        contents: [
+          {
+            parts: [{ text: 'Hello, how are you?' }],
+            role: 'user',
+          },
+        ],
       };
 
       const mockResponse = 'Hello! I am doing well, thank you for asking.';
@@ -182,7 +206,9 @@ describe('TrustContentGenerator', () => {
 
       expect(mockModelClient.generateText).toHaveBeenCalled();
       expect(result.candidates).toHaveLength(1);
-      expect(result.candidates?.[0]?.content?.parts?.[0]?.text).toBe(mockResponse);
+      expect(result.candidates?.[0]?.content?.parts?.[0]?.text).toBe(
+        mockResponse,
+      );
       expect(result.candidates?.[0]?.content?.role).toBe('model');
     });
 
@@ -192,17 +218,17 @@ describe('TrustContentGenerator', () => {
         contents: [
           {
             parts: [{ text: 'What is 2+2?' }],
-            role: 'user'
+            role: 'user',
           },
           {
             parts: [{ text: '2+2 equals 4.' }],
-            role: 'model'
+            role: 'model',
           },
           {
             parts: [{ text: 'What about 3+3?' }],
-            role: 'user'
-          }
-        ]
+            role: 'user',
+          },
+        ],
       };
 
       const mockResponse = '3+3 equals 6.';
@@ -219,15 +245,17 @@ describe('TrustContentGenerator', () => {
     it('should handle system instructions', async () => {
       const request: GenerateContentParameters = {
         model: 'test-model',
-        contents: [{
-          parts: [{ text: 'Hello!' }],
-          role: 'user'
-        }],
+        contents: [
+          {
+            parts: [{ text: 'Hello!' }],
+            role: 'user',
+          },
+        ],
         config: {
           systemInstruction: {
-            parts: [{ text: 'You are a helpful assistant.' }]
-          }
-        }
+            parts: [{ text: 'You are a helpful assistant.' }],
+          },
+        },
       };
 
       mockModelClient.generateText.mockResolvedValue('Hello there!');
@@ -243,28 +271,32 @@ describe('TrustContentGenerator', () => {
 
       const request: GenerateContentParameters = {
         model: 'test-model',
-        contents: [{
-          parts: [{ text: 'Hello!' }],
-          role: 'user'
-        }]
+        contents: [
+          {
+            parts: [{ text: 'Hello!' }],
+            role: 'user',
+          },
+        ],
       };
 
       await expect(contentGenerator.generateContent(request)).rejects.toThrow(
-        /No AI backend available/
+        /No AI backend available/,
       );
     });
 
     it('should use generation options from config', async () => {
       const request: GenerateContentParameters = {
         model: 'test-model',
-        contents: [{
-          parts: [{ text: 'Hello!' }],
-          role: 'user'
-        }],
+        contents: [
+          {
+            parts: [{ text: 'Hello!' }],
+            role: 'user',
+          },
+        ],
         config: {
           temperature: 0.8,
-          topP: 0.95
-        }
+          topP: 0.95,
+        },
       };
 
       mockModelClient.generateText.mockResolvedValue('Response');
@@ -290,10 +322,12 @@ describe('TrustContentGenerator', () => {
     it('should generate streaming content', async () => {
       const request: GenerateContentParameters = {
         model: 'test-model',
-        contents: [{
-          parts: [{ text: 'Tell me a story' }],
-          role: 'user'
-        }]
+        contents: [
+          {
+            parts: [{ text: 'Tell me a story' }],
+            role: 'user',
+          },
+        ],
       };
 
       const mockChunks = ['Once', ' upon', ' a', ' time...'];
@@ -305,14 +339,14 @@ describe('TrustContentGenerator', () => {
 
       const generator = await contentGenerator.generateContentStream(request);
       const chunks = [];
-      
+
       for await (const chunk of generator) {
         chunks.push(chunk);
       }
 
       expect(chunks.length).toBeGreaterThan(0);
       // Verify the structure of streaming chunks
-      chunks.forEach(chunk => {
+      chunks.forEach((chunk) => {
         expect(chunk).toHaveProperty('candidates');
         expect(chunk.candidates?.[0]).toHaveProperty('content');
         expect(chunk.candidates?.[0]?.content).toHaveProperty('parts');
@@ -322,10 +356,12 @@ describe('TrustContentGenerator', () => {
     it('should handle streaming errors', async () => {
       const request: GenerateContentParameters = {
         model: 'test-model',
-        contents: [{
-          parts: [{ text: 'Hello!' }],
-          role: 'user'
-        }]
+        contents: [
+          {
+            parts: [{ text: 'Hello!' }],
+            role: 'user',
+          },
+        ],
       };
 
       mockModelClient.generateStream.mockImplementation(async function* () {
@@ -333,7 +369,7 @@ describe('TrustContentGenerator', () => {
       });
 
       const generator = await contentGenerator.generateContentStream(request);
-      
+
       await expect(async () => {
         for await (const chunk of generator) {
           // Should throw error
@@ -351,10 +387,12 @@ describe('TrustContentGenerator', () => {
     it('should estimate token count for simple text', async () => {
       const request: CountTokensParameters = {
         model: 'test-model',
-        contents: [{
-          parts: [{ text: 'This is a test message with some words.' }],
-          role: 'user'
-        }]
+        contents: [
+          {
+            parts: [{ text: 'This is a test message with some words.' }],
+            role: 'user',
+          },
+        ],
       };
 
       const result = await contentGenerator.countTokens(request);
@@ -366,7 +404,7 @@ describe('TrustContentGenerator', () => {
     it('should handle empty content', async () => {
       const request: CountTokensParameters = {
         model: 'test-model',
-        contents: []
+        contents: [],
       };
 
       const result = await contentGenerator.countTokens(request);
@@ -391,7 +429,7 @@ describe('TrustContentGenerator', () => {
         quantization: 'Q4_K_M',
         trustScore: 9,
         ramRequirement: 4,
-        tasks: ['coding']
+        tasks: ['coding'],
       };
 
       mockModelManager.switchModel.mockResolvedValue(undefined);
@@ -401,7 +439,10 @@ describe('TrustContentGenerator', () => {
       await contentGenerator.switchModel('new-model');
 
       expect(mockModelManager.switchModel).toHaveBeenCalledWith('new-model');
-      expect(mockModelClient.loadModel).toHaveBeenCalledWith(newModel.path, newModel);
+      expect(mockModelClient.loadModel).toHaveBeenCalledWith(
+        newModel.path,
+        newModel,
+      );
     });
 
     it('should download models', async () => {
@@ -409,7 +450,9 @@ describe('TrustContentGenerator', () => {
 
       await contentGenerator.downloadModel('test-model-id');
 
-      expect(mockModelManager.downloadModel).toHaveBeenCalledWith('test-model-id');
+      expect(mockModelManager.downloadModel).toHaveBeenCalledWith(
+        'test-model-id',
+      );
     });
 
     it('should list available models', () => {
@@ -423,8 +466,8 @@ describe('TrustContentGenerator', () => {
           quantization: 'Q4_K_M',
           trustScore: 8,
           ramRequirement: 2,
-          tasks: ['coding']
-        }
+          tasks: ['coding'],
+        },
       ];
 
       mockModelManager.listAvailableModels.mockReturnValue(mockModels);
@@ -444,7 +487,7 @@ describe('TrustContentGenerator', () => {
         quantization: 'Q4_K_M',
         trustScore: 8,
         ramRequirement: 3,
-        tasks: ['writing']
+        tasks: ['writing'],
       };
 
       mockModelManager.getCurrentModel.mockReturnValue(mockModel);
@@ -461,7 +504,7 @@ describe('TrustContentGenerator', () => {
         lastInferenceTime: 1500,
         totalInferences: 10,
         averageInferenceTime: 1200,
-        tokensPerSecond: 15.5
+        tokensPerSecond: 15.5,
       };
 
       mockModelClient.getMetrics.mockReturnValue(mockMetrics);
@@ -481,7 +524,7 @@ describe('TrustContentGenerator', () => {
         quantization: 'Q4_K_M',
         trustScore: 9,
         ramRequirement: 2,
-        tasks: ['coding']
+        tasks: ['coding'],
       };
 
       mockModelManager.getRecommendedModel.mockReturnValue(mockModel);
@@ -489,7 +532,10 @@ describe('TrustContentGenerator', () => {
       const result = contentGenerator.getRecommendedModel('coding', 4);
 
       expect(result).toEqual(mockModel);
-      expect(mockModelManager.getRecommendedModel).toHaveBeenCalledWith('coding', 4);
+      expect(mockModelManager.getRecommendedModel).toHaveBeenCalledWith(
+        'coding',
+        4,
+      );
     });
   });
 });
