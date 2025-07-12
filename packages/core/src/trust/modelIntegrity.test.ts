@@ -4,13 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import { createReadStream, createWriteStream } from 'fs';
+import { createReadStream } from 'fs';
 import { Readable } from 'stream';
 import { ModelIntegrityChecker } from './modelIntegrity.js';
-import * as crypto from 'crypto';
 
 vi.mock('fs/promises');
 vi.mock('fs');
@@ -65,6 +64,7 @@ describe('ModelIntegrityChecker', () => {
 
   describe('computeFileHashes', () => {
     it('should compute SHA-256 hash with progress', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const mockStats = { size: 1000 } as any;
       vi.mocked(fs.stat).mockResolvedValue(mockStats);
 
@@ -73,13 +73,14 @@ describe('ModelIntegrityChecker', () => {
           // Mock implementation - do nothing
         },
       });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       vi.mocked(createReadStream).mockReturnValue(mockStream as any);
 
       const progressUpdates: number[] = [];
       const hashPromise = checker.computeFileHashes(
         testModelPath,
         ['sha256'],
-        (processed, total) => progressUpdates.push(processed),
+        (processed, _total) => progressUpdates.push(processed),
       );
 
       // Simulate streaming data asynchronously
@@ -97,6 +98,7 @@ describe('ModelIntegrityChecker', () => {
     });
 
     it('should handle multiple hash algorithms', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const mockStats = { size: 100 } as any;
       vi.mocked(fs.stat).mockResolvedValue(mockStats);
 
@@ -105,6 +107,7 @@ describe('ModelIntegrityChecker', () => {
           // Mock implementation - do nothing
         },
       });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       vi.mocked(createReadStream).mockReturnValue(mockStream as any);
 
       const hashPromise = checker.computeFileHashes(testModelPath, [
@@ -129,6 +132,7 @@ describe('ModelIntegrityChecker', () => {
       const mockStats = {
         size: 1000,
         isFile: () => true,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any;
       vi.mocked(fs.stat).mockResolvedValue(mockStats);
 
@@ -137,6 +141,7 @@ describe('ModelIntegrityChecker', () => {
           // Mock implementation - do nothing
         },
       });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       vi.mocked(createReadStream).mockReturnValue(mockStream as any);
 
       // Initialize with trusted model
@@ -181,6 +186,7 @@ describe('ModelIntegrityChecker', () => {
       const mockStats = {
         size: 1000,
         isFile: () => true,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any;
       vi.mocked(fs.stat).mockResolvedValue(mockStats);
 
@@ -189,6 +195,7 @@ describe('ModelIntegrityChecker', () => {
           // Mock implementation - do nothing
         },
       });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       vi.mocked(createReadStream).mockReturnValue(mockStream as any);
 
       const verifyPromise = checker.verifyModel(
@@ -221,6 +228,7 @@ describe('ModelIntegrityChecker', () => {
       const mockStats = {
         size: 1000,
         isFile: () => true,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any;
       vi.mocked(fs.stat).mockResolvedValue(mockStats);
 
@@ -229,6 +237,7 @@ describe('ModelIntegrityChecker', () => {
           // Mock implementation - do nothing
         },
       });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       vi.mocked(createReadStream).mockReturnValue(mockStream as any);
 
       // Initialize with pending verification
@@ -271,6 +280,7 @@ describe('ModelIntegrityChecker', () => {
 
   describe('addTrustedModel', () => {
     it('should add new model to registry', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const mockStats = { size: 2000 } as any;
       vi.mocked(fs.stat).mockResolvedValue(mockStats);
 
@@ -279,6 +289,7 @@ describe('ModelIntegrityChecker', () => {
           // Mock implementation - do nothing
         },
       });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       vi.mocked(createReadStream).mockReturnValue(mockStream as any);
 
       vi.mocked(fs.mkdir).mockResolvedValue(undefined);
@@ -312,6 +323,7 @@ describe('ModelIntegrityChecker', () => {
         size: 1500,
         isFile: () => true,
         birthtime: new Date('2025-01-01'),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any;
       vi.mocked(fs.stat).mockResolvedValue(mockStats);
 
@@ -320,6 +332,7 @@ describe('ModelIntegrityChecker', () => {
           // Mock implementation - do nothing
         },
       });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       vi.mocked(createReadStream).mockReturnValue(mockStream as any);
 
       // Initialize with trusted model
@@ -371,6 +384,7 @@ describe('ModelIntegrityChecker', () => {
         size: 1000,
         isFile: () => true,
         birthtime: new Date('2025-01-01'),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any;
       vi.mocked(fs.stat).mockResolvedValue(mockStats);
 
@@ -379,6 +393,7 @@ describe('ModelIntegrityChecker', () => {
           // Mock implementation - do nothing
         },
       });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       vi.mocked(createReadStream).mockReturnValue(mockStream as any);
 
       vi.mocked(fs.writeFile).mockResolvedValue();
@@ -410,11 +425,13 @@ describe('ModelIntegrityChecker', () => {
         'model1.gguf',
         'model2.gguf',
         'other.txt',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       ] as any);
 
       const mockStats = {
         size: 1000,
         isFile: () => true,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any;
       vi.mocked(fs.stat).mockResolvedValue(mockStats);
 
@@ -433,6 +450,7 @@ describe('ModelIntegrityChecker', () => {
           mockStream.emit('end');
         });
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return mockStream as any;
       });
 

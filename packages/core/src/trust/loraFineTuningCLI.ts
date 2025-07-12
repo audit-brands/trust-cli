@@ -157,6 +157,7 @@ export class LoRAFineTuningCLI {
     return program;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private async analyzeModels(options: any): Promise<void> {
     console.log('🔍 Analyzing models for fine-tuning opportunities...\n');
 
@@ -209,6 +210,7 @@ export class LoRAFineTuningCLI {
     }
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private async createDataset(options: any): Promise<void> {
     console.log(`📚 Creating training dataset for ${options.model}...\n`);
 
@@ -216,7 +218,7 @@ export class LoRAFineTuningCLI {
       const errorTypes = options.errorTypes
         .split(',')
         .map((t: string) => t.trim());
-      const minSamples = parseInt(options.minSamples);
+      const minSamples = parseInt(options.minSamples, 10);
 
       const dataset = await this.fineTuner.generateDatasetFromErrors(
         options.model,
@@ -254,6 +256,7 @@ export class LoRAFineTuningCLI {
     }
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private async startTraining(options: any): Promise<void> {
     console.log(`🚀 Starting LoRA fine-tuning for ${options.model}...\n`);
 
@@ -285,12 +288,12 @@ export class LoRAFineTuningCLI {
       );
 
       // Override with CLI options
-      if (options.rank) config.rank = parseInt(options.rank);
-      if (options.alpha) config.alpha = parseInt(options.alpha);
-      if (options.epochs) config.epochs = parseInt(options.epochs);
+      if (options.rank) config.rank = parseInt(options.rank, 10);
+      if (options.alpha) config.alpha = parseInt(options.alpha, 10);
+      if (options.epochs) config.epochs = parseInt(options.epochs, 10);
       if (options.learningRate)
         config.learningRate = parseFloat(options.learningRate);
-      if (options.batchSize) config.batchSize = parseInt(options.batchSize);
+      if (options.batchSize) config.batchSize = parseInt(options.batchSize, 10);
 
       console.log('📋 Training configuration:');
       console.log(`   Model: ${config.modelName}`);
@@ -329,6 +332,7 @@ export class LoRAFineTuningCLI {
     );
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private async checkJobStatus(options: any): Promise<void> {
     console.log(`📊 Checking status for job ${options.jobId}...\n`);
 
@@ -386,6 +390,7 @@ export class LoRAFineTuningCLI {
     }
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private async loadAdapter(options: any): Promise<void> {
     console.log(`🔧 Loading adapter ${options.adapterId}...\n`);
 
@@ -409,6 +414,7 @@ export class LoRAFineTuningCLI {
     }
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private async deleteAdapter(options: any): Promise<void> {
     if (!options.force) {
       console.log(
@@ -428,6 +434,7 @@ export class LoRAFineTuningCLI {
     }
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private async generateReport(options: any): Promise<void> {
     console.log('📊 Generating training report...\n');
 

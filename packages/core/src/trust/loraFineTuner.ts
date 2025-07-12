@@ -6,6 +6,7 @@
 
 import fs from 'fs/promises';
 import path from 'path';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { spawn } from 'child_process';
 import { TrustModelConfig } from './types.js';
 import { ErrorCollector, ErrorRecord } from './errorCollector.js';
@@ -53,6 +54,7 @@ export interface TrainingSample {
   category: string;
   difficulty: 'easy' | 'medium' | 'hard';
   source: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   metadata?: Record<string, any>;
 }
 
@@ -185,7 +187,7 @@ export class LoRAFineTuner {
    */
   async generateDatasetFromBenchmarks(
     modelName: string,
-    failureThreshold: number = 0.7,
+    _failureThreshold: number = 0.7,
   ): Promise<TrainingDataset> {
     // This would integrate with the benchmark system
     // For now, we'll create a placeholder implementation

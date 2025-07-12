@@ -177,7 +177,7 @@ export class LogitBiasManager {
   generateContextualBias(
     config: LogitBiasConfig,
     context: JsonContext,
-    currentText: string,
+    _currentText: string,
   ): Record<number, number> {
     const bias: Record<number, number> = {};
 
@@ -205,6 +205,9 @@ export class LogitBiasManager {
         break;
       case 'value':
         contextBias = config.contextualBias.inValue;
+        break;
+      default:
+        // Unknown context
         break;
     }
 
@@ -253,6 +256,9 @@ export class LogitBiasManager {
             this.adjustTokenBias(bias, token, -10);
           }
         });
+        break;
+      default:
+        // Unknown context
         break;
     }
   }
@@ -391,6 +397,10 @@ export class LogitBiasManager {
           '(': -20,
           ')': -20,
         };
+        break;
+      default:
+        // Unknown level - use light settings
+        baseConfig.jsonBias!.valueBias = { true: 2, false: 2, null: 2 };
         break;
     }
 

@@ -10,18 +10,16 @@ import {
   expect,
   beforeEach,
   vi,
-  type MockedFunction,
 } from 'vitest';
 import { TrustModelManagerImpl } from './modelManager.js';
-import { TrustModelConfig } from './types.js';
 import * as fs from 'fs/promises';
-import * as path from 'path';
 
 // Mock dependencies
 vi.mock('fs/promises');
 vi.mock('path');
 vi.mock('./modelDownloader.js');
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const mockFs = fs as any;
 
 describe('TrustModelManager', () => {
@@ -124,6 +122,7 @@ describe('TrustModelManager', () => {
         expect(typeof recommendation.ramRequirement).toBe('string');
         const ramValue = parseInt(
           recommendation.ramRequirement.replace('GB', ''),
+          10,
         );
         expect(ramValue).toBeLessThanOrEqual(4);
       }
@@ -137,6 +136,7 @@ describe('TrustModelManager', () => {
       mockFs.readFile.mockRejectedValue(new Error('Config file not found'));
       mockFs.writeFile.mockResolvedValue(undefined);
       // Mock stat to return a valid file for model verification
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       mockFs.stat.mockResolvedValue({ isFile: () => true, size: 1000 } as any);
 
       await modelManager.initialize();
@@ -171,6 +171,7 @@ describe('TrustModelManager', () => {
       await modelManager.initialize();
       const testPath = '/test/models/test-model.gguf';
       // Mock stat to return a valid file
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       mockFs.stat.mockResolvedValue({ isFile: () => true, size: 1000 } as any);
 
       const exists = await modelManager.verifyModel(testPath);

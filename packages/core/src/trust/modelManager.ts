@@ -10,8 +10,8 @@ import * as os from 'os';
 import { TrustModelConfig, TrustModelManager } from './types.js';
 import { createHash } from 'crypto';
 import { createReadStream } from 'fs';
-import { ModelDownloader, DownloadProgress } from './modelDownloader.js';
-import { ModelIntegrityChecker, VerificationResult } from './modelIntegrity.js';
+import { ModelDownloader } from './modelDownloader.js';
+import { ModelIntegrityChecker } from './modelIntegrity.js';
 
 export class TrustModelManagerImpl implements TrustModelManager {
   private modelsDir: string;
@@ -206,7 +206,7 @@ export class TrustModelManagerImpl implements TrustModelManager {
         if (savedConfig.currentModel) {
           this.currentModel = savedConfig.currentModel;
         }
-      } catch (error) {
+      } catch (_error) {
         // Config file doesn't exist, use defaults
         await this.saveConfig();
       }
@@ -325,7 +325,7 @@ export class TrustModelManagerImpl implements TrustModelManager {
 
       // Basic verification - check if file exists and has some content
       return stats.size > 0;
-    } catch (error) {
+    } catch (_error) {
       // Silently return false for missing files - this is expected for undownloaded models
       return false;
     }
@@ -449,7 +449,7 @@ export class TrustModelManagerImpl implements TrustModelManager {
     }
 
     try {
-      const report = await this.integrityChecker.generateIntegrityReport(
+      const _report = await this.integrityChecker.generateIntegrityReport(
         model.path,
         modelName,
       );
@@ -509,7 +509,7 @@ export class TrustModelManagerImpl implements TrustModelManager {
 
     // Filter models by RAM requirement
     const suitableModels = this.availableModels.filter((model) => {
-      const modelRAM = parseInt(model.ramRequirement.replace('GB', ''));
+      const modelRAM = parseInt(model.ramRequirement.replace('GB', ''), 10);
       return modelRAM <= ramLimitGB;
     });
 
@@ -540,7 +540,7 @@ export class TrustModelManagerImpl implements TrustModelManager {
             (m) => m.type === 'gemma' && m.parameters === '2.6B',
           ) ||
           suitableModels.reduce((smallest, current) =>
-            parseInt(current.ramRequirement) < parseInt(smallest.ramRequirement)
+            parseInt(current.ramRequirement, 10) < parseInt(smallest.ramRequirement, 10)
               ? current
               : smallest,
           )

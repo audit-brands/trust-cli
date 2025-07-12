@@ -104,8 +104,9 @@ export class ModelDownloader {
     return new Promise((resolve, reject) => {
       const file = createWriteStream(tempPath);
       const startTime = Date.now();
-      const downloaded = 0;
+      const _downloaded = 0;
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const headers: any = {
         'User-Agent':
           'TrustCLI/0.1.0 (https://github.com/audit-brands/trust-cli)',
@@ -136,13 +137,16 @@ export class ModelDownloader {
 
   private makeRequest(
     url: string,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     options: any,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     file: any,
     tempPath: string,
     finalPath: string,
     startTime: number,
     onProgress?: (progress: DownloadProgress) => void,
     resolve?: (value: string) => void,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     reject?: (reason: any) => void,
   ) {
     const parsedUrl = new URL(url);
@@ -199,13 +203,16 @@ export class ModelDownloader {
   }
 
   private handleDownloadResponse(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     response: any,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     file: any,
     tempPath: string,
     finalPath: string,
     startTime: number,
     onProgress?: (progress: DownloadProgress) => void,
     resolve?: (value: string) => void,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     reject?: (reason: any) => void,
   ) {
     const total = parseInt(response.headers['content-length'] || '0', 10);

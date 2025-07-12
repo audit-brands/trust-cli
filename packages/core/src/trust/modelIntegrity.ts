@@ -7,9 +7,7 @@
 import * as fs from 'fs/promises';
 import * as crypto from 'crypto';
 import * as path from 'path';
-import { createReadStream, createWriteStream } from 'fs';
-import { pipeline } from 'stream/promises';
-import { Transform } from 'stream';
+import { createReadStream } from 'fs';
 
 export interface ModelIntegrityInfo {
   modelName: string;
@@ -61,7 +59,7 @@ export class ModelIntegrityChecker {
   async initialize(): Promise<void> {
     try {
       await this.loadTrustedRegistry();
-    } catch (error) {
+    } catch (_error) {
       // Initialize with default trusted models
       this.trustedRegistry = {
         models: {
@@ -393,6 +391,7 @@ export class ModelIntegrityChecker {
   async createModelManifest(
     modelPath: string,
     modelName: string,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     metadata: any = {},
   ): Promise<string> {
     const integrityInfo = await this.generateIntegrityReport(
