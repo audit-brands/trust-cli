@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { PrivacyManager, PrivacyConfig } from '../trust/privacyManager.js';
+import { PrivacyManager, PrivacyConfigFile as PrivacyConfig } from '../trust/privacyManager.js';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import * as os from 'os';
@@ -195,7 +195,7 @@ export class PrivacyAuditEngine {
 
     // Custom checks
     if (config.customChecks) {
-      const privacyConfig = await this.privacyManager.getPrivacyConfig();
+      const privacyConfig = JSON.parse(await this.privacyManager.exportPrivacyConfig());
       for (const customCheck of config.customChecks) {
         try {
           const customFindings = await customCheck.check(privacyConfig);
@@ -269,7 +269,7 @@ export class PrivacyAuditEngine {
    */
   private async auditPrivacyConfiguration(): Promise<PrivacyAuditFinding[]> {
     const findings: PrivacyAuditFinding[] = [];
-    const config = await this.privacyManager.getPrivacyConfig();
+    const config = JSON.parse(await this.privacyManager.exportPrivacyConfig());
 
     // Check privacy mode
     if (config.mode === 'open') {
@@ -398,7 +398,7 @@ export class PrivacyAuditEngine {
     framework: ComplianceFramework,
   ): Promise<PrivacyAuditFinding[]> {
     const findings: PrivacyAuditFinding[] = [];
-    const config = await this.privacyManager.getPrivacyConfig();
+    const config = JSON.parse(await this.privacyManager.exportPrivacyConfig());
 
     switch (framework) {
       case 'gdpr':
@@ -887,7 +887,10 @@ export class PrivacyAuditEngine {
     const status: Record<
       ComplianceFramework,
       { compliant: boolean; score: number; gaps: string[] }
-    > = {};
+    > = {} as Record<
+      ComplianceFramework,
+      { compliant: boolean; score: number; gaps: string[] }
+    >;
 
     for (const framework of frameworks) {
       const frameworkFindings = findings.filter((f) =>

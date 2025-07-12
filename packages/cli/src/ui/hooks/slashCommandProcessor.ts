@@ -942,14 +942,14 @@ export const useSlashCommandProcessor = (
             return;
           }
 
+          // Capture console output
+          const _originalLog = console.log;
+          const _originalError = console.error;
+          let _output = '';
+
           try {
             const handler = await import('../../commands/assuranceCommands.js');
             const assuranceHandler = new handler.AssuranceCommandHandler();
-
-            // Capture console output
-            const _originalLog = console.log;
-            const _originalError = console.error;
-            let _output = '';
             console.log = (...args) => {
               _output += args.join(' ') + '\n';
             };

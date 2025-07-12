@@ -302,6 +302,7 @@ export class ModelCommandHandler {
       `CPU: ${systemCapabilities.cpuCores} cores @ ${systemCapabilities.cpuSpeed}MHz`,
     );
 
+    const models = this.modelManager.listAvailableModels();
     const modelRecommendations =
       hardwareOptimizer.analyzeModelSuitability(models);
 

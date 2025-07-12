@@ -5,11 +5,11 @@
  */
 
 import {
-  PerformanceBenchmark,
-  BenchmarkReport,
+  // PerformanceBenchmark, // TODO: Class not implemented yet
   globalPerformanceMonitor,
   TrustModelManagerImpl,
 } from '@trust-cli/trust-cli-core';
+import type { BenchmarkReport, BenchmarkResult } from '../../../core/src/trust/performanceBenchmark.js';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
@@ -24,15 +24,15 @@ export interface BenchmarkCommandArgs {
 }
 
 export class BenchmarkCommandHandler {
-  private performanceBenchmark: PerformanceBenchmark;
+  // private performanceBenchmark: PerformanceBenchmark; // TODO: Class not implemented yet
   private modelManager: TrustModelManagerImpl;
 
   constructor() {
     this.modelManager = new TrustModelManagerImpl();
-    this.performanceBenchmark = new PerformanceBenchmark(
-      globalPerformanceMonitor,
-      this.modelManager,
-    );
+    // this.performanceBenchmark = new PerformanceBenchmark(
+    //   globalPerformanceMonitor,
+    //   this.modelManager,
+    // ); // TODO: Class not implemented yet
   }
 
   async initialize(): Promise<void> {
@@ -90,6 +90,9 @@ export class BenchmarkCommandHandler {
     let lastProgress = 0;
 
     try {
+      // TODO: Implement PerformanceBenchmark class
+      throw new Error('PerformanceBenchmark class not yet implemented');
+      /*
       const report = await this.performanceBenchmark.runBenchmarkSuite(
         suite,
         models,
@@ -101,6 +104,7 @@ export class BenchmarkCommandHandler {
           }
         },
       );
+      */
 
       const duration = Date.now() - startTime;
       console.log(
@@ -383,7 +387,7 @@ export class BenchmarkCommandHandler {
     return [headers.join(','), ...rows.map((row) => row.join(','))].join('\n');
   }
 
-  private generateCSVFromResults(results: BenchmarkReport[]): string {
+  private generateCSVFromResults(results: BenchmarkResult[]): string {
     const headers = [
       'Timestamp',
       'Model',

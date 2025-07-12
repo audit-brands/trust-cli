@@ -352,7 +352,7 @@ export class SecurityRecommendationEngine {
    */
   private async assessEncryption(): Promise<SecurityRecommendation[]> {
     const recommendations: SecurityRecommendation[] = [];
-    const privacyConfig = await this.privacyManager.getPrivacyConfig();
+    const privacyConfig = JSON.parse(await this.privacyManager.exportPrivacyConfig());
 
     if (!privacyConfig.encryptStorage) {
       recommendations.push({
@@ -660,7 +660,7 @@ export class SecurityRecommendationEngine {
    */
   private async assessMonitoring(): Promise<SecurityRecommendation[]> {
     const recommendations: SecurityRecommendation[] = [];
-    const privacyConfig = await this.privacyManager.getPrivacyConfig();
+    const privacyConfig = JSON.parse(await this.privacyManager.exportPrivacyConfig());
 
     if (!privacyConfig.auditLogging) {
       recommendations.push({
@@ -878,7 +878,7 @@ export class SecurityRecommendationEngine {
    */
   private async checkComplianceGaps(): Promise<ComplianceGap[]> {
     const gaps: ComplianceGap[] = [];
-    const privacyConfig = await this.privacyManager.getPrivacyConfig();
+    const privacyConfig = JSON.parse(await this.privacyManager.exportPrivacyConfig());
 
     // GDPR compliance gaps
     if (!privacyConfig.encryptStorage) {

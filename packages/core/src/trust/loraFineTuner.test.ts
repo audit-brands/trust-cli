@@ -59,7 +59,7 @@ describe('LoRAFineTuner', () => {
         {
           name: 'weak-model',
           path: 'test.gguf',
-          type: 'test',
+          type: 'phi',
           parameters: '1.5B',
           contextSize: 2048,
           ramRequirement: '2GB',
@@ -68,6 +68,8 @@ describe('LoRAFineTuner', () => {
           downloadUrl: 'https://example.com/model.gguf',
           verificationHash: 'test-hash',
           expectedSize: 1000000,
+        quantization: 'Q4_K_M',
+          quantization: 'Q4_K_M',
         },
       ];
 
@@ -103,7 +105,7 @@ describe('LoRAFineTuner', () => {
         {
           name: 'tool-confused-model',
           path: 'test.gguf',
-          type: 'test',
+          type: 'phi',
           parameters: '3B',
           contextSize: 4096,
           ramRequirement: '4GB',
@@ -112,6 +114,7 @@ describe('LoRAFineTuner', () => {
           downloadUrl: 'https://example.com/model.gguf',
           verificationHash: 'test-hash',
           expectedSize: 2000000,
+          quantization: 'Q4_K_M',
         },
       ];
 
@@ -144,7 +147,7 @@ describe('LoRAFineTuner', () => {
         {
           name: 'strong-model',
           path: 'test.gguf',
-          type: 'test',
+          type: 'phi',
           parameters: '7B',
           contextSize: 8192,
           ramRequirement: '8GB',
@@ -153,6 +156,7 @@ describe('LoRAFineTuner', () => {
           downloadUrl: 'https://example.com/model.gguf',
           verificationHash: 'test-hash',
           expectedSize: 4000000,
+          quantization: 'Q4_K_M',
         },
       ];
 
@@ -294,6 +298,7 @@ describe('LoRAFineTuner', () => {
         downloadUrl: 'https://example.com/model.gguf',
         verificationHash: 'test-hash',
         expectedSize: 1000000,
+        quantization: 'Q4_K_M',
       };
 
       const dataset: TrainingDataset = {

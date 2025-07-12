@@ -49,7 +49,7 @@ describe('SecurityRecommendationEngine', () => {
   beforeEach(() => {
     mockPerformanceMonitor = {} as PerformanceMonitor;
     mockPrivacyManager = {
-      getPrivacyConfig: vi.fn().mockResolvedValue(mockPrivacyConfig),
+      exportPrivacyConfig: vi.fn().mockResolvedValue(JSON.stringify(mockPrivacyConfig)),
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any;
     securityEngine = new SecurityRecommendationEngine(
@@ -123,8 +123,8 @@ describe('SecurityRecommendationEngine', () => {
   describe('Encryption Assessment', () => {
     it('should detect disabled encryption as critical issue', async () => {
       const unencryptedConfig = { ...mockPrivacyConfig, encryptStorage: false };
-      vi.mocked(mockPrivacyManager.getPrivacyConfig).mockResolvedValue(
-        unencryptedConfig,
+      vi.mocked(mockPrivacyManager.exportPrivacyConfig).mockResolvedValue(
+        JSON.stringify(unencryptedConfig),
       );
 
       const config: SecurityAssessmentConfig = {
@@ -261,8 +261,8 @@ describe('SecurityRecommendationEngine', () => {
   describe('Monitoring Assessment', () => {
     it('should detect disabled security monitoring', async () => {
       const noAuditConfig = { ...mockPrivacyConfig, auditLogging: false };
-      vi.mocked(mockPrivacyManager.getPrivacyConfig).mockResolvedValue(
-        noAuditConfig,
+      vi.mocked(mockPrivacyManager.exportPrivacyConfig).mockResolvedValue(
+        JSON.stringify(noAuditConfig),
       );
 
       const config: SecurityAssessmentConfig = {
@@ -400,8 +400,8 @@ describe('SecurityRecommendationEngine', () => {
         encryptStorage: false,
         auditLogging: false,
       };
-      vi.mocked(mockPrivacyManager.getPrivacyConfig).mockResolvedValue(
-        criticalConfig,
+      vi.mocked(mockPrivacyManager.exportPrivacyConfig).mockResolvedValue(
+        JSON.stringify(criticalConfig),
       );
 
       const config: SecurityAssessmentConfig = {
@@ -574,8 +574,8 @@ describe('SecurityRecommendationEngine', () => {
   describe('Risk Scoring', () => {
     it('should calculate risk scores appropriately', async () => {
       const criticalConfig = { ...mockPrivacyConfig, encryptStorage: false };
-      vi.mocked(mockPrivacyManager.getPrivacyConfig).mockResolvedValue(
-        criticalConfig,
+      vi.mocked(mockPrivacyManager.exportPrivacyConfig).mockResolvedValue(
+        JSON.stringify(criticalConfig),
       );
 
       const config: SecurityAssessmentConfig = {

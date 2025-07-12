@@ -291,7 +291,7 @@ export class SecurityCommandHandler {
       console.log(`Include Dev Dependencies: ${config.includeDevDependencies ? '✅' : '❌'}`);
       console.log(`Severity Threshold: ${config.seventy_threshold}`);
       console.log(`Cache Enabled: ${config.enableCache ? '✅' : '❌'}`);
-      console.log(`Auto-remediation: ${config.autoRemediation.enabled ? '✅' : '❌'}`);
+      console.log(`Auto-remediation: ${config.autoRemediation?.enabled ? '✅' : '❌'}`);
       
     } else if (args.subaction === 'set') {
       if (!args.service || args.apiKey === undefined) {
@@ -373,7 +373,7 @@ export class SecurityCommandHandler {
       const config = await this.loadConfig();
       console.log('\n⚙️  Configuration:');
       console.log(`   Sources: ${Object.entries(config.sources).filter(([, enabled]) => enabled).map(([name]) => name).join(', ')}`);
-      console.log(`   Auto-remediation: ${config.autoRemediation.enabled ? '✅' : '❌'}`);
+      console.log(`   Auto-remediation: ${config.autoRemediation?.enabled ? '✅' : '❌'}`);
     } catch {
       console.log('\n⚙️  Configuration: Using defaults');
     }

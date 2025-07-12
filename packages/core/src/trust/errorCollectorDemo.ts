@@ -7,7 +7,7 @@
 import { ErrorCollector } from './errorCollector.js';
 import { FunctionCallEvaluator } from './functionCallEvaluator.js';
 import { TrustContentGenerator } from './trustContentGenerator.js';
-import { ModelManager } from './modelManager.js';
+import { TrustModelManagerImpl } from './modelManager.js';
 
 /**
  * Demonstration of the error collection system
