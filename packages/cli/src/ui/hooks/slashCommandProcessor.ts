@@ -1575,6 +1575,128 @@ export const useSlashCommandProcessor = (
       },
     });
 
+    // Security commands for dependency vulnerability scanning
+    commands.push({
+      name: 'security',
+      description: 'dependency vulnerability scanning and security management',
+      subCommands: [
+        { name: 'scan', description: 'Scan project for vulnerabilities' },
+        { name: 'monitor', description: 'Setup continuous monitoring' },
+        { name: 'report', description: 'Generate security reports' },
+        { name: 'remediate', description: 'Apply security fixes' },
+        { name: 'configure', description: 'Configure security settings' },
+        { name: 'status', description: 'Show security status' },
+      ],
+      action: async (_mainCommand, subCommand, args) => {
+        try {
+          const handler = await import('../../commands/securityCommands.js');
+
+          // Capture console output
+          const _originalLog = console.log;
+          const _originalError = console.error;
+          let _output = '';
+          console.log = (...args) => {
+            _output += args.join(' ') + '\n';
+          };
+          console.error = (...args) => {
+            _output += args.join(' ') + '\n';
+          };
+
+          try {
+            // Parse the command structure
+            const commandArgs: any = {
+              action: subCommand || 'status',
+            };
+
+            // Parse arguments based on structure
+            if (args) {
+              const argParts = args.trim().split(/\s+/);
+              
+              // Handle different argument patterns
+              if (argParts.length > 0 && argParts[0] !== '') {
+                commandArgs.subaction = argParts[0];
+                
+                if (argParts.length > 1) {
+                  commandArgs.path = argParts[1];
+                }
+                
+                // Parse flags
+                if (args.includes('--autofix')) {
+                  commandArgs.autofix = true;
+                }
+                if (args.includes('--force')) {
+                  commandArgs.force = true;
+                }
+                if (args.includes('--verbose')) {
+                  commandArgs.verbose = true;
+                }
+                if (args.includes('--continuous')) {
+                  commandArgs.continuous = true;
+                }
+                
+                // Parse specific options
+                const formatMatch = args.match(/--format\s+(\S+)/);
+                if (formatMatch) {
+                  commandArgs.format = formatMatch[1];
+                }
+                
+                const outputMatch = args.match(/--output\s+(\S+)/);
+                if (outputMatch) {
+                  commandArgs.output = outputMatch[1];
+                }
+                
+                const severityMatch = args.match(/--severity\s+(\S+)/);
+                if (severityMatch) {
+                  commandArgs.severity = severityMatch[1];
+                }
+                
+                const intervalMatch = args.match(/--interval-hours\s+(\d+)/);
+                if (intervalMatch) {
+                  commandArgs.intervalHours = parseInt(intervalMatch[1], 10);
+                }
+                
+                const sourceMatch = args.match(/--sources\s+([^\s]+)/);
+                if (sourceMatch) {
+                  commandArgs.sources = sourceMatch[1].split(',');
+                }
+                
+                const apiKeyMatch = args.match(/--api-key\s+(\S+)/);
+                if (apiKeyMatch) {
+                  commandArgs.apiKey = apiKeyMatch[1];
+                }
+                
+                const serviceMatch = args.match(/--service\s+(\S+)/);
+                if (serviceMatch) {
+                  commandArgs.service = serviceMatch[1];
+                }
+              }
+            }
+
+            await handler.handleSecurityCommand(commandArgs);
+          } catch (error) {
+            _output += `Error: ${error instanceof Error ? error.message : String(error)}\n`;
+          } finally {
+            console.log = _originalLog;
+            console.error = _originalError;
+          }
+
+          if (_output) {
+            addMessage({
+              type: MessageType.INFO,
+              content: _output.trim(),
+              timestamp: new Date(),
+            });
+          }
+        } catch (importError) {
+          addMessage({
+            type: MessageType.ERROR,
+            content: `Failed to load security commands: ${importError instanceof Error ? importError.message : String(importError)}`,
+            timestamp: new Date(),
+          });
+        }
+      },
+    });
+
     return commands;
   }, [
     onDebugMessage,

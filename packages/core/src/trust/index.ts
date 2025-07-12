@@ -29,6 +29,7 @@ export * from './functionCallEvaluator.js';
 export * from './ollamaClient.js';
 export * from './ollamaToolRegistry.js';
 export * from './ollamaContentGenerator.js';
+export * from './hardwareOptimizer.js';
 
 // Trust version and metadata
 // Trust: An Open System for Modern Assurance
