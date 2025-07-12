@@ -160,6 +160,7 @@ export class PrivacyCommandHandler {
     console.log('\\n🛡️  Trust CLI - Available Privacy Modes');
     console.log('═'.repeat(60));
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     Object.values(PRIVACY_MODES).forEach((mode: any) => {
       const isCurrent = currentMode.name === mode.name;
       const indicator = isCurrent ? '→' : ' ';

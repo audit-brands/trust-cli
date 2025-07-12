@@ -550,6 +550,7 @@ describe('ModelCommandHandler', () => {
   describe('error handling', () => {
     it('should handle invalid action', async () => {
       const args: ModelCommandArgs = {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         action: 'invalid' as any,
         modelName: undefined,
         task: undefined,

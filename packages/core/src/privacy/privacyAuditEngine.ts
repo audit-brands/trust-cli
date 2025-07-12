@@ -418,6 +418,9 @@ export class PrivacyAuditEngine {
       case 'iso27001':
         findings.push(...(await this.auditISO27001Compliance(config)));
         break;
+      default:
+        // Unknown framework - no specific compliance checks
+        break;
     }
 
     return findings;
@@ -698,7 +701,7 @@ export class PrivacyAuditEngine {
           timestamp: new Date(),
         });
       }
-    } catch (error) {
+    } catch (_error) {
       findings.push({
         id: 'privacy-dir-missing',
         level: 'medium',
@@ -1027,7 +1030,7 @@ export class PrivacyAuditEngine {
       return reports.sort(
         (a, b) => b.timestamp.getTime() - a.timestamp.getTime(),
       );
-    } catch (error) {
+    } catch (_error) {
       return [];
     }
   }

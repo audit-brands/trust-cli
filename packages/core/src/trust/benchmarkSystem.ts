@@ -85,7 +85,7 @@ export class TrustBenchmarkSystem {
       includeCustomTests?: boolean;
     } = {},
   ): Promise<BenchmarkReport> {
-    const { tests, iterations = 1, includeCustomTests = false } = options;
+    const { tests, iterations = 1, includeCustomTests: _includeCustomTests = false } = options;
 
     // Load the model if not already loaded
     if (
@@ -477,7 +477,7 @@ export class TrustBenchmarkSystem {
 
   private determineRecommendedUseCase(
     speed: number,
-    responseTime: number,
+    _responseTime: number,
   ): string {
     if (speed > 50) {
       return 'Excellent for real-time applications and interactive use';

@@ -132,6 +132,7 @@ export class ServeCommandHandler {
 
       // Keep the process alive
       await new Promise(() => {}); // This will run until the process is killed
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       console.error(`❌ Failed to start server: ${error}`);
 
@@ -178,7 +179,7 @@ export class ServeCommandHandler {
       // Get tools from the registry
       const tools = this.toolRegistry.getAllTools();
       return tools.length;
-    } catch (error) {
+    } catch (_error) {
       return 0;
     }
   }

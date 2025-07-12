@@ -18,8 +18,11 @@ const mockFs = vi.mocked(fs);
 
 describe('ConfigCommandHandler', () => {
   let commandHandler: ConfigCommandHandler;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockConfig: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockConsoleLog: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockConsoleError: any;
 
   beforeEach(() => {
@@ -453,6 +456,7 @@ describe('ConfigCommandHandler', () => {
 
   describe('unknown action', () => {
     it('should throw error for unknown action', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const args: ConfigCommandArgs = { action: 'unknown' as any };
 
       await expect(commandHandler.handleCommand(args)).rejects.toThrow(

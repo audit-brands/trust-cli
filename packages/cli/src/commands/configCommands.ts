@@ -197,6 +197,7 @@ export class ConfigCommandHandler {
       this.setNestedValue(config, key, parsedValue);
 
       // Update the configuration
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (this.config as any).config = config;
       await this.config.save();
 
@@ -232,7 +233,7 @@ export class ConfigCommandHandler {
   private async setBackend(
     backend: 'ollama' | 'huggingface' | 'cloud',
   ): Promise<void> {
-    this.config.setPreferredBackend(backend as any);
+    this.config.setPreferredBackend(backend as 'ollama' | 'huggingface' | 'cloud');
     await this.config.save();
 
     console.log(`✅ Preferred AI backend set to: ${backend}`);
@@ -257,7 +258,7 @@ export class ConfigCommandHandler {
       );
     }
 
-    this.config.setFallbackOrder(order as any);
+    this.config.setFallbackOrder(order as Array<'ollama' | 'huggingface' | 'cloud'>);
     await this.config.save();
 
     console.log(`✅ Fallback order set to: ${order.join(' → ')}`);
@@ -265,7 +266,7 @@ export class ConfigCommandHandler {
     // Show which backends are enabled
     console.log('\n📊 Backend Status:');
     for (const backend of order) {
-      const enabled = this.config.isBackendEnabled(backend as any);
+      const enabled = this.config.isBackendEnabled(backend as 'ollama' | 'huggingface' | 'cloud');
       console.log(`   ${backend}: ${enabled ? '✅ Enabled' : '❌ Disabled'}`);
     }
   }
@@ -298,6 +299,7 @@ export class ConfigCommandHandler {
         throw new Error('Invalid configuration file format');
       }
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (this.config as any).config = importedConfig;
       await this.config.save();
 
@@ -310,6 +312,7 @@ export class ConfigCommandHandler {
     }
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private getNestedValue(obj: any, path: string): any {
     return path
       .split('.')
@@ -320,6 +323,7 @@ export class ConfigCommandHandler {
       );
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private setNestedValue(obj: any, path: string, value: any): void {
     const keys = path.split('.');
     const lastKey = keys.pop()!;
@@ -333,6 +337,7 @@ export class ConfigCommandHandler {
     target[lastKey] = value;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private parseValue(value: string): any {
     // Try to parse as JSON first
     try {

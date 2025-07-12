@@ -584,6 +584,7 @@ class PrivacyAuditCommandHandler {
     ) as ComplianceFramework[];
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private displayAuditSummary(report: any): void {
     console.log(chalk.blue('\n📊 Privacy Audit Summary:'));
     console.log('─'.repeat(35));

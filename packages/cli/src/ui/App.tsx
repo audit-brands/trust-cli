@@ -250,8 +250,10 @@ const App = ({ config, settings, startupWarnings = [] }: AppProps) => {
         // Check if this is a TrustContentGenerator (has getCurrentBackend method)
         if (
           contentGenerator &&
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           typeof (contentGenerator as any).getCurrentBackend === 'function'
         ) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const backend = (contentGenerator as any).getCurrentBackend();
           if (backend !== currentBackend) {
             setCurrentBackend(backend);

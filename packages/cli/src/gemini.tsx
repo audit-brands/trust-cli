@@ -192,6 +192,7 @@ export async function main() {
 
     try {
       await handleModelCommand({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         action: action as any,
         modelName,
         task,
@@ -239,6 +240,7 @@ export async function main() {
     const allFlags = args.slice(2);
 
     try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const configArgs: any = {
         action: action || 'show',
         verbose: allFlags.includes('--verbose') || allFlags.includes('-v'),

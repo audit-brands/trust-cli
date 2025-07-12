@@ -882,6 +882,7 @@ export const useSlashCommandProcessor = (
           };
 
           try {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             let commandArgs: any;
 
             if (!subCommand || subCommand === 'show' || subCommand === 'list') {
@@ -956,6 +957,7 @@ export const useSlashCommandProcessor = (
               _output += args.join(' ') + '\n';
             };
 
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const commandArgs: any = {
               action: subCommand,
             };
@@ -1021,6 +1023,7 @@ export const useSlashCommandProcessor = (
           };
 
           try {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const commandArgs: any = {
               action: subCommand,
               verbose: args === '--verbose' || args === 'verbose',
@@ -1080,6 +1083,7 @@ export const useSlashCommandProcessor = (
             };
 
             try {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               const commandArgs: any = {
                 action: subCommand || 'list',
               };
@@ -1140,6 +1144,7 @@ export const useSlashCommandProcessor = (
             };
 
             try {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               const commandArgs: any = {
                 action: subCommand || 'show',
               };
@@ -1226,6 +1231,7 @@ export const useSlashCommandProcessor = (
               _output += args.join(' ') + '\n';
             };
 
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const commandArgs: any = {
               action: subCommand || 'list-all',
             };

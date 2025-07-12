@@ -8,6 +8,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import {
   SecurityRecommendationEngine,
   SecurityAssessmentConfig,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   SecurityAssessmentReport,
 } from './securityRecommendationEngine.js';
 import { PrivacyManager, PrivacyConfig } from '../trust/privacyManager.js';

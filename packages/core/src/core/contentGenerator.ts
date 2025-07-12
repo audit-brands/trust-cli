@@ -103,6 +103,7 @@ export async function createContentGeneratorConfig(
 export async function createContentGenerator(
   config: ContentGeneratorConfig,
   sessionId?: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   fullConfig?: any, // Optional full Config object for GBNF support
 ): Promise<ContentGenerator> {
   const version = process.env.CLI_VERSION || process.version;

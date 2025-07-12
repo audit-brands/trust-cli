@@ -394,12 +394,15 @@ async function handleStructuredConvert(options: {
     convertedData = JSON.stringify(parseResult.data, null, 2);
   } else if (to === 'xml') {
     // Access private method for conversion (this is a utility function)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     convertedData = (schemaEnforcement as any).convertJSONToXML(
       parseResult.data,
     );
   } else if (to === 'kv') {
     // Access private method for conversion
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     convertedData = (schemaEnforcement as any).convertJSONToKV(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       parseResult.data as any,
     );
   } else {

@@ -84,6 +84,7 @@ export class StatusCommandHandler {
           `      GBNF Functions: ${huggingfaceConfig?.gbnfFunctions ? '✅' : '❌'}`,
         );
       }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (_error: any) {
       console.log(`   🤗 HuggingFace: ⚠️  Configuration error`);
     }

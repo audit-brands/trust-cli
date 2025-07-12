@@ -336,7 +336,7 @@ export class BenchmarkCommandHandler {
   }
 
   private async exportToFile(
-    results: any[],
+    results: BenchmarkReport[],
     outputPath: string,
     format: string,
   ): Promise<void> {
@@ -383,7 +383,7 @@ export class BenchmarkCommandHandler {
     return [headers.join(','), ...rows.map((row) => row.join(','))].join('\n');
   }
 
-  private generateCSVFromResults(results: any[]): string {
+  private generateCSVFromResults(results: BenchmarkReport[]): string {
     const headers = [
       'Timestamp',
       'Model',

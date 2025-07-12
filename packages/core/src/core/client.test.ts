@@ -398,6 +398,7 @@ describe('Gemini Client (client.ts)', () => {
 
       // Mock startChat to return different chat instances but with same sendMessage mock
       const _mockStartChat = vi
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .spyOn(client as any, 'startChat')
         .mockImplementation(
           async () =>

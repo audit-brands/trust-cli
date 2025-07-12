@@ -124,6 +124,7 @@ export const ModelManagerUI: React.FC<ModelManagerUIProps> = ({ onExit }) => {
     }
   });
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleListInput = (input: string, key: any) => {
     if (key.upArrow && state.selectedIndex > 0) {
       setState((prev) => ({ ...prev, selectedIndex: prev.selectedIndex - 1 }));
@@ -147,6 +148,7 @@ export const ModelManagerUI: React.FC<ModelManagerUIProps> = ({ onExit }) => {
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleDetailInput = (input: string, key: any) => {
     if (key.escape || input === 'b') {
       setState((prev) => ({ ...prev, view: 'list' }));
@@ -159,18 +161,21 @@ export const ModelManagerUI: React.FC<ModelManagerUIProps> = ({ onExit }) => {
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleDownloadInput = (input: string, key: any) => {
     if (key.escape || input === 'b') {
       setState((prev) => ({ ...prev, view: 'list' }));
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleBenchmarkInput = (input: string, key: any) => {
     if (key.escape || input === 'b') {
       setState((prev) => ({ ...prev, view: 'list' }));
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleSettingsInput = (input: string, key: any) => {
     if (key.escape || input === 'b') {
       setState((prev) => ({ ...prev, view: 'list' }));
@@ -514,7 +519,7 @@ const BenchmarkView: React.FC<{ state: UIState }> = ({ state }) => {
 const SettingsView: React.FC<{
   state: UIState;
   config: TrustConfiguration | null;
-}> = ({ state, config }) => {
+}> = ({ state: _state, config }) => {
   if (!config) return <Text>Configuration not available</Text>;
 
   const settings = config.get();

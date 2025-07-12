@@ -9,6 +9,7 @@ import {
   PrivacyAuditEngine,
   PrivacyAuditConfig,
   ComplianceFramework,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   PrivacyAuditReport,
 } from './privacyAuditEngine.js';
 import { PrivacyManager, PrivacyConfig } from '../trust/privacyManager.js';
@@ -32,7 +33,7 @@ vi.mock('os', () => ({
 describe('PrivacyAuditEngine', () => {
   let auditEngine: PrivacyAuditEngine;
   let mockPrivacyManager: PrivacyManager;
-  let mockPerformanceMonitor: PerformanceMonitor;
+  let _mockPerformanceMonitor: PerformanceMonitor;
 
   const mockPrivacyConfig: PrivacyConfig = {
     mode: 'moderate',

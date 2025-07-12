@@ -911,6 +911,7 @@ export class ModelCommandHandler {
       const { ModelManagerUI } = await import('../ui/modelManagerUI.js');
 
       // Set up exit handler
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let appInstance: any = null;
       const handleExit = () => {
         if (appInstance) {
@@ -1087,6 +1088,7 @@ export class ModelCommandHandler {
     console.log('   trust status backend         # Backend configuration');
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private async getDownloadedCount(models: any[]): Promise<number> {
     let count = 0;
     for (const model of models) {
@@ -1096,6 +1098,7 @@ export class ModelCommandHandler {
     return count;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private async getVerifiedCount(models: any[]): Promise<number> {
     let count = 0;
     for (const model of models) {
@@ -1109,6 +1112,7 @@ export class ModelCommandHandler {
     return count;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private async getFirstDownloadedModel(models: any[]) {
     for (const model of models) {
       const isDownloaded = await this.modelManager.verifyModel(model.path);

@@ -399,7 +399,7 @@ export class EnhancedModelCommandHandler {
     const grouped = await this.unifiedManager.getModelsByBackend();
 
     for (const [backend, models] of Object.entries(grouped)) {
-      const enabled = this.trustConfig.isBackendEnabled(backend as any);
+      const enabled = this.trustConfig.isBackendEnabled(backend as 'ollama' | 'huggingface' | 'cloud');
       const status = enabled ? '✅' : '❌';
       const icon = this.getBackendIcon(backend);
 
@@ -532,6 +532,7 @@ export class EnhancedModelCommandHandler {
 
       // Display transparency info if requested
       if (args.transparency) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         await this.displayAdditionalTransparency(selection as any);
       }
 
@@ -864,6 +865,7 @@ export class EnhancedModelCommandHandler {
     }
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private async displayAdditionalTransparency(_selection: any): Promise<void> {
     console.log('\n🔍 **Additional Transparency:**');
     console.log(`   Selection Timestamp: ${new Date().toISOString()}`);
@@ -875,6 +877,7 @@ export class EnhancedModelCommandHandler {
 
   private displayPerformanceExpectations(
     model: UnifiedModel,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     systemAnalysis: any,
   ): void {
     const ramUsage = this.parseRAMRequirement(model.ramRequirement || '0');
@@ -1250,6 +1253,7 @@ export class EnhancedModelCommandHandler {
     }
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private displayPerformanceExpectationsForSystem(resources: any): void {
     const memoryUsagePercent =
       (resources.memory.usedRAM / resources.memory.totalRAM) * 100;
@@ -1336,6 +1340,7 @@ export class EnhancedModelCommandHandler {
       // Show help for a specific error type
       console.log(`🎯 **Error Type:** ${args.errorType}\n`);
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const help = this.errorHandler.getContextualHelp(args.errorType as any);
       console.log(`📖 **Overview:**\n   ${help}\n`);
 
@@ -1447,6 +1452,7 @@ ${i + 1}. ${typeIcon} **${solution.title}**`);
    */
   private async handleCommandWithEnhancedErrors<T>(
     operation: () => Promise<T>,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     context: Record<string, any> = {},
   ): Promise<T> {
     try {

@@ -251,6 +251,7 @@ describe('BenchmarkCommandHandler', () => {
       const commandHandlerWithNoModels = new BenchmarkCommandHandler();
 
       // Mock the private method using object property assignment
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (commandHandlerWithNoModels as any).getAvailableModelNames = () => [];
 
       const args: BenchmarkCommandArgs = {
@@ -363,7 +364,10 @@ describe('BenchmarkCommandHandler', () => {
       const { PerformanceBenchmark } = await import(
         '@trust-cli/trust-cli-core'
       );
-      const mockBenchmark = new PerformanceBenchmark({} as any, {} as any);
+      const mockPerformanceMonitor = {};
+      const mockModelManager = {};
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const mockBenchmark = new PerformanceBenchmark(mockPerformanceMonitor as any, mockModelManager as any);
       vi.mocked(mockBenchmark.getResults).mockReturnValue([
         {
           testId: 'quick-response',
@@ -413,6 +417,7 @@ describe('BenchmarkCommandHandler', () => {
       const commandHandlerWithNoResults = new BenchmarkCommandHandler();
 
       // Mock the performance benchmark to return no results
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (commandHandlerWithNoResults as any).performanceBenchmark.getResults = vi
         .fn()
         .mockReturnValue([]);
@@ -456,7 +461,10 @@ describe('BenchmarkCommandHandler', () => {
       const { PerformanceBenchmark } = await import(
         '@trust-cli/trust-cli-core'
       );
-      const mockBenchmark = new PerformanceBenchmark({} as any, {} as any);
+      const mockPerformanceMonitor = {};
+      const mockModelManager = {};
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const mockBenchmark = new PerformanceBenchmark(mockPerformanceMonitor as any, mockModelManager as any);
 
       vi.mocked(mockBenchmark.getResults)
         .mockReturnValueOnce([
@@ -532,6 +540,7 @@ describe('BenchmarkCommandHandler', () => {
       const commandHandlerWithNoResults = new BenchmarkCommandHandler();
 
       // Mock the performance benchmark to return no results
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (commandHandlerWithNoResults as any).performanceBenchmark.getResults = vi
         .fn()
         .mockReturnValue([]);
@@ -591,6 +600,7 @@ describe('BenchmarkCommandHandler', () => {
 
     it('should show help when no action provided', async () => {
       const args: BenchmarkCommandArgs = {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         action: '' as any,
       };
 
@@ -605,6 +615,7 @@ describe('BenchmarkCommandHandler', () => {
   describe('error handling', () => {
     it('should handle unknown action', async () => {
       const args: BenchmarkCommandArgs = {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         action: 'unknown' as any,
       };
 
@@ -618,6 +629,7 @@ describe('BenchmarkCommandHandler', () => {
       const commandHandlerWithError = new BenchmarkCommandHandler();
 
       // Mock the performance benchmark to fail
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (commandHandlerWithError as any).performanceBenchmark.runBenchmarkSuite =
         vi.fn().mockRejectedValue(new Error('Benchmark failed'));
 
