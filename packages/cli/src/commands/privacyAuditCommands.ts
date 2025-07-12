@@ -32,7 +32,7 @@ class PrivacyAuditCommandHandler {
 
   constructor() {
     this.performanceMonitor = new PerformanceMonitor();
-    this.privacyManager = new PrivacyManager(this.performanceMonitor);
+    this.privacyManager = new PrivacyManager();
     this.auditEngine = new PrivacyAuditEngine(this.privacyManager);
     this.securityEngine = new SecurityRecommendationEngine(
       this.privacyManager,

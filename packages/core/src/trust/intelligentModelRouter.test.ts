@@ -12,7 +12,7 @@ import {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   RoutingConfig,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  SystemResources,
+  RouterSystemResources,
 } from './intelligentModelRouter.js';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { UnifiedModel, TaskType } from './unifiedModelManager.js';

@@ -208,7 +208,7 @@ export class ResourceMonitor {
   private async getDiskInfo(): Promise<SystemResources['disk']> {
     try {
       // For cross-platform compatibility, check current working directory
-      const stats = (await fs.statvfs?.(process.cwd())) || null;
+      const stats = (await (fs as any).statvfs?.(process.cwd())) || null;
 
       if (stats) {
         const blockSize = stats.bavail;

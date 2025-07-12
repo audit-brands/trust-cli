@@ -21,8 +21,7 @@ export class ErrorCollectorDemo {
     this.errorCollector = new ErrorCollector();
 
     // Initialize the evaluator with error collection
-    const modelManager = new TrustModelManagerImpl();
-    const contentGenerator = new TrustContentGenerator(modelManager);
+    const contentGenerator = new TrustContentGenerator();
     this.evaluator = new FunctionCallEvaluator(
       contentGenerator,
       this.errorCollector,

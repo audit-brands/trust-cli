@@ -35,7 +35,7 @@ export interface ToolCallStats {
   };
 }
 
-export interface ModelMetrics {
+export interface TelemetryModelMetrics {
   api: {
     totalRequests: number;
     totalErrors: number;
@@ -52,7 +52,7 @@ export interface ModelMetrics {
 }
 
 export interface SessionMetrics {
-  models: Record<string, ModelMetrics>;
+  models: Record<string, TelemetryModelMetrics>;
   tools: {
     totalCalls: number;
     totalSuccess: number;
@@ -67,7 +67,7 @@ export interface SessionMetrics {
   };
 }
 
-const createInitialModelMetrics = (): ModelMetrics => ({
+const createInitialModelMetrics = (): TelemetryModelMetrics => ({
   api: {
     totalRequests: 0,
     totalErrors: 0,
@@ -133,7 +133,7 @@ export class UiTelemetryService extends EventEmitter {
     return this.#lastPromptTokenCount;
   }
 
-  private getOrCreateModelMetrics(modelName: string): ModelMetrics {
+  private getOrCreateModelMetrics(modelName: string): TelemetryModelMetrics {
     if (!this.#metrics.models[modelName]) {
       this.#metrics.models[modelName] = createInitialModelMetrics();
     }

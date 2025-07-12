@@ -1521,7 +1521,7 @@ ${i + 1}. ${typeIcon} **${solution.title}**`);
 }
 
 export async function handleEnhancedModelCommand(
-  _args: EnhancedModelCommandArgs,
+  args: EnhancedModelCommandArgs,
 ): Promise<void> {
   const handler = new EnhancedModelCommandHandler();
   await handler.handleCommand(args);

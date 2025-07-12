@@ -50,6 +50,7 @@ export const ModelManagerUI: React.FC<ModelManagerUIProps> = ({ onExit }) => {
   const [config, setConfig] = useState<TrustConfiguration | null>(null);
   const [modelManager, setModelManager] =
     useState<TrustModelManagerImpl | null>(null);
+  const [downloadStatuses, setDownloadStatuses] = useState<Map<string, boolean>>(new Map());
 
   // Initialize components
   useEffect(() => {

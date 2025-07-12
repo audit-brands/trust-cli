@@ -6,5 +6,5 @@
 
 export * from './dependencyScanner.js';
 export * from './dependencyUpdater.js';
-export { SecurityRecommendationEngine } from './securityRecommendationEngine.js';
+export { SecurityRecommendationEngine, SecurityAssessmentConfig } from './securityRecommendationEngine.js';
 export { SecurityRecommendation as SecurityRecEngineRecommendation } from './securityRecommendationEngine.js';

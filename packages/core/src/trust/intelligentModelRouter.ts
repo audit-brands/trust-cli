@@ -65,7 +65,7 @@ export interface RoutingConfig {
 /**
  * Hardware detection results
  */
-export interface SystemResources {
+export interface RouterSystemResources {
   availableRAM: number; // GB
   totalRAM: number; // GB
   cpuCores: number;
@@ -174,7 +174,7 @@ export class IntelligentModelRouter {
   /**
    * Detect current system hardware constraints
    */
-  async detectSystemResources(): Promise<SystemResources> {
+  async detectSystemResources(): Promise<RouterSystemResources> {
     const os = await import('os');
 
     return {
@@ -192,7 +192,7 @@ export class IntelligentModelRouter {
   async getRoutingRecommendation(task?: TaskType): Promise<{
     recommended: RoutingConfig;
     reasoning: string;
-    systemInfo: SystemResources;
+    systemInfo: RouterSystemResources;
   }> {
     const systemInfo = await this.detectSystemResources();
 
@@ -381,7 +381,7 @@ export class IntelligentModelRouter {
     // Task suitability score (30% weight)
     let taskScore = 0.7; // Default general suitability
     if (config.task && model.taskSuitability?.[config.task]) {
-      taskScore = model.taskSuitability[config.task] / 10;
+      taskScore = model.taskSuitability[config.task]! / 10;
     }
     breakdown.task_suitability = taskScore * 0.3;
 
@@ -492,7 +492,7 @@ export class IntelligentModelRouter {
    * Generate system-specific recommendations
    */
   private generateSystemReasoning(
-    systemInfo: SystemResources,
+    systemInfo: RouterSystemResources,
     config: RoutingConfig,
   ): string {
     const reasons = [];
@@ -556,7 +556,7 @@ export class IntelligentModelRouter {
   }
 
   private getPreferredBackendsForSystem(
-    systemInfo: SystemResources,
+    systemInfo: RouterSystemResources,
   ): Array<'ollama' | 'huggingface' | 'cloud'> {
     const backends: Array<'ollama' | 'huggingface' | 'cloud'> = [];
 

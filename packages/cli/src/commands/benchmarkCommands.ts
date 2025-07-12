@@ -106,6 +106,8 @@ export class BenchmarkCommandHandler {
       );
       */
 
+      // TODO: Implement PerformanceBenchmark class to enable this code
+      /*
       const duration = Date.now() - startTime;
       console.log(
         `\n✅ Benchmark completed in ${(duration / 1000).toFixed(1)}s\n`,
@@ -120,6 +122,7 @@ export class BenchmarkCommandHandler {
         await this.saveReport(report, args.output, args.format || 'json');
         console.log(`💾 Results saved to: ${args.output}`);
       }
+      */
     } catch (error) {
       console.error(
         `❌ Benchmark failed: ${error instanceof Error ? error.message : String(error)}`,
@@ -133,6 +136,9 @@ export class BenchmarkCommandHandler {
   }
 
   private async listSuites(verbose = false): Promise<void> {
+    // TODO: Implement PerformanceBenchmark class
+    throw new Error('PerformanceBenchmark class not yet implemented');
+    /*
     const suites = this.performanceBenchmark.getBenchmarkSuites();
 
     console.log('\n📋 Available Benchmark Suites');
@@ -161,9 +167,13 @@ export class BenchmarkCommandHandler {
     console.log(
       `   trust benchmark run --suite speed --models phi-3.5-mini-instruct`,
     );
+    */
   }
 
   private async showResults(args: BenchmarkCommandArgs): Promise<void> {
+    // TODO: Implement PerformanceBenchmark class
+    throw new Error('PerformanceBenchmark class not yet implemented');
+    /*
     const results = this.performanceBenchmark.getResults(
       args.filter,
       undefined,
@@ -218,9 +228,13 @@ export class BenchmarkCommandHandler {
     }
 
     console.log('\n💡 Use --verbose for detailed results');
+    */
   }
 
   private async compareModels(args: BenchmarkCommandArgs): Promise<void> {
+    // TODO: Implement PerformanceBenchmark class
+    throw new Error('PerformanceBenchmark class not yet implemented');
+    /*
     const models = args.models || [];
 
     if (models.length < 2) {
@@ -288,9 +302,13 @@ export class BenchmarkCommandHandler {
         `   ${fastest.model} is ${speedDiff.toFixed(1)}% faster than ${slowest.model}`,
       );
     }
+    */
   }
 
   private async exportResults(args: BenchmarkCommandArgs): Promise<void> {
+    // TODO: Implement PerformanceBenchmark class
+    throw new Error('PerformanceBenchmark class not yet implemented');
+    /*
     const results = this.performanceBenchmark.getResults();
 
     if (results.length === 0) {
@@ -310,6 +328,7 @@ export class BenchmarkCommandHandler {
       );
       throw error;
     }
+    */
   }
 
   private async saveReport(
@@ -317,6 +336,9 @@ export class BenchmarkCommandHandler {
     outputPath: string,
     format: string,
   ): Promise<void> {
+    // TODO: Implement PerformanceBenchmark class
+    throw new Error('PerformanceBenchmark class not yet implemented');
+    /*
     const dir = path.dirname(outputPath);
     await fs.mkdir(dir, { recursive: true });
 
@@ -337,6 +359,7 @@ export class BenchmarkCommandHandler {
       default:
         throw new Error(`Unsupported format: ${format}`);
     }
+    */
   }
 
   private async exportToFile(

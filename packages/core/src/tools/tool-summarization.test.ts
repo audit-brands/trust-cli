@@ -34,9 +34,9 @@ class MockToolWithSummarizer implements Tool<{ input: string }, ToolResult> {
       parameters: {
         type: 'object',
         properties: {
-          input: { type: 'string' } as Schema,
+          input: { type: 'string' } as unknown as Schema,
         },
-      } as Schema,
+      } as unknown as Schema,
     };
   }
 
@@ -132,8 +132,8 @@ describe('Tool Summarization Feature', () => {
           description: this.description,
           parameters: {
             type: 'object',
-            properties: { input: { type: 'string' } as Schema },
-          } as Schema,
+            properties: { input: { type: 'string' } as unknown as Schema },
+          } as unknown as Schema,
         };
       }
 

@@ -68,7 +68,6 @@ describe('LoRAFineTuner', () => {
           downloadUrl: 'https://example.com/model.gguf',
           verificationHash: 'test-hash',
           expectedSize: 1000000,
-        quantization: 'Q4_K_M',
           quantization: 'Q4_K_M',
         },
       ];
@@ -206,7 +205,7 @@ describe('LoRAFineTuner', () => {
           id: `error${i}`,
           prompt: `Test prompt ${i}`,
           expectedTool: 'test_tool',
-          expectedArgs: {},
+          expectedArgs: { path: `test-path-${i}` },
           failureType: 'parse_error',
           category: 'test',
           difficulty: 'easy',
@@ -338,6 +337,7 @@ describe('LoRAFineTuner', () => {
         downloadUrl: 'https://example.com/model.gguf',
         verificationHash: 'test-hash',
         expectedSize: 4000000,
+        quantization: 'Q4_K_M',
       };
 
       const dataset: TrainingDataset = {
@@ -378,6 +378,7 @@ describe('LoRAFineTuner', () => {
         downloadUrl: 'https://example.com/model.gguf',
         verificationHash: 'test-hash',
         expectedSize: 2000000,
+        quantization: 'Q4_K_M',
       };
 
       const lowQualityDataset: TrainingDataset = {
