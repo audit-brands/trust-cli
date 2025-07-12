@@ -38,7 +38,7 @@ async function createEngagementFile(basePath: string, engagementName: string) {
   await fs.writeFile(path.join(basePath, 'engagement.yaml'), yamlData);
 }
 
-export async function openauditNew(engagementName: string) {
+export async function assuranceNew(engagementName: string) {
   if (!engagementName) {
     return 'Error: Engagement name is required.';
   }
@@ -56,11 +56,11 @@ export async function openauditNew(engagementName: string) {
   }
 }
 
-export function openauditAdd() {
-  return "Success! The 'openaudit add' command is coming soon and will be used to add patterns and modules.";
+export function assuranceAdd() {
+  return "Success! The 'assurance add' command is coming soon and will be used to add patterns and modules.";
 }
 
-export async function handleOpenAuditCommand(options: {
+export async function handleAssuranceCommand(options: {
   action: string;
   args: string[];
 }) {
@@ -69,16 +69,16 @@ export async function handleOpenAuditCommand(options: {
   const program = new Command();
 
   program
-    .name('openaudit')
+    .name('assurance')
     .description(
-      'A suite of tools for working with the OpenAudit Integrated Assurance framework.',
+      'A suite of tools for working with the Integrated Assurance framework.',
     );
 
   program
     .command('new <engagement_name>')
     .description('Scaffold a new assurance engagement.')
     .action(async (engagementName) => {
-      const result = await openauditNew(engagementName);
+      const result = await assuranceNew(engagementName);
       console.log(result);
     });
 
@@ -86,16 +86,33 @@ export async function handleOpenAuditCommand(options: {
     .command('add')
     .description('Add a pattern or module to an existing engagement.')
     .action(() => {
-      console.log(openauditAdd());
+      console.log(assuranceAdd());
     });
 
   // Prevent commander from exiting the process during tests
   program.exitOverride();
 
   try {
-    // Prepend 'openaudit' to the args array so that commander knows how to parse it.
-    program.parse(['openaudit', action, ...args]);
+    // Prepend 'assurance' to the args array so that commander knows how to parse it.
+    program.parse(['assurance', action, ...args]);
   } catch (_e) {
     // Ignore errors in test environment
+  }
+}
+
+export class AssuranceCommandHandler {
+  async handleCommand(args: string[]): Promise<void> {
+    if (args.length === 0) {
+      console.log('Missing command\nUsage: /assurance <new|list|report> [options]');
+      return;
+    }
+
+    const action = args[0];
+    const additionalArgs = args.slice(1);
+
+    await handleAssuranceCommand({
+      action,
+      args: additionalArgs,
+    });
   }
 }

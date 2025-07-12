@@ -280,19 +280,19 @@ export async function main() {
     }
   }
 
-  // OpenAudit command
-  if (args[0] === 'openaudit') {
-    const { handleOpenAuditCommand } = await import(
-      './commands/openauditCommands.js'
+  // Assurance command
+  if (args[0] === 'assurance') {
+    const { handleAssuranceCommand } = await import(
+      './commands/assuranceCommands.js'
     );
     try {
-      await handleOpenAuditCommand({
+      await handleAssuranceCommand({
         action: args[1] as string,
         args: args.slice(2),
       });
       return;
     } catch (error) {
-      console.error(`❌ OpenAudit command failed: ${error}`);
+      console.error(`❌ Assurance command failed: ${error}`);
       process.exit(1);
     }
   }

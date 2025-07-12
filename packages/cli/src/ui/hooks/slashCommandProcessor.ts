@@ -928,23 +928,23 @@ export const useSlashCommandProcessor = (
         },
       },
       {
-        name: 'openaudit',
+        name: 'assurance',
         description:
-          'open audit management. Usage: /openaudit <new|list|report> [options]',
+          'integrated assurance management. Usage: /assurance <new|list|report> [options]',
         action: async (_mainCommand, subCommand, args) => {
           if (!subCommand) {
             addMessage({
               type: MessageType.ERROR,
               content:
-                'Missing command\nUsage: /openaudit <new|list|report> [options]',
+                'Missing command\nUsage: /assurance <new|list|report> [options]',
               timestamp: new Date(),
             });
             return;
           }
 
           try {
-            const handler = await import('../../commands/openauditCommands.js');
-            const openAuditHandler = new handler.OpenAuditCommandHandler();
+            const handler = await import('../../commands/assuranceCommands.js');
+            const assuranceHandler = new handler.AssuranceCommandHandler();
 
             // Capture console output
             const _originalLog = console.log;
@@ -980,7 +980,7 @@ export const useSlashCommandProcessor = (
               }
             }
 
-            await openAuditHandler.handleCommand(commandArgs);
+            await assuranceHandler.handleCommand(commandArgs);
           } catch (error) {
             _output += `Error: ${error instanceof Error ? error.message : String(error)}\n`;
           } finally {
