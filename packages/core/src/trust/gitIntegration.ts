@@ -107,7 +107,7 @@ export class TrustGitIntegration {
         lastCommit,
         status,
       };
-    } catch (_error) {
+    } catch (error) {
       throw new Error(`Failed to get repository info: ${error}`);
     }
   }
@@ -156,7 +156,7 @@ export class TrustGitIntegration {
         );
         summary = analysis.summary;
         suggestions = analysis.suggestions;
-      } catch (_error) {
+      } catch (error) {
         console.warn('AI analysis failed, using basic analysis:', error);
         suggestions = this.generateBasicSuggestions(stats);
       }
@@ -245,7 +245,7 @@ export class TrustGitIntegration {
             file,
             this.calculateFileImportance(file),
           );
-        } catch (_error) {
+        } catch (error) {
           console.warn(`Failed to add file to context: ${file}`, error);
         }
       }
@@ -259,7 +259,7 @@ export class TrustGitIntegration {
       if (repoContext) {
         context += `## Repository Files\\n\\n${repoContext}\\n\\n`;
       }
-    } catch (_error) {
+    } catch (error) {
       console.warn('Failed to analyze repository files:', error);
     }
 
@@ -268,7 +268,7 @@ export class TrustGitIntegration {
       try {
         const history = this.getRecentCommits(10);
         context += `## Recent Commits\\n\\n${history}\\n\\n`;
-      } catch (_error) {
+      } catch (error) {
         console.warn('Failed to get commit history:', error);
       }
     }
@@ -294,7 +294,7 @@ export class TrustGitIntegration {
 
         const response = await chatSession.sendMessageSync(prompt);
         return response.content.trim();
-      } catch (_error) {
+      } catch (error) {
         console.warn('AI commit message generation failed:', error);
       }
     }
@@ -478,7 +478,7 @@ export class TrustGitIntegration {
     try {
       const sourceFiles = await this.findSourceFiles(maxFiles - files.length);
       files.push(...sourceFiles);
-    } catch (_error) {
+    } catch (error) {
       console.warn('Failed to find source files:', error);
     }
 

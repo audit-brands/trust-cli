@@ -83,8 +83,8 @@ describe('PrivacyAuditEngine', () => {
 
     it('should detect disabled storage encryption as critical', async () => {
       const unencryptedConfig = { ...mockPrivacyConfig, encryptStorage: false };
-      vi.mocked(mockPrivacyManager.getPrivacyConfig).mockResolvedValue(
-        unencryptedConfig,
+      vi.mocked(mockPrivacyManager.exportPrivacyConfig).mockResolvedValue(
+        JSON.stringify(unencryptedConfig),
       );
 
       const config: PrivacyAuditConfig = {
@@ -108,8 +108,8 @@ describe('PrivacyAuditEngine', () => {
 
     it('should detect disabled audit logging as high risk', async () => {
       const noAuditConfig = { ...mockPrivacyConfig, auditLogging: false };
-      vi.mocked(mockPrivacyManager.getPrivacyConfig).mockResolvedValue(
-        noAuditConfig,
+      vi.mocked(mockPrivacyManager.exportPrivacyConfig).mockResolvedValue(
+        JSON.stringify(noAuditConfig),
       );
 
       const config: PrivacyAuditConfig = {
@@ -132,8 +132,8 @@ describe('PrivacyAuditEngine', () => {
 
     it('should detect excessive data retention as medium risk', async () => {
       const longRetentionConfig = { ...mockPrivacyConfig, dataRetention: 400 };
-      vi.mocked(mockPrivacyManager.getPrivacyConfig).mockResolvedValue(
-        longRetentionConfig,
+      vi.mocked(mockPrivacyManager.exportPrivacyConfig).mockResolvedValue(
+        JSON.stringify(longRetentionConfig),
       );
 
       const config: PrivacyAuditConfig = {
@@ -195,8 +195,8 @@ describe('PrivacyAuditEngine', () => {
         encryptStorage: false, // Critical finding
         auditLogging: false, // High finding
       };
-      vi.mocked(mockPrivacyManager.getPrivacyConfig).mockResolvedValue(
-        criticalConfig,
+      vi.mocked(mockPrivacyManager.exportPrivacyConfig).mockResolvedValue(
+        JSON.stringify(criticalConfig),
       );
 
       const config: PrivacyAuditConfig = {
@@ -331,8 +331,8 @@ describe('PrivacyAuditEngine', () => {
         encryptStorage: false,
         auditLogging: false,
       };
-      vi.mocked(mockPrivacyManager.getPrivacyConfig).mockResolvedValue(
-        criticalConfig,
+      vi.mocked(mockPrivacyManager.exportPrivacyConfig).mockResolvedValue(
+        JSON.stringify(criticalConfig),
       );
 
       const config: PrivacyAuditConfig = {
@@ -380,8 +380,8 @@ describe('PrivacyAuditEngine', () => {
         mode: 'open' as const, // High
         dataRetention: 400, // Medium
       };
-      vi.mocked(mockPrivacyManager.getPrivacyConfig).mockResolvedValue(
-        mixedConfig,
+      vi.mocked(mockPrivacyManager.exportPrivacyConfig).mockResolvedValue(
+        JSON.stringify(mixedConfig),
       );
 
       const config: PrivacyAuditConfig = {
@@ -555,8 +555,8 @@ describe('PrivacyAuditEngine', () => {
         auditLogging: false, // High
         dataRetention: 400, // Medium
       };
-      vi.mocked(mockPrivacyManager.getPrivacyConfig).mockResolvedValue(
-        mixedConfig,
+      vi.mocked(mockPrivacyManager.exportPrivacyConfig).mockResolvedValue(
+        JSON.stringify(mixedConfig),
       );
 
       const config: PrivacyAuditConfig = {

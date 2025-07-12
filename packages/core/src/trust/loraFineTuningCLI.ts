@@ -162,7 +162,7 @@ export class LoRAFineTuningCLI {
     console.log('🔍 Analyzing models for fine-tuning opportunities...\n');
 
     try {
-      const models = await this.modelManager.getAvailableModels();
+      const models = this.modelManager.listAvailableModels();
       const modelsToAnalyze = options.model
         ? models.filter((m) => m.name === options.model)
         : models;
@@ -261,7 +261,7 @@ export class LoRAFineTuningCLI {
     console.log(`🚀 Starting LoRA fine-tuning for ${options.model}...\n`);
 
     try {
-      const models = await this.modelManager.getAvailableModels();
+      const models = this.modelManager.listAvailableModels();
       const model = models.find((m) => m.name === options.model);
 
       if (!model) {

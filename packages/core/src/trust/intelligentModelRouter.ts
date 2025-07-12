@@ -130,7 +130,6 @@ export class IntelligentModelRouter {
     const step4Start = Date.now();
     const routingResults = await this.performRouting(
       selectionResults.selected,
-      config,
     );
     const step4Duration = Date.now() - step4Start;
 
@@ -142,7 +141,6 @@ export class IntelligentModelRouter {
         selectionResults.selected,
         config,
         filterResults,
-        selectionResults,
       ),
       alternatives: selectionResults.topCandidates
         .slice(1, 4)

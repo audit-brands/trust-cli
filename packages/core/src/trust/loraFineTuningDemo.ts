@@ -41,7 +41,7 @@ export class LoRAFineTuningDemo {
       this.performanceBenchmark,
     );
 
-    const contentGenerator = new TrustContentGenerator(this.modelManager);
+    const contentGenerator = new TrustContentGenerator();
     this.functionCallEvaluator = new FunctionCallEvaluator(
       contentGenerator,
       this.errorCollector,
@@ -110,7 +110,7 @@ export class LoRAFineTuningDemo {
 
   private async analyzeModels(): Promise<void> {
     try {
-      const models = await this.modelManager.getAvailableModels();
+      const models = this.modelManager.listAvailableModels();
       console.log(`   📊 Analyzing ${models.length} available models...`);
 
       const weakModels = await this.fineTuner.identifyWeakModels(models);
@@ -150,7 +150,7 @@ export class LoRAFineTuningDemo {
       );
 
       // Get some models to work with
-      const models = await this.modelManager.getAvailableModels();
+      const models = this.modelManager.listAvailableModels();
       const testModel =
         models.find((m) => m.parameters?.includes('1.5B')) || models[0];
 
@@ -186,7 +186,7 @@ export class LoRAFineTuningDemo {
     try {
       console.log('   ⚙️  Creating optimal LoRA configurations...');
 
-      const models = await this.modelManager.getAvailableModels();
+      const models = this.modelManager.listAvailableModels();
 
       for (const model of models.slice(0, 3)) {
         // Demo with first 3 models
@@ -239,7 +239,7 @@ export class LoRAFineTuningDemo {
     try {
       console.log('   🎯 Simulating LoRA fine-tuning process...');
 
-      const models = await this.modelManager.getAvailableModels();
+      const models = this.modelManager.listAvailableModels();
       const testModel =
         models.find((m) => m.parameters?.includes('1.5B')) || models[0];
 
