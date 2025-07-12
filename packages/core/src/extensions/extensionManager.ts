@@ -477,7 +477,7 @@ export class ExtensionManager extends EventEmitter {
 
     const updates: { name: string; currentVersion: string; latestVersion: string }[] = [];
 
-    for (const [name, installed] of this.installedExtensions) {
+    for (const [name, installed] of Array.from(this.installedExtensions)) {
       const latest = this.registryCache!.extensions.find(ext => ext.manifest.name === name);
       if (latest && latest.manifest.version !== installed.manifest.version) {
         updates.push({
@@ -551,7 +551,7 @@ export class ExtensionManager extends EventEmitter {
   }
 
   private async validateInstalledExtensions(): Promise<void> {
-    for (const [name, extension] of this.installedExtensions) {
+    for (const [name, extension] of Array.from(this.installedExtensions)) {
       try {
         // Check if extension directory exists
         await fs.access(extension.installPath);
@@ -574,10 +574,6 @@ export class ExtensionManager extends EventEmitter {
   private async downloadExtension(extension: MarketplaceExtension, installPath: string): Promise<void> {
     // Simulate download by creating a basic package structure
     const packageJson = {
-      name: extension.manifest.name,
-      version: extension.manifest.version,
-      description: extension.manifest.description,
-      main: extension.manifest.main,
       ...extension.manifest,
     };
 

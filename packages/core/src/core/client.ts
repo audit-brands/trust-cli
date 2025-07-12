@@ -11,6 +11,8 @@ import {
   Content,
   Tool,
   GenerateContentResponse,
+  GenerateContentConfig,
+  EmbedContentParameters,
 } from '@google/genai';
 import {
   Turn,
@@ -30,6 +32,12 @@ import { getErrorMessage } from '../utils/errors.js';
 import { tokenLimit } from './tokenLimits.js';
 import { ProxyAgent, setGlobalDispatcher } from 'undici';
 import { DEFAULT_GEMINI_FLASH_MODEL } from '../config/models.js';
+import { 
+  ContentGenerator, 
+  ContentGeneratorConfig, 
+  createContentGenerator,
+  AuthType
+} from './contentGenerator.js';
 
 function isThinkingSupported(model: string) {
   if (model.startsWith('gemini-2.5')) return true;
@@ -79,10 +87,9 @@ export class GeminiClient {
    */
   async generateSummary(prompt: string, signal: AbortSignal): Promise<string> {
     const response = await this.generateContent(
-      [{ text: prompt }],
-      signal,
-      DEFAULT_GEMINI_FLASH_MODEL,
+      [{ role: 'user', parts: [{ text: prompt }] }],
       { temperature: 0.3, topP: 0.95 },
+      signal,
     );
     return getResponseText(response);
   }

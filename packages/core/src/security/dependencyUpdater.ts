@@ -145,8 +145,8 @@ export class DependencyUpdater extends EventEmitter {
 
       // Sort by priority (security updates first)
       updates.sort((a, b) => {
-        const priorityOrder = { security: 3, bug-fix: 2, compatibility: 1, feature: 0, maintenance: 0 };
-        return priorityOrder[b.reason] - priorityOrder[a.reason];
+        const priorityOrder = { security: 3, 'bug-fix': 2, compatibility: 1, feature: 0, maintenance: 0 };
+        return priorityOrder[b.reason as keyof typeof priorityOrder] - priorityOrder[a.reason as keyof typeof priorityOrder];
       });
 
       console.log(`📊 Found ${updates.length} potential updates`);
@@ -427,7 +427,7 @@ export class DependencyUpdater extends EventEmitter {
       files.push(...matches.map(file => path.resolve(this.projectPath, file)));
     }
 
-    return [...new Set(files)];
+    return Array.from(new Set(files));
   }
 
   private async analyzeFile(filePath: string, scanResult: ScanResult): Promise<DependencyUpdate[]> {

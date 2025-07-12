@@ -12,7 +12,7 @@ import {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   PrivacyAuditReport,
 } from './privacyAuditEngine.js';
-import { PrivacyManager, PrivacyConfig } from '../trust/privacyManager.js';
+import { PrivacyManager, PrivacyConfigFile as PrivacyConfig } from '../trust/privacyManager.js';
 import { PerformanceMonitor } from '../trust/performanceMonitor.js';
 
 // Mock dependencies
@@ -48,7 +48,7 @@ describe('PrivacyAuditEngine', () => {
   };
 
   beforeEach(() => {
-    mockPerformanceMonitor = {} as PerformanceMonitor;
+    _mockPerformanceMonitor = {} as PerformanceMonitor;
     mockPrivacyManager = {
       getPrivacyConfig: vi.fn().mockResolvedValue(mockPrivacyConfig),
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

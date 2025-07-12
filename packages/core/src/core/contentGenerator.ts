@@ -8,6 +8,10 @@ import {
   EmbedContentResponse,
   EmbedContentParameters,
   GoogleGenAI,
+  GenerateContentParameters,
+  GenerateContentResponse,
+  CountTokensParameters,
+  CountTokensResponse,
 } from '@google/genai';
 import { createCodeAssistContentGenerator } from '../code_assist/codeAssist.js';
 import { DEFAULT_GEMINI_MODEL } from '../config/models.js';

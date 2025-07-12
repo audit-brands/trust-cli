@@ -346,7 +346,7 @@ export class DependencyVulnerabilityScanner {
       files.push(...matches.map(file => path.resolve(projectPath, file)));
     }
 
-    return [...new Set(files)]; // Remove duplicates
+    return Array.from(new Set(files)); // Remove duplicates
   }
 
   private async parseDependencies(dependencyFiles: string[]): Promise<DependencyInfo[]> {
@@ -635,7 +635,7 @@ export class DependencyVulnerabilityScanner {
           packageName: vuln.affectedPackage.name,
           currentVersion: vuln.affectedPackage.version,
           recommendedVersion: vuln.patchedVersions[0],
-          severity: vuln.severity,
+          severity: vuln.severity === 'info' ? 'low' : vuln.severity,
           justification: `Update to patched version to fix ${vuln.id}`,
           automatable: vuln.severity !== 'critical', // Require manual review for critical
           riskReduction: this.calculateRiskReduction(vuln),

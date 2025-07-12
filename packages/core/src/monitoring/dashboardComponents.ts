@@ -126,7 +126,7 @@ export class RealTimeMonitor extends EventEmitter {
     this.isRunning = true;
 
     // Start all collectors
-    for (const [name, collector] of this.collectors.entries()) {
+    for (const [name, collector] of Array.from(this.collectors.entries())) {
       const interval = setInterval(async () => {
         try {
           await collector();
@@ -153,7 +153,7 @@ export class RealTimeMonitor extends EventEmitter {
     this.isRunning = false;
 
     // Clear all intervals
-    for (const interval of this.intervals.values()) {
+    for (const interval of Array.from(this.intervals.values())) {
       clearInterval(interval);
     }
     this.intervals.clear();
@@ -391,13 +391,18 @@ export class RealTimeMonitor extends EventEmitter {
     return { usagePercent, used, total };
   }
 
-  private async getDiskInfo(): Promise<{ usagePercent: number; used: number; total: number; iops: number }> {
+  private async getDiskInfo(): Promise<{ usagePercent: number; used: number; total: number; free: number; iops: number }> {
     // This is a simplified implementation
     // In a real implementation, you'd use platform-specific APIs
+    const total = 100 * 1024 * 1024 * 1024; // 100GB
+    const used = 50 * 1024 * 1024 * 1024; // 50GB
+    const free = total - used;
+    
     return {
       usagePercent: 50, // Placeholder
-      used: 50 * 1024 * 1024 * 1024, // 50GB
-      total: 100 * 1024 * 1024 * 1024, // 100GB
+      used,
+      total,
+      free,
       iops: 0, // Would need OS-specific implementation
     };
   }
