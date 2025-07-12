@@ -71,3 +71,6 @@ export * from './trust/index.js';
 // Export Privacy and Security components
 export * from './privacy/privacyAuditEngine.js';
 export * from './security/index.js';
+
+// Export Monitoring components
+export * from './monitoring/index.js';

@@ -1697,6 +1697,120 @@ export const useSlashCommandProcessor = (
       },
     });
 
+    // Monitoring commands for real-time dashboard and system monitoring
+    commands.push({
+      name: 'monitoring',
+      altName: 'monitor',
+      description: 'real-time system monitoring and dashboard management',
+      subCommands: [
+        { name: 'start', description: 'Start monitoring services' },
+        { name: 'stop', description: 'Stop monitoring services' },
+        { name: 'status', description: 'Show monitoring status' },
+        { name: 'dashboard', description: 'Manage monitoring dashboard' },
+        { name: 'alerts', description: 'View and manage alerts' },
+        { name: 'metrics', description: 'View system metrics' },
+        { name: 'widget', description: 'Manage dashboard widgets' },
+        { name: 'health', description: 'Perform system health check' },
+      ],
+      action: async (_mainCommand, subCommand, args) => {
+        try {
+          const handler = await import('../../commands/monitoringCommands.js');
+
+          // Capture console output
+          const _originalLog = console.log;
+          const _originalError = console.error;
+          let _output = '';
+          console.log = (...args) => {
+            _output += args.join(' ') + '\n';
+          };
+          console.error = (...args) => {
+            _output += args.join(' ') + '\n';
+          };
+
+          try {
+            // Parse the command structure
+            const commandArgs: any = {
+              action: subCommand || 'status',
+            };
+
+            // Parse arguments based on structure
+            if (args) {
+              const argParts = args.trim().split(/\s+/);
+              
+              // Handle different argument patterns
+              if (argParts.length > 0 && argParts[0] !== '') {
+                commandArgs.subaction = argParts[0];
+                
+                if (argParts.length > 1) {
+                  commandArgs.widgetId = argParts[1];
+                }
+                
+                // Parse flags
+                if (args.includes('--watch')) {
+                  commandArgs.watch = true;
+                }
+                if (args.includes('--verbose')) {
+                  commandArgs.verbose = true;
+                }
+                
+                // Parse specific options
+                const formatMatch = args.match(/--format\s+(\S+)/);
+                if (formatMatch) {
+                  commandArgs.format = formatMatch[1];
+                }
+                
+                const outputMatch = args.match(/--output\s+(\S+)/);
+                if (outputMatch) {
+                  commandArgs.output = outputMatch[1];
+                }
+                
+                const intervalMatch = args.match(/--interval\s+(\d+)/);
+                if (intervalMatch) {
+                  commandArgs.interval = parseInt(intervalMatch[1], 10);
+                }
+                
+                const durationMatch = args.match(/--duration\s+(\S+)/);
+                if (durationMatch) {
+                  commandArgs.duration = durationMatch[1];
+                }
+                
+                const filterMatch = args.match(/--filter\s+(\S+)/);
+                if (filterMatch) {
+                  commandArgs.filter = filterMatch[1];
+                }
+                
+                // Widget type for add command
+                if (subCommand === 'widget' && argParts[0] === 'add' && argParts[1]) {
+                  commandArgs.widgetType = argParts[1];
+                }
+              }
+            }
+
+            await handler.handleMonitoringCommand(commandArgs);
+          } catch (error) {
+            _output += `Error: ${error instanceof Error ? error.message : String(error)}\n`;
+          } finally {
+            console.log = _originalLog;
+            console.error = _originalError;
+          }
+
+          if (_output) {
+            addMessage({
+              type: MessageType.INFO,
+              content: _output.trim(),
+              timestamp: new Date(),
+            });
+          }
+        } catch (importError) {
+          addMessage({
+            type: MessageType.ERROR,
+            content: `Failed to load monitoring commands: ${importError instanceof Error ? importError.message : String(importError)}`,
+            timestamp: new Date(),
+          });
+        }
+      },
+    });
+
     return commands;
   }, [
     onDebugMessage,
