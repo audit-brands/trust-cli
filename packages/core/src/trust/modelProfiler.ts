@@ -87,6 +87,7 @@ export interface ModelProfileRecommendation {
   expectedImprovement: string;
   implementation: {
     setting?: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     value?: any;
     code?: string;
   };
@@ -213,7 +214,7 @@ export class ModelProfiler {
   ): ModelRecommendation[] {
     const recommendations: ModelRecommendation[] = [];
 
-    for (const [modelName, profile] of this.profiles) {
+    for (const [_modelName, profile] of this.profiles) {
       const suitabilityScore = this.calculateWorkloadSuitability(
         profile,
         workloadPattern,
@@ -451,7 +452,7 @@ export class ModelProfiler {
     profile: ModelProfile,
     metrics: InferenceMetrics,
     systemMetrics: SystemMetrics,
-    options?: GenerationOptions,
+    _options?: GenerationOptions,
   ): Promise<void> {
     profile.history.totalInferences++;
     profile.history.lastUsed = new Date();
@@ -664,7 +665,7 @@ export class ModelProfiler {
           }
         }
       }
-    } catch (error) {
+    } catch (_error) {
       // Directory doesn't exist yet, will be created
     }
   }
@@ -721,6 +722,7 @@ export class ModelProfiler {
     }
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private convertToCSV(report: any): string {
     // Simple CSV conversion for model profiles
     const headers = [
@@ -748,6 +750,7 @@ export class ModelProfiler {
     return rows.join('\n');
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private formatAsText(report: any): string {
     let text = `Model Performance Report\n`;
     text += `Generated: ${report.generatedAt}\n\n`;

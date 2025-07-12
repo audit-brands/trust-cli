@@ -7,7 +7,6 @@
 import {
   getLlama,
   LlamaChatSession,
-  defineChatSessionFunction,
 } from 'node-llama-cpp';
 import {
   TrustModelClient,
@@ -18,8 +17,11 @@ import {
 import * as os from 'os';
 
 export class TrustNodeLlamaClient implements TrustModelClient {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private llama: any = null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private model: any = null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private context: any = null;
   private currentModelConfig: TrustModelConfig | null = null;
   private reusableSession: LlamaChatSession | null = null;
@@ -132,6 +134,7 @@ export class TrustNodeLlamaClient implements TrustModelClient {
       const session = await this.createChatSession();
 
       // Build prompt options with native function calling support
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const promptOptions: any = {
         temperature: options?.temperature ?? 0.7,
         topP: options?.topP ?? 0.9,
@@ -176,6 +179,7 @@ export class TrustNodeLlamaClient implements TrustModelClient {
       const session = await this.createChatSession();
 
       // Build prompt options with native function calling support
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const promptOptions: any = {
         temperature: options?.temperature ?? 0.7,
         topP: options?.topP ?? 0.9,
@@ -208,7 +212,8 @@ export class TrustNodeLlamaClient implements TrustModelClient {
         const session = await this.createChatSession();
 
         // Build prompt options with native function calling support
-        const promptOptions: any = {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const promptOptions: any = {
           temperature: options?.temperature ?? 0.7,
           topP: options?.topP ?? 0.9,
           topK: options?.topK ?? 40,
@@ -247,7 +252,7 @@ export class TrustNodeLlamaClient implements TrustModelClient {
     return this.model !== null;
   }
 
-  private getOptimalSettings(config?: TrustModelConfig) {
+  private getOptimalSettings(_config?: TrustModelConfig) {
     const cpuCount = os.cpus().length;
     const totalMemory = os.totalmem();
     const freeMemory = os.freemem();
