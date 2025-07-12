@@ -1811,6 +1811,144 @@ export const useSlashCommandProcessor = (
       },
     });
 
+    // Extension commands for managing Trust CLI extensions
+    commands.push({
+      name: 'extensions',
+      altName: 'ext',
+      description: 'manage Trust CLI extensions and marketplace',
+      subCommands: [
+        { name: 'search', description: 'Search extension marketplace' },
+        { name: 'install', description: 'Install an extension' },
+        { name: 'uninstall', description: 'Uninstall an extension' },
+        { name: 'update', description: 'Update extensions' },
+        { name: 'list', description: 'List installed extensions' },
+        { name: 'enable', description: 'Enable an extension' },
+        { name: 'disable', description: 'Disable an extension' },
+        { name: 'info', description: 'Show extension information' },
+        { name: 'marketplace', description: 'Browse extension marketplace' },
+      ],
+      action: async (_mainCommand, subCommand, args) => {
+        try {
+          const handler = await import('../../commands/extensionCommands.js');
+
+          // Capture console output
+          const _originalLog = console.log;
+          const _originalError = console.error;
+          let _output = '';
+          console.log = (...args) => {
+            _output += args.join(' ') + '\n';
+          };
+          console.error = (...args) => {
+            _output += args.join(' ') + '\n';
+          };
+
+          try {
+            // Parse the command structure
+            const commandArgs: any = {
+              action: subCommand || 'list',
+            };
+
+            // Parse arguments based on structure
+            if (args) {
+              const argParts = args.trim().split(/\s+/);
+              
+              // Handle different argument patterns
+              if (argParts.length > 0 && argParts[0] !== '') {
+                // For commands that take a name (install, uninstall, info, enable, disable)
+                if (['install', 'uninstall', 'info', 'enable', 'disable'].includes(subCommand || '')) {
+                  commandArgs.name = argParts[0];
+                } else if (subCommand === 'search') {
+                  commandArgs.query = argParts.join(' ');
+                } else if (subCommand === 'marketplace') {
+                  commandArgs.subaction = argParts[0];
+                }
+                
+                // Parse flags
+                if (args.includes('--force')) {
+                  commandArgs.force = true;
+                }
+                if (args.includes('--all')) {
+                  commandArgs.all = true;
+                }
+                if (args.includes('--verbose')) {
+                  commandArgs.verbose = true;
+                }
+                if (args.includes('--verified')) {
+                  commandArgs.verified = true;
+                }
+                if (args.includes('--featured')) {
+                  commandArgs.featured = true;
+                }
+                if (args.includes('--skip-dependencies')) {
+                  commandArgs.skipDependencies = true;
+                }
+                if (args.includes('--development')) {
+                  commandArgs.development = true;
+                }
+                
+                // Parse specific options
+                const formatMatch = args.match(/--format\s+(\S+)/);
+                if (formatMatch) {
+                  commandArgs.format = formatMatch[1];
+                }
+                
+                const categoryMatch = args.match(/--category\s+(\S+)/);
+                if (categoryMatch) {
+                  commandArgs.category = categoryMatch[1];
+                }
+                
+                const sortByMatch = args.match(/--sort-by\s+(\S+)/);
+                if (sortByMatch) {
+                  commandArgs.sortBy = sortByMatch[1];
+                }
+                
+                const sortOrderMatch = args.match(/--sort-order\s+(\S+)/);
+                if (sortOrderMatch) {
+                  commandArgs.sortOrder = sortOrderMatch[1];
+                }
+                
+                const limitMatch = args.match(/--limit\s+(\d+)/);
+                if (limitMatch) {
+                  commandArgs.limit = parseInt(limitMatch[1], 10);
+                }
+                
+                const offsetMatch = args.match(/--offset\s+(\d+)/);
+                if (offsetMatch) {
+                  commandArgs.offset = parseInt(offsetMatch[1], 10);
+                }
+                
+                const sourceMatch = args.match(/--source\s+(\S+)/);
+                if (sourceMatch) {
+                  commandArgs.source = sourceMatch[1];
+                }
+              }
+            }
+
+            await handler.handleExtensionCommand(commandArgs);
+          } catch (error) {
+            _output += `Error: ${error instanceof Error ? error.message : String(error)}\n`;
+          } finally {
+            console.log = _originalLog;
+            console.error = _originalError;
+          }
+
+          if (_output) {
+            addMessage({
+              type: MessageType.INFO,
+              content: _output.trim(),
+              timestamp: new Date(),
+            });
+          }
+        } catch (importError) {
+          addMessage({
+            type: MessageType.ERROR,
+            content: `Failed to load extension commands: ${importError instanceof Error ? importError.message : String(importError)}`,
+            timestamp: new Date(),
+          });
+        }
+      },
+    });
+
     return commands;
   }, [
     onDebugMessage,

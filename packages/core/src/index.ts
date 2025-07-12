@@ -74,3 +74,6 @@ export * from './security/index.js';
 
 // Export Monitoring components
 export * from './monitoring/index.js';
+
+// Export Extension components
+export * from './extensions/index.js';
