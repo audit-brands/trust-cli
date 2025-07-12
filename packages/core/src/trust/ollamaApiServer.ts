@@ -551,7 +551,7 @@ export class OllamaApiServer {
     try {
       const tools = await this.getAvailableTools();
       return tools.length;
-    } catch (error) {
+    } catch (_error) {
       return 0;
     }
   }
