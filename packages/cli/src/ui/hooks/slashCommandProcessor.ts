@@ -1470,6 +1470,111 @@ export const useSlashCommandProcessor = (
         },
       });
     }
+
+    // Admin commands for system-wide management
+    commands.push({
+      name: 'admin',
+      description: 'system administration and policy management',
+      subCommands: [
+        { name: 'status', description: 'Show administrative status' },
+        { name: 'policy', description: 'Manage administrative policies' },
+        { name: 'users', description: 'Manage user configurations' },
+        { name: 'audit', description: 'Audit log management' },
+        { name: 'defaults', description: 'System-wide defaults' },
+        { name: 'security', description: 'Security management' },
+        { name: 'compliance', description: 'Compliance framework management' },
+        { name: 'bulk', description: 'Bulk operations' },
+        { name: 'override', description: 'User configuration overrides' },
+      ],
+      action: async (_mainCommand, subCommand, args) => {
+        try {
+          const handler = await import('../../commands/adminCommands.js');
+          const adminHandler = new handler.AdminCommandHandler();
+
+          // Capture console output
+          const _originalLog = console.log;
+          const _originalError = console.error;
+          let _output = '';
+          console.log = (...args) => {
+            _output += args.join(' ') + '\n';
+          };
+          console.error = (...args) => {
+            _output += args.join(' ') + '\n';
+          };
+
+          try {
+            // Parse the command structure
+            const commandArgs: any = {
+              action: subCommand || 'status',
+            };
+
+            // Parse arguments based on structure
+            if (args) {
+              const argParts = args.trim().split(/\s+/);
+              
+              // Handle different argument patterns
+              if (argParts.length > 0 && argParts[0] !== '') {
+                commandArgs.subaction = argParts[0];
+                
+                if (argParts.length > 1) {
+                  commandArgs.target = argParts[1];
+                }
+                
+                if (argParts.length > 2) {
+                  commandArgs.value = argParts.slice(2).join(' ');
+                }
+                
+                // Parse flags
+                if (args.includes('--force')) {
+                  commandArgs.force = true;
+                }
+                if (args.includes('--verbose')) {
+                  commandArgs.verbose = true;
+                }
+                
+                // Parse specific options
+                const policyMatch = args.match(/--policy\s+(\S+)/);
+                if (policyMatch) {
+                  commandArgs.policy = policyMatch[1];
+                }
+                
+                const frameworkMatch = args.match(/--framework\s+(\S+)/);
+                if (frameworkMatch) {
+                  commandArgs.framework = frameworkMatch[1];
+                }
+                
+                const outputMatch = args.match(/--output\s+(\S+)/);
+                if (outputMatch) {
+                  commandArgs.output = outputMatch[1];
+                }
+              }
+            }
+
+            await adminHandler.handleCommand(commandArgs);
+          } catch (error) {
+            _output += `Error: ${error instanceof Error ? error.message : String(error)}\n`;
+          } finally {
+            console.log = _originalLog;
+            console.error = _originalError;
+          }
+
+          if (_output) {
+            addMessage({
+              type: MessageType.INFO,
+              content: _output.trim(),
+              timestamp: new Date(),
+            });
+          }
+        } catch (importError) {
+          addMessage({
+            type: MessageType.ERROR,
+            content: `Failed to load admin commands: ${importError instanceof Error ? importError.message : String(importError)}`,
+            timestamp: new Date(),
+          });
+        }
+      },
+    });
+
     return commands;
   }, [
     onDebugMessage,
