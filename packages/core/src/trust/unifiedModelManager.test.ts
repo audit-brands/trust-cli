@@ -247,7 +247,7 @@ describe('UnifiedModelManager', () => {
         'coding model',
       );
 
-      expect(suitability.coding).toBeGreaterThanOrEqual(9);
+      expect(suitability?.coding).toBeGreaterThanOrEqual(9);
     });
 
     it('should score reasoning models highly for reasoning tasks', () => {
@@ -257,7 +257,7 @@ describe('UnifiedModelManager', () => {
         'reasoning model',
       );
 
-      expect(suitability.reasoning).toBeGreaterThanOrEqual(9);
+      expect(suitability?.reasoning).toBeGreaterThanOrEqual(9);
     });
 
     it('should provide balanced scores for general models', () => {
@@ -267,7 +267,7 @@ describe('UnifiedModelManager', () => {
         'general purpose',
       );
 
-      expect(suitability.general).toBeGreaterThanOrEqual(7);
+      expect(suitability?.general).toBeGreaterThanOrEqual(7);
     });
   });
 

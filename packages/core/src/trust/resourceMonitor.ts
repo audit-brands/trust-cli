@@ -119,7 +119,7 @@ export class ResourceMonitor {
       cpu: cpuInfo,
       memory: memoryInfo,
       disk: diskInfo,
-      gpu: gpuInfo.length > 0 ? gpuInfo : undefined,
+      gpu: gpuInfo && gpuInfo.length > 0 ? gpuInfo : undefined,
       network: networkInfo,
     };
   }

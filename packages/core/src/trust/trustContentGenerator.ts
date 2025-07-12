@@ -494,7 +494,7 @@ export class TrustContentGenerator implements ContentGenerator {
       request,
       contentsArray,
       currentModel,
-      hasTools,
+      hasTools || false,
     );
 
     // Apply context window optimization
@@ -1081,14 +1081,14 @@ export class TrustContentGenerator implements ContentGenerator {
     const options: GenerationOptions = {
       temperature: request.config?.temperature || (hasTools ? 0.1 : 0.7), // Lower temp for function calls, higher for creative tasks
       topP: request.config?.topP || 0.9,
-      maxTokens: this.getOptimalMaxTokens(modelName, hasTools),
-      stopTokens: this.getOptimalStopTokens(modelName, hasTools),
+      maxTokens: this.getOptimalMaxTokens(modelName, hasTools || false),
+      stopTokens: this.getOptimalStopTokens(modelName, hasTools || false),
     };
 
     // Model-specific optimizations
     if (modelName.includes('phi')) {
       // Phi models prefer slightly higher temperature and different stop tokens
-      options.temperature = Math.min(options.temperature * 1.2, 0.9);
+      options.temperature = Math.min((options.temperature || 0.7) * 1.2, 0.9);
       options.topP = 0.95;
     } else if (modelName.includes('qwen')) {
       // Qwen models work well with more diverse outputs
