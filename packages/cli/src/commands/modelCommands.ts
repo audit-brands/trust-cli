@@ -7,6 +7,8 @@
 import {
   TrustModelManagerImpl,
   TrustConfiguration,
+  UnifiedModelManager,
+  UnifiedModel,
 } from '@trust-cli/trust-cli-core';
 import * as fs from 'fs/promises';
 import * as path from 'path';
@@ -35,16 +37,19 @@ export interface ModelCommandArgs {
 
 export class ModelCommandHandler {
   private modelManager: TrustModelManagerImpl;
+  private unifiedManager: UnifiedModelManager;
   private config: TrustConfiguration;
 
   constructor() {
     this.config = new TrustConfiguration();
     this.modelManager = new TrustModelManagerImpl();
+    this.unifiedManager = new UnifiedModelManager(this.config);
   }
 
   async initialize(): Promise<void> {
     await this.config.initialize();
     await this.modelManager.initialize();
+    await this.unifiedManager.initialize();
   }
 
   async handleCommand(args: ModelCommandArgs): Promise<void> {
@@ -116,98 +121,88 @@ export class ModelCommandHandler {
   }
 
   private async listModels(verbose = false): Promise<void> {
-    const models = this.modelManager.listAvailableModels();
+    // Use unified manager to get all models from both backends
+    const allModels = await this.unifiedManager.listAllModels();
     const currentModel = this.modelManager.getCurrentModel();
 
-    console.log('\n🤗 Trust CLI - HuggingFace Models');
+    console.log('\n🤗 Trust CLI - All Local Models');
     console.log('═'.repeat(60));
 
-    if (models.length === 0) {
+    if (allModels.length === 0) {
       console.log('📁 No models found.');
       console.log('\n🚀 Quick Start:');
       console.log(
-        '   trust model download qwen2.5-1.5b-instruct    # Lightweight model',
+        '   trust model download qwen2.5-1.5b-instruct    # Lightweight HF model',
       );
       console.log(
-        '   trust model download phi-3.5-mini-instruct    # Coding model',
+        '   trust model download phi-3.5-mini-instruct    # Coding HF model',
       );
       console.log(
-        '   trust model download deepseek-r1-distill-7b   # Advanced reasoning',
+        '   trust model download llama2:7b                # Ollama model',
       );
-      console.log('\n💡 Or use Ollama for faster setup:');
-      console.log('   ollama pull qwen2.5:1.5b && trust');
+      console.log('\n💡 Or install Ollama and pull models directly:');
+      console.log('   ollama pull qwen2.5:1.5b && trust model list');
       return;
     }
 
-    // Calculate status for all models in parallel
-    const modelStatuses = await Promise.all(
-      models.map(async (model) => {
-        const isCurrent = currentModel?.name === model.name;
-        const isDownloaded = await this.modelManager.verifyModel(model.path);
-        return {
-          model,
-          isCurrent,
-          isDownloaded,
-          status: isCurrent
-            ? '🎯 current'
-            : isDownloaded
-              ? '✅ ready'
-              : '📄 not downloaded',
-          icon: isCurrent ? '🎯' : isDownloaded ? '✅' : '⚪',
-        };
-      }),
-    );
+    // Group models by backend
+    const hfModels = allModels.filter(m => m.backend === 'huggingface');
+    const ollamaModels = allModels.filter(m => m.backend === 'ollama');
 
-    // Group models by status
-    const downloadedModels = modelStatuses.filter((m) => m.isDownloaded);
-    const availableModels = modelStatuses.filter((m) => !m.isDownloaded);
+    // Display unified table with Backend column
+    console.log('\n📋 All Models:');
+    console.log('');
+    console.log('│ Status │ Backend     │ Model Name                    │ Parameters │ RAM Req │');
+    console.log('├────────┼─────────────┼───────────────────────────────┼────────────┼─────────┤');
 
-    if (downloadedModels.length > 0) {
-      console.log('\n📦 Downloaded Models:');
-      for (const { model, icon } of downloadedModels) {
-        console.log(`   ${icon} ${model.name}`);
-        if (verbose) {
-          console.log(
-            `      📊 ${model.type} | ${model.parameters} | ${model.ramRequirement} RAM`,
-          );
-          console.log(
-            `      🎆 Trust Score: ${(model.trustScore || 0).toFixed(1)}/10`,
-          );
-          console.log(`      📝 ${model.description}`);
-          console.log(`      📁 ${model.path}`);
-          console.log('');
+    for (const model of allModels) {
+      const isCurrent = currentModel?.name === model.name && model.backend === 'huggingface';
+      const icon = isCurrent ? '🎯' : model.available ? '✅' : '⚪';
+      const status = isCurrent ? 'current' : model.available ? 'ready' : 'avail';
+      const backend = model.backend === 'huggingface' ? 'HuggingFace' : 'Ollama';
+      const params = model.parameters || 'Unknown';
+      const ram = model.ramRequirement || 'Unknown';
+      
+      console.log(
+        `│ ${icon} ${status.padEnd(6)} │ ${backend.padEnd(11)} │ ${model.name.padEnd(29)} │ ${params.padEnd(10)} │ ${ram.padEnd(7)} │`
+      );
+
+      if (verbose) {
+        console.log(`│        │             │   📝 ${model.description || 'No description'}`.padEnd(79) + '│');
+        if (model.backend === 'huggingface' && !model.available) {
+          console.log(`│        │             │   🚀 trust model download ${model.name}`.padEnd(79) + '│');
         }
+        console.log('├────────┼─────────────┼───────────────────────────────┼────────────┼─────────┤');
       }
     }
+    console.log('└────────┴─────────────┴───────────────────────────────┴────────────┴─────────┘');
 
-    if (availableModels.length > 0) {
-      console.log('\n🚫 Available for Download:');
-      for (const { model, icon } of availableModels) {
-        console.log(
-          `   ${icon} ${model.name} (${model.parameters}, ${model.ramRequirement} RAM)`,
-        );
-        if (verbose) {
-          console.log(`      📝 ${model.description}`);
-          console.log(`      🚀 Download: trust model download ${model.name}`);
-          console.log('');
-        }
-      }
+    // Show summary
+    console.log('');
+    console.log(`📊 Summary: ${allModels.length} total models`);
+    console.log(`   • HuggingFace: ${hfModels.length} models (${hfModels.filter(m => m.available).length} downloaded)`);
+    console.log(`   • Ollama: ${ollamaModels.length} models (all available)`);
+
+    if (hfModels.filter(m => !m.available).length > 0) {
+      console.log('\n🚀 To download HuggingFace models: trust model download <model-name>');
+    }
+    if (ollamaModels.length === 0) {
+      console.log('\n💡 To add Ollama models: ollama pull <model-name>');
     }
 
     // Show quick actions
     console.log('\n🚀 Quick Actions:');
-    if (downloadedModels.length > 0 && !currentModel) {
-      console.log(`   trust model switch ${downloadedModels[0].model.name}`);
+    const downloadedHfModels = hfModels.filter(m => m.available);
+    const availableHfModels = hfModels.filter(m => !m.available);
+    
+    if (downloadedHfModels.length > 0 && !currentModel) {
+      console.log(`   trust model switch ${downloadedHfModels[0].name}`);
     }
-    if (availableModels.length > 0) {
-      const recommended =
-        availableModels.find((m) => m.model.name.includes('qwen')) ||
-        availableModels[0];
-      console.log(`   trust model download ${recommended.model.name}`);
+    if (availableHfModels.length > 0) {
+      const recommended = availableHfModels.find((m) => m.name.includes('qwen')) || availableHfModels[0];
+      console.log(`   trust model download ${recommended.name}`);
     }
-    console.log(
-      '   trust model recommend <task>              # Get recommendations',
-    );
+    console.log('   trust model recommend <task>              # Get recommendations');
 
     if (!verbose) {
       console.log('\n💡 Use --verbose for detailed information');
@@ -218,26 +213,6 @@ export class ModelCommandHandler {
     console.log(`\n🔄 Switching to model: ${modelName}`);
 
     try {
-      // Check if model is downloaded
-      const models = this.modelManager.listAvailableModels();
-      const targetModel = models.find((m) => m.name === modelName);
-
-      if (!targetModel) {
-        console.log(`❌ Model "${modelName}" not found.`);
-        console.log('\n📝 Available models:');
-        models.forEach((m) => console.log(`   - ${m.name}`));
-        throw new Error(`Model "${modelName}" not found`);
-      }
-
-      const isDownloaded = await this.modelManager.verifyModel(
-        targetModel.path,
-      );
-      if (!isDownloaded) {
-        console.log(`📄 Model "${modelName}" is not downloaded yet.`);
-        console.log(`🚀 Download it first: trust model download ${modelName}`);
-        throw new Error(`Model "${modelName}" not downloaded`);
-      }
-
       // Enhanced loading indicator with animation
       const loadingFrames = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
       let frameIndex = 0;
@@ -249,28 +224,28 @@ export class ModelCommandHandler {
       }, 100);
 
       try {
-        await this.modelManager.switchModel(modelName);
+        // Use unified manager for switching
+        await this.unifiedManager.switchModel(modelName);
         this.config.setDefaultModel(modelName);
         await this.config.save();
 
         // Clear loading indicator
         clearInterval(loadingInterval);
         process.stdout.write('\r\x1b[K');
-      } catch (_error) {
+      } catch (error) {
         clearInterval(loadingInterval);
         process.stdout.write('\r\x1b[K');
-        throw _error;
+        
+        // Show available models on error
+        const allModels = await this.unifiedManager.listAllModels();
+        console.log(`❌ ${error instanceof Error ? error.message : String(error)}`);
+        console.log('\n📝 Available models:');
+        allModels.forEach((m) => console.log(`   - ${m.name} (${m.backend})`));
+        throw error;
       }
 
       console.log(`✅ Successfully switched to ${modelName}`);
-      console.log(`📋 Model Details:`);
-      console.log(`   Type: ${targetModel.type}`);
-      console.log(`   Size: ${targetModel.parameters}`);
-      console.log(`   RAM: ${targetModel.ramRequirement}`);
-      console.log(`   Trust Score: ${targetModel.trustScore}/10`);
-      console.log(
-        '\n💡 The new model will be used for all future conversations',
-      );
+      console.log(`📋 Model is now active for future conversations`);
     } catch (error) {
       console.error(`❌ Failed to switch model: ${error}`);
 
@@ -285,82 +260,24 @@ export class ModelCommandHandler {
   }
 
   private async downloadModel(modelName: string): Promise<void> {
-    const models = this.modelManager.listAvailableModels();
-    const targetModel = models.find((m) => m.name === modelName);
-
-    if (!targetModel) {
-      console.log(`❌ Model "${modelName}" not found in catalog.`);
-      console.log('\n📝 Available models:');
-      models.forEach((m) =>
-        console.log(`   - ${m.name} (${m.parameters}, ${m.ramRequirement})`),
-      );
-      throw new Error(`Model "${modelName}" not found`);
-    }
-
-    // Check if already downloaded
-    const isDownloaded = await this.modelManager.verifyModel(targetModel.path);
-    if (isDownloaded) {
-      console.log(
-        `✅ Model "${modelName}" is already downloaded and verified.`,
-      );
-      console.log(`🚀 Switch to it: trust model switch ${modelName}`);
-      return;
-    }
-
-    console.log(`\n🚀 Downloading HuggingFace model: ${modelName}`);
-    console.log(`📝 ${targetModel.description}`);
-    console.log(
-      `📊 Size: ${targetModel.parameters} | RAM: ${targetModel.ramRequirement} | Trust: ⭐ ${targetModel.trustScore}/10`,
-    );
-    console.log(`🔗 Source: ${targetModel.downloadUrl}`);
-    console.log(
-      '\n⏳ This may take several minutes depending on model size and connection...',
-    );
-
-    // Enhanced progress indicator
-    const progressFrames = [
-      '▱▱▱▱▱',
-      '▰▱▱▱▱',
-      '▰▰▱▱▱',
-      '▰▰▰▱▱',
-      '▰▰▰▰▱',
-      '▰▰▰▰▰',
-    ];
-    let progressIndex = 0;
-    const progressInterval = setInterval(() => {
-      process.stdout.write(
-        `\r📥 ${progressFrames[progressIndex]} Downloading...`,
-      );
-      progressIndex = (progressIndex + 1) % progressFrames.length;
-    }, 500);
+    console.log(`\n🚀 Downloading model: ${modelName}`);
+    console.log('⏳ This may take several minutes depending on model size and connection...');
 
     try {
-      await this.modelManager.downloadModel(modelName);
-
-      // Clear progress indicator
-      clearInterval(progressInterval);
-      process.stdout.write('\r\x1b[K');
+      // Use unified manager for downloading
+      await this.unifiedManager.downloadModel(modelName);
 
       console.log(`✅ Successfully downloaded ${modelName}`);
-      console.log(`📋 Model ready at: ${targetModel.path}`);
       console.log(`\n🚀 Quick Start:`);
-      console.log(
-        `   trust model switch ${modelName}     # Set as active model`,
-      );
+      console.log(`   trust model switch ${modelName}     # Set as active model`);
       console.log(`   trust model verify ${modelName}     # Verify integrity`);
-      console.log(
-        `   trust                               # Start using the model`,
-      );
+      console.log(`   trust                               # Start using the model`);
     } catch (error) {
-      // Clear progress indicator
-      clearInterval(progressInterval);
-      process.stdout.write('\r\x1b[K');
-
       console.error(`❌ Failed to download model: ${error}`);
       console.log(`\n🔧 Troubleshooting:`);
       console.log('   • Check your internet connection');
       console.log('   • Verify disk space availability (models can be 1-8GB)');
-      console.log('   • Check HuggingFace service status');
+      console.log('   • Check HuggingFace service status or Ollama availability');
       console.log('   • Try downloading a smaller model first');
       console.log('   • Alternative: Use Ollama (ollama pull qwen2.5:1.5b)');
       throw error;
@@ -542,7 +459,7 @@ export class ModelCommandHandler {
   private async deleteModel(modelName: string): Promise<void> {
     console.log(`\n🗑️  Deleting model: ${modelName}`);
 
-    // Confirm deletion
+    // Check if it's the current HuggingFace model
     const currentModel = this.modelManager.getCurrentModel();
     if (currentModel?.name === modelName) {
       throw new Error(
@@ -551,7 +468,8 @@ export class ModelCommandHandler {
     }
 
     try {
-      await this.modelManager.deleteModel(modelName);
+      // Use unified manager for deletion
+      await this.unifiedManager.deleteModel(modelName);
       console.log(`✅ Successfully deleted ${modelName}`);
     } catch (error) {
       console.error(`❌ Failed to delete model: ${error}`);

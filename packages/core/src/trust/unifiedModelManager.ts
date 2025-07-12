@@ -75,9 +75,10 @@ export class UnifiedModelManager {
   }
 
   /**
-   * Discover and consolidate models from all configured backends
+   * List all models from both HuggingFace and Ollama backends
+   * Implementation of architecture requirement 3.1
    */
-  async discoverAllModels(forceRefresh = false): Promise<UnifiedModel[]> {
+  async listAllModels(forceRefresh = false): Promise<UnifiedModel[]> {
     const now = Date.now();
 
     // Return cached models if still valid
@@ -91,22 +92,20 @@ export class UnifiedModelManager {
 
     const allModels: UnifiedModel[] = [];
 
-    // Discover HuggingFace models
-    if (this.trustConfig.isBackendEnabled('huggingface')) {
+    // Get HuggingFace models
+    try {
       const hfModels = await this.discoverHuggingFaceModels();
       allModels.push(...hfModels);
+    } catch (error) {
+      console.warn('Could not load HuggingFace models:', error);
     }
 
-    // Discover Ollama models
-    if (this.trustConfig.isBackendEnabled('ollama')) {
+    // Get Ollama models
+    try {
       const ollamaModels = await this.discoverOllamaModels();
       allModels.push(...ollamaModels);
-    }
-
-    // Discover Cloud models (placeholder for future implementation)
-    if (this.trustConfig.isBackendEnabled('cloud')) {
-      const cloudModels = await this.discoverCloudModels();
-      allModels.push(...cloudModels);
+    } catch (error) {
+      console.warn('Could not load Ollama models:', error);
     }
 
     // Cache the results
@@ -114,6 +113,14 @@ export class UnifiedModelManager {
     this.lastCacheUpdate = now;
 
     return allModels;
+  }
+
+  /**
+   * Discover and consolidate models from all configured backends
+   * @deprecated Use listAllModels() instead
+   */
+  async discoverAllModels(forceRefresh = false): Promise<UnifiedModel[]> {
+    return this.listAllModels(forceRefresh);
   }
 
   /**
@@ -278,6 +285,119 @@ export class UnifiedModelManager {
   }
 
   /**
+   * Download a model, auto-determining the appropriate backend
+   * Implementation of architecture requirement 3.3
+   */
+  async downloadModel(modelName: string): Promise<void> {
+    const allModels = await this.listAllModels();
+    const targetModel = allModels.find(m => m.name === modelName);
+
+    if (!targetModel) {
+      // If not found in current models, try to determine backend from model name patterns
+      if (this.isOllamaModelName(modelName)) {
+        console.log(`📥 Pulling model ${modelName} via Ollama...`);
+        const success = await this.ollamaClient.pullModel(modelName, (progress) => {
+          process.stdout.write(`\r${progress}`);
+        });
+        
+        if (success) {
+          console.log(`\n✅ Model ${modelName} downloaded successfully via Ollama`);
+          this.clearCache(); // Refresh cache
+        } else {
+          throw new Error(`Failed to download ${modelName} via Ollama`);
+        }
+        return;
+      } else {
+        // Try HuggingFace
+        const hfModels = this.trustModelManager.listAvailableModels();
+        const hfModel = hfModels.find(m => m.name === modelName);
+        if (hfModel) {
+          await this.trustModelManager.downloadModel(modelName);
+          this.clearCache(); // Refresh cache
+          return;
+        }
+      }
+      
+      throw new Error(`Model ${modelName} not found in any backend. Available models: ${allModels.map(m => m.name).join(', ')}`);
+    }
+
+    // Model found in current list - use its backend
+    if (targetModel.backend === 'ollama') {
+      console.log(`📥 Pulling model ${modelName} via Ollama...`);
+      const success = await this.ollamaClient.pullModel(modelName, (progress) => {
+        process.stdout.write(`\r${progress}`);
+      });
+      
+      if (success) {
+        console.log(`\n✅ Model ${modelName} downloaded successfully via Ollama`);
+        this.clearCache(); // Refresh cache
+      } else {
+        throw new Error(`Failed to download ${modelName} via Ollama`);
+      }
+    } else if (targetModel.backend === 'huggingface') {
+      await this.trustModelManager.downloadModel(modelName);
+      this.clearCache(); // Refresh cache
+    } else {
+      throw new Error(`Backend ${targetModel.backend} not supported for downloads`);
+    }
+  }
+
+  /**
+   * Delete a model from the appropriate backend
+   * Implementation of architecture requirement 3.2
+   */
+  async deleteModel(modelName: string): Promise<void> {
+    const allModels = await this.listAllModels();
+    const targetModel = allModels.find(m => m.name === modelName);
+
+    if (!targetModel) {
+      throw new Error(`Model ${modelName} not found in any backend`);
+    }
+
+    if (targetModel.backend === 'huggingface') {
+      await this.trustModelManager.deleteModel(modelName);
+      console.log(`✅ Model ${modelName} deleted from HuggingFace backend`);
+    } else if (targetModel.backend === 'ollama') {
+      // Use child process to execute ollama rm command
+      const { exec } = await import('child_process');
+      const { promisify } = await import('util');
+      const execAsync = promisify(exec);
+      
+      try {
+        await execAsync(`ollama rm ${modelName}`);
+        console.log(`✅ Model ${modelName} deleted from Ollama backend`);
+      } catch (error) {
+        throw new Error(`Failed to delete Ollama model ${modelName}: ${error instanceof Error ? error.message : String(error)}`);
+      }
+    } else {
+      throw new Error(`Backend ${targetModel.backend} not supported for deletion`);
+    }
+
+    this.clearCache(); // Refresh cache after deletion
+  }
+
+  /**
+   * Switch to a model (updates current model for HuggingFace, sets model for Ollama)
+   */
+  async switchModel(modelName: string): Promise<void> {
+    const allModels = await this.listAllModels();
+    const targetModel = allModels.find(m => m.name === modelName);
+
+    if (!targetModel) {
+      throw new Error(`Model ${modelName} not found in any backend`);
+    }
+
+    if (targetModel.backend === 'huggingface') {
+      await this.trustModelManager.switchModel(modelName);
+    } else if (targetModel.backend === 'ollama') {
+      this.ollamaClient.setModel(modelName);
+      console.log(`✅ Switched to Ollama model: ${modelName}`);
+    } else {
+      throw new Error(`Backend ${targetModel.backend} not supported for switching`);
+    }
+  }
+
+  /**
    * Clear the model cache
    */
   clearCache(): void {
@@ -402,5 +522,28 @@ export class UnifiedModelManager {
     }
 
     return 8;
+  }
+
+  /**
+   * Check if a model name follows Ollama naming conventions
+   */
+  private isOllamaModelName(modelName: string): boolean {
+    // Ollama models typically follow patterns like:
+    // - llama2, llama2:7b, llama2:13b-instruct
+    // - codellama:7b-instruct
+    // - mistral:7b-instruct-v0.1
+    // - qwen:1.8b
+    const ollamaPatterns = [
+      /^llama/i,
+      /^codellama/i,
+      /^mistral/i,
+      /^qwen/i,
+      /^phi/i,
+      /^gemma/i,
+      /^deepseek/i,
+      /:.*b/i, // Contains colon followed by size in billions
+    ];
+
+    return ollamaPatterns.some(pattern => pattern.test(modelName));
   }
 }
