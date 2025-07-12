@@ -1,0 +1,19 @@
+# Dependabot configuration for automated dependency updates
+# Based on upstream commit 3e157a23 from google-gemini/gemini-cli
+
+version: 2
+updates:
+  # Enable version updates for GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+
+  # Enable version updates for npm dependencies
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 15
+    versioning-strategy: "widen"
