@@ -8,7 +8,6 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import {
   UnifiedModelManager,
   UnifiedModel,
-  TaskType,
   HardwareConstraints,
 } from './unifiedModelManager.js';
 import { TrustConfiguration } from '../config/trustConfig.js';

@@ -1066,7 +1066,7 @@ export class ModelCommandHandler {
       console.log(
         `   Memory Usage: ${memoryStatus} (${memoryPercent.toFixed(0)}%)`,
       );
-    } catch (error) {
+    } catch (_error) {
       console.log('\n📊 Performance Metrics: Not available');
     }
 

@@ -10,7 +10,6 @@ import {
   expect,
   beforeEach,
   vi,
-  type MockedFunction,
 } from 'vitest';
 import { TrustContentGenerator } from './trustContentGenerator.js';
 import { TrustModelManagerImpl } from './modelManager.js';
@@ -234,7 +233,7 @@ describe('TrustContentGenerator', () => {
       const mockResponse = '3+3 equals 6.';
       mockModelClient.generateText.mockResolvedValue(mockResponse);
 
-      const result = await contentGenerator.generateContent(request);
+      const _result = await contentGenerator.generateContent(request);
 
       const callArgs = mockModelClient.generateText.mock.calls[0][0];
       expect(callArgs).toContain('User: What is 2+2?');
@@ -365,13 +364,14 @@ describe('TrustContentGenerator', () => {
       };
 
       mockModelClient.generateStream.mockImplementation(async function* () {
+        yield 'partial'; // Required for generator function
         throw new Error('Streaming failed');
       });
 
       const generator = await contentGenerator.generateContentStream(request);
 
       await expect(async () => {
-        for await (const chunk of generator) {
+        for await (const _chunk of generator) {
           // Should throw error
         }
       }).rejects.toThrow('Streaming failed');

@@ -10,7 +10,6 @@ import {
   expect,
   beforeEach,
   vi,
-  type MockedFunction,
 } from 'vitest';
 import { TrustContentGenerator } from './trustContentGenerator.js';
 import { TrustModelManagerImpl } from './modelManager.js';

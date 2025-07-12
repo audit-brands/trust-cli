@@ -11,7 +11,6 @@ import {
   CountTokensParameters,
   EmbedContentResponse,
   EmbedContentParameters,
-  Content,
   Part,
   FunctionCall,
   FinishReason,
@@ -22,7 +21,6 @@ import { TrustModelManagerImpl } from './modelManager.js';
 import {
   TrustModelConfig,
   GenerationOptions,
-  TrustConfig,
   AIBackend,
 } from './types.js';
 import { GBNFunctionRegistry } from './gbnfFunctionRegistry.js';
@@ -75,14 +73,14 @@ export class TrustContentGenerator implements ContentGenerator {
     );
 
     // Try each backend in order
-    let successfulBackend: string | null = null;
+    let _successfulBackend: string | null = null;
 
     for (const backend of fallbackOrder) {
       if (this.trustConfig.isBackendEnabled(backend as AIBackend)) {
         if (await this.tryInitializeBackend(backend as AIBackend)) {
           console.log(`✅ Successfully initialized ${backend} backend`);
           this.backendInitHistory.push({ backend, success: true });
-          successfulBackend = backend;
+          _successfulBackend = backend;
           break;
         } else if (!isFallbackEnabled) {
           console.log(
@@ -462,7 +460,7 @@ export class TrustContentGenerator implements ContentGenerator {
   }
 
   async embedContent(
-    request: EmbedContentParameters,
+    _request: EmbedContentParameters,
   ): Promise<EmbedContentResponse> {
     // Local embedding models would be implemented here
     // For now, return empty response

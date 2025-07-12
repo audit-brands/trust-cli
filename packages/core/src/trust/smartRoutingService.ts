@@ -255,10 +255,10 @@ export class SmartRoutingService {
 
   // Private helper methods
 
-  private isDecisionStillValid(decision: ModelRoutingDecision): boolean {
+  private isDecisionStillValid(_decision: ModelRoutingDecision): boolean {
     // Consider decision valid for 5 minutes
     // We need to track when the decision was made, not just the duration
-    const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
+    const _fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
     // For now, assume all recent decisions are still valid
     // In a real implementation, we'd store the decision timestamp
     return true; // Simplified for current implementation
@@ -314,7 +314,7 @@ export class SmartRoutingService {
           confidence: 0.3,
         };
       }
-    } catch (fallbackError) {
+    } catch (_fallbackError) {
       // Last resort - create a minimal default
     }
 
