@@ -1949,6 +1949,132 @@ export const useSlashCommandProcessor = (
       },
     });
 
+    // Update commands for automated dependency management
+    commands.push({
+      name: 'update',
+      description: 'automated dependency update management',
+      subCommands: [
+        { name: 'analyze', description: 'Analyze available dependency updates' },
+        { name: 'plan', description: 'Create dependency update plan' },
+        { name: 'execute', description: 'Execute dependency updates' },
+        { name: 'schedule', description: 'Manage scheduled updates' },
+        { name: 'history', description: 'View update history' },
+        { name: 'policy', description: 'Manage update policies' },
+        { name: 'status', description: 'Show update system status' },
+        { name: 'rollback', description: 'Rollback previous updates' },
+      ],
+      action: async (_mainCommand, subCommand, args) => {
+        try {
+          const handler = await import('../../commands/updateCommands.js');
+
+          // Capture console output
+          const _originalLog = console.log;
+          const _originalError = console.error;
+          let _output = '';
+          console.log = (...args) => {
+            _output += args.join(' ') + '\n';
+          };
+          console.error = (...args) => {
+            _output += args.join(' ') + '\n';
+          };
+
+          try {
+            // Parse the command structure
+            const commandArgs: any = {
+              action: subCommand || 'status',
+            };
+
+            // Parse arguments based on structure
+            if (args) {
+              const argParts = args.trim().split(/\s+/);
+              
+              // Handle different argument patterns
+              if (argParts.length > 0 && argParts[0] !== '') {
+                // For commands that take specific values
+                if (subCommand === 'rollback') {
+                  commandArgs.batchId = argParts[0];
+                } else if (subCommand === 'schedule' || subCommand === 'policy') {
+                  commandArgs.subaction = argParts[0];
+                }
+                
+                // Parse flags
+                if (args.includes('--force')) {
+                  commandArgs.force = true;
+                }
+                if (args.includes('--dry-run')) {
+                  commandArgs.dryRun = true;
+                }
+                if (args.includes('--security-only')) {
+                  commandArgs.securityOnly = true;
+                }
+                if (args.includes('--interactive')) {
+                  commandArgs.interactive = true;
+                }
+                if (args.includes('--auto-update')) {
+                  commandArgs.autoUpdate = true;
+                }
+                if (args.includes('--verbose')) {
+                  commandArgs.verbose = true;
+                }
+                
+                // Parse specific options
+                const formatMatch = args.match(/--format\s+(\S+)/);
+                if (formatMatch) {
+                  commandArgs.format = formatMatch[1];
+                }
+                
+                const ecosystemMatch = args.match(/--ecosystem\s+(\S+)/);
+                if (ecosystemMatch) {
+                  commandArgs.ecosystem = ecosystemMatch[1];
+                }
+                
+                const packageMatch = args.match(/--package\s+(\S+)/);
+                if (packageMatch) {
+                  commandArgs.package = packageMatch[1];
+                }
+                
+                const testCommandMatch = args.match(/--test-command\s+(.+?)(?:\s--|$)/);
+                if (testCommandMatch) {
+                  commandArgs.testCommand = testCommandMatch[1].trim();
+                }
+                
+                const scheduleMatch = args.match(/--schedule\s+"([^"]+)"/);
+                if (scheduleMatch) {
+                  commandArgs.schedule = scheduleMatch[1];
+                }
+                
+                const severityMatch = args.match(/--severity\s+(\S+)/);
+                if (severityMatch) {
+                  commandArgs.severity = severityMatch[1];
+                }
+              }
+            }
+
+            await handler.handleUpdateCommand(commandArgs);
+          } catch (error) {
+            _output += `Error: ${error instanceof Error ? error.message : String(error)}\n`;
+          } finally {
+            console.log = _originalLog;
+            console.error = _originalError;
+          }
+
+          if (_output) {
+            addMessage({
+              type: MessageType.INFO,
+              content: _output.trim(),
+              timestamp: new Date(),
+            });
+          }
+        } catch (importError) {
+          addMessage({
+            type: MessageType.ERROR,
+            content: `Failed to load update commands: ${importError instanceof Error ? importError.message : String(importError)}`,
+            timestamp: new Date(),
+          });
+        }
+      },
+    });
+
     return commands;
   }, [
     onDebugMessage,

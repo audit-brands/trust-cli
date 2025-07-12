@@ -5,4 +5,5 @@
  */
 
 export * from './dependencyScanner.js';
+export * from './dependencyUpdater.js';
 export * from './securityRecommendationEngine.js';
