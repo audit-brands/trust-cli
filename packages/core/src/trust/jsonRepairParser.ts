@@ -135,7 +135,7 @@ export class JsonRepairParser {
             if (functionCall) {
               return { success: true, functionCalls: [functionCall] };
             }
-          } catch (e) {
+          } catch (_e) {
             // Continue to next pattern
           }
         }
@@ -151,6 +151,7 @@ export class JsonRepairParser {
     }
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private extractFunctionCallsFromObject(obj: any): FunctionCall[] {
     const calls: FunctionCall[] = [];
 
@@ -268,7 +269,7 @@ export class JsonRepairParser {
           args,
           id: `call_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         });
-      } catch (e) {
+      } catch (_e) {
         // Continue if JSON parse fails
       }
     }
@@ -283,7 +284,7 @@ export class JsonRepairParser {
           args,
           id: `call_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         });
-      } catch (e) {
+      } catch (_e) {
         // Continue if JSON parse fails
       }
     }

@@ -50,6 +50,7 @@ describe('SecurityRecommendationEngine', () => {
     mockPerformanceMonitor = {} as PerformanceMonitor;
     mockPrivacyManager = {
       getPrivacyConfig: vi.fn().mockResolvedValue(mockPrivacyConfig),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any;
     securityEngine = new SecurityRecommendationEngine(
       mockPrivacyManager,
@@ -173,6 +174,7 @@ describe('SecurityRecommendationEngine', () => {
       const fs = await import('fs/promises');
       vi.mocked(fs.stat).mockResolvedValue({
         mode: parseInt('755', 8), // Insecure permissions
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any);
 
       const config: SecurityAssessmentConfig = {

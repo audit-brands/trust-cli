@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import fs from 'fs';
 import path from 'path';
-import { ErrorCollector, type ErrorRecord } from './errorCollector.js';
+import { ErrorCollector } from './errorCollector.js';
 import { EvaluationResult } from './functionCallEvaluator.js';
 
 describe('ErrorCollector', () => {

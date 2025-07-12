@@ -8,6 +8,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import {
   EnhancedErrorHandler,
   EnhancedError,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   ErrorSolution,
 } from './enhancedErrorHandler.js';
 import { TrustConfiguration } from '../config/trustConfig.js';
@@ -259,6 +260,7 @@ describe('EnhancedErrorHandler', () => {
     });
 
     it('should return generic help for unknown error types', () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const help = handler.getContextualHelp('unknown_type' as any);
       expect(help).toContain('general error');
     });
@@ -467,6 +469,7 @@ describe('EnhancedErrorHandler', () => {
     });
 
     it('should handle null/undefined errors gracefully', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const enhancedError = await handler.processError(null as any);
       expect(enhancedError.type).toBe('generic');
     });

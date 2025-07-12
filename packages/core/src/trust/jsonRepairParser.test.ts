@@ -136,6 +136,7 @@ describe('JsonRepairParser', () => {
     it('should detect invalid arguments', () => {
       const call = {
         name: 'test',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         args: null as any,
         id: 'call_123',
       };

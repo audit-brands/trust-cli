@@ -93,7 +93,7 @@ export class TrustChatSession {
         const historyData = await fs.readFile(this.historyPath, 'utf-8');
         const history = JSON.parse(historyData);
         this.messages = history.messages || [];
-      } catch (error) {
+      } catch (_error) {
         // History file doesn't exist yet, start fresh
         this.messages = [];
       }
@@ -198,14 +198,14 @@ export class TrustChatSession {
     content: string,
     options?: GenerationOptions,
   ): Promise<ChatMessage> {
-    let fullResponse = '';
+    let _fullResponse = '';
     let messageId = '';
 
     for await (const { chunk, messageId: id, isComplete } of this.sendMessage(
       content,
       options,
     )) {
-      fullResponse += chunk;
+      _fullResponse += chunk;
       messageId = id;
 
       if (isComplete) {
@@ -491,7 +491,7 @@ Summary:`;
         summary += chunk;
       }
       return summary.trim();
-    } catch (error) {
+    } catch (_error) {
       // Fallback to simple truncation if AI compression fails
       const lines = prompt.split('\n').slice(0, 10);
       return `Previous conversation context: ${lines.join(' ')}...`;

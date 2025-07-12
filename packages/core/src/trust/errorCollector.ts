@@ -14,6 +14,7 @@ export interface ErrorRecord {
   timestamp: number;
   prompt: string;
   expectedTool: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   expectedArgs: Record<string, any>;
   actualResponse: string;
   parsedCalls: FunctionCall[];
@@ -72,6 +73,7 @@ export class ErrorCollector {
   recordFailure(
     prompt: string,
     expectedTool: string,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     expectedArgs: Record<string, any>,
     result: EvaluationResult,
     category: string,
@@ -293,7 +295,7 @@ export class ErrorCollector {
         const data = fs.readFileSync(this.errorLogPath, 'utf8');
         const parsed = JSON.parse(data);
         return Array.isArray(parsed) ? parsed : parsed.errors || [];
-      } catch (error) {
+      } catch (_error) {
         return [];
       }
     }

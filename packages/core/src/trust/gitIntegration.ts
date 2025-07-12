@@ -84,7 +84,7 @@ export class TrustGitIntegration {
             `remote get-url ${remoteName}`,
           ).trim();
         }
-      } catch (error) {
+      } catch (_error) {
         // No remote configured
       }
 
@@ -92,7 +92,7 @@ export class TrustGitIntegration {
       let lastCommit: string | undefined;
       try {
         lastCommit = this.executeGitCommand('log -1 --format="%H %s"').trim();
-      } catch (error) {
+      } catch (_error) {
         // No commits yet
       }
 
@@ -107,7 +107,7 @@ export class TrustGitIntegration {
         lastCommit,
         status,
       };
-    } catch (error) {
+    } catch (_error) {
       throw new Error(`Failed to get repository info: ${error}`);
     }
   }
@@ -156,7 +156,7 @@ export class TrustGitIntegration {
         );
         summary = analysis.summary;
         suggestions = analysis.suggestions;
-      } catch (error) {
+      } catch (_error) {
         console.warn('AI analysis failed, using basic analysis:', error);
         suggestions = this.generateBasicSuggestions(stats);
       }
@@ -245,7 +245,7 @@ export class TrustGitIntegration {
             file,
             this.calculateFileImportance(file),
           );
-        } catch (error) {
+        } catch (_error) {
           console.warn(`Failed to add file to context: ${file}`, error);
         }
       }
@@ -259,7 +259,7 @@ export class TrustGitIntegration {
       if (repoContext) {
         context += `## Repository Files\\n\\n${repoContext}\\n\\n`;
       }
-    } catch (error) {
+    } catch (_error) {
       console.warn('Failed to analyze repository files:', error);
     }
 
@@ -268,7 +268,7 @@ export class TrustGitIntegration {
       try {
         const history = this.getRecentCommits(10);
         context += `## Recent Commits\\n\\n${history}\\n\\n`;
-      } catch (error) {
+      } catch (_error) {
         console.warn('Failed to get commit history:', error);
       }
     }
@@ -294,7 +294,7 @@ export class TrustGitIntegration {
 
         const response = await chatSession.sendMessageSync(prompt);
         return response.content.trim();
-      } catch (error) {
+      } catch (_error) {
         console.warn('AI commit message generation failed:', error);
       }
     }
@@ -308,7 +308,7 @@ export class TrustGitIntegration {
       const gitDir = path.join(this.repoPath, '.git');
       const stats = await fs.stat(gitDir);
       return stats.isDirectory();
-    } catch (error) {
+    } catch (_error) {
       return false;
     }
   }
@@ -320,6 +320,7 @@ export class TrustGitIntegration {
         encoding: 'utf-8',
         stdio: ['pipe', 'pipe', 'pipe'],
       });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       throw new Error(`Git command failed: ${error.message}`);
     }
@@ -351,7 +352,7 @@ export class TrustGitIntegration {
   private getStagedDiff(): string {
     try {
       return this.executeGitCommand('diff --cached');
-    } catch (error) {
+    } catch (_error) {
       return '';
     }
   }
@@ -359,7 +360,7 @@ export class TrustGitIntegration {
   private getModifiedDiff(): string {
     try {
       return this.executeGitCommand('diff');
-    } catch (error) {
+    } catch (_error) {
       return '';
     }
   }
@@ -468,7 +469,7 @@ export class TrustGitIntegration {
         const filePath = path.join(this.repoPath, pattern);
         await fs.access(filePath);
         files.push(filePath);
-      } catch (error) {
+      } catch (_error) {
         // File doesn't exist, skip
       }
     }
@@ -477,7 +478,7 @@ export class TrustGitIntegration {
     try {
       const sourceFiles = await this.findSourceFiles(maxFiles - files.length);
       files.push(...sourceFiles);
-    } catch (error) {
+    } catch (_error) {
       console.warn('Failed to find source files:', error);
     }
 
@@ -511,7 +512,7 @@ export class TrustGitIntegration {
       return sourceFiles
         .slice(0, maxFiles)
         .map((file) => path.join(this.repoPath, file));
-    } catch (error) {
+    } catch (_error) {
       return [];
     }
   }
@@ -557,7 +558,7 @@ export class TrustGitIntegration {
   private getRecentCommits(count: number): string {
     try {
       return this.executeGitCommand(`log --oneline -${count}`);
-    } catch (error) {
+    } catch (_error) {
       return 'No commit history available';
     }
   }

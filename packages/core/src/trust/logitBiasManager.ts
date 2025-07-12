@@ -111,7 +111,7 @@ export class LogitBiasManager {
     // Apply token-specific biases
     if (config.tokenBias) {
       Object.entries(config.tokenBias).forEach(([tokenId, biasValue]) => {
-        bias[parseInt(tokenId)] = this.clampBias(biasValue);
+        bias[parseInt(tokenId, 10)] = this.clampBias(biasValue);
       });
     }
 

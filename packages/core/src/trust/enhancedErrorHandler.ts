@@ -23,6 +23,7 @@ export interface EnhancedError {
   title: string;
   description: string;
   cause: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   context?: Record<string, any>;
   solutions: ErrorSolution[];
   relatedCommands: string[];
@@ -55,6 +56,7 @@ interface ErrorPattern {
   causeTemplate: string;
   solutionGenerator: (
     match: RegExpMatchArray,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     context?: any,
   ) => ErrorSolution[];
   relatedCommands: string[];
@@ -87,6 +89,7 @@ export class EnhancedErrorHandler {
    */
   async processError(
     error: Error | string,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     context?: Record<string, any>,
   ): Promise<EnhancedError> {
     const errorMessage = error instanceof Error ? error.message : error || '';
@@ -118,6 +121,7 @@ export class EnhancedErrorHandler {
    */
   async processErrors(
     errors: Array<Error | string>,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     context?: Record<string, any>,
   ): Promise<EnhancedError[]> {
     const enhancedErrors = await Promise.all(
@@ -377,6 +381,7 @@ export class EnhancedErrorHandler {
   private buildEnhancedError(
     pattern: ErrorPattern,
     match: RegExpMatchArray,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     context: any,
   ): EnhancedError {
     const modelName = match[1] || match[2] || 'unknown';
@@ -400,6 +405,7 @@ export class EnhancedErrorHandler {
 
   private createGenericError(
     errorMessage: string,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     context?: Record<string, any>,
   ): EnhancedError {
     return {
@@ -735,6 +741,8 @@ export class EnhancedErrorHandler {
         return '🟡';
       case 'low':
         return '🟢';
+      default:
+        return '❓';
     }
   }
 
@@ -746,6 +754,8 @@ export class EnhancedErrorHandler {
         return '🔧';
       case 'long_term':
         return '🛠️';
+      default:
+        return '🔧';
     }
   }
 
@@ -757,6 +767,8 @@ export class EnhancedErrorHandler {
         return '🟡';
       case 'advanced':
         return '🔴';
+      default:
+        return '❓';
     }
   }
 }

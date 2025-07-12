@@ -6,10 +6,12 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { FunctionCallEvaluator } from './functionCallEvaluator.js';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { TrustContentGenerator } from './trustContentGenerator.js';
 
 describe('FunctionCallEvaluator', () => {
   let evaluator: FunctionCallEvaluator;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockContentGenerator: any;
 
   beforeEach(() => {
@@ -24,6 +26,7 @@ describe('FunctionCallEvaluator', () => {
 
   describe('Basic functionality', () => {
     it('should create evaluation prompts', () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const prompts = (evaluator as any).evaluationPrompts;
       expect(prompts).toBeDefined();
       expect(prompts.length).toBe(50);
@@ -37,7 +40,9 @@ describe('FunctionCallEvaluator', () => {
     });
 
     it('should have diverse categories', () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const prompts = (evaluator as any).evaluationPrompts;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const categories = new Set(prompts.map((p: any) => p.category));
 
       expect(categories.has('file_operations')).toBe(true);
@@ -49,7 +54,9 @@ describe('FunctionCallEvaluator', () => {
     });
 
     it('should have different difficulty levels', () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const prompts = (evaluator as any).evaluationPrompts;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const difficulties = new Set(prompts.map((p: any) => p.difficulty));
 
       expect(difficulties.has('easy')).toBe(true);
@@ -60,6 +67,7 @@ describe('FunctionCallEvaluator', () => {
 
   describe('Argument comparison', () => {
     it('should correctly compare exact matches', () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const compareArgs = (evaluator as any).compareArgs.bind(evaluator);
 
       expect(
@@ -71,6 +79,7 @@ describe('FunctionCallEvaluator', () => {
     });
 
     it('should handle partial string matches', () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const compareArgs = (evaluator as any).compareArgs.bind(evaluator);
 
       expect(
@@ -79,6 +88,7 @@ describe('FunctionCallEvaluator', () => {
     });
 
     it('should reject missing required arguments', () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const compareArgs = (evaluator as any).compareArgs.bind(evaluator);
 
       expect(
@@ -87,6 +97,7 @@ describe('FunctionCallEvaluator', () => {
     });
 
     it('should reject different values', () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const compareArgs = (evaluator as any).compareArgs.bind(evaluator);
 
       expect(
@@ -123,6 +134,7 @@ describe('FunctionCallEvaluator', () => {
         },
       ];
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const summary = (evaluator as any).generateSummary(results);
 
       expect(summary.totalPrompts).toBe(2);

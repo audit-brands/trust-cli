@@ -14,6 +14,7 @@ export interface EvaluationPrompt {
   description: string;
   prompt: string;
   expectedTool: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   expectedArgs: Record<string, any>;
   category:
     | 'file_operations'
@@ -210,7 +211,9 @@ export class FunctionCallEvaluator {
    * Compare function arguments with expected values
    */
   private compareArgs(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     actual: Record<string, any>,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     expected: Record<string, any>,
   ): boolean {
     const expectedKeys = Object.keys(expected);

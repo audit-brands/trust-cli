@@ -57,6 +57,7 @@ export interface SecurityRecommendation {
   evidence?: {
     type: 'config' | 'scan' | 'log' | 'system';
     source: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     details: any;
   };
   timestamp: Date;
@@ -496,7 +497,7 @@ export class SecurityRecommendationEngine {
           timestamp: new Date(),
         });
       }
-    } catch (error) {
+    } catch (_error) {
       // Directory doesn't exist - this is handled elsewhere
     }
 
@@ -645,6 +646,9 @@ export class SecurityRecommendationEngine {
         break;
       case 'compliance':
         recommendations.push(...(await this.assessCompliance()));
+        break;
+      default:
+        // Unknown category - no specific recommendations
         break;
     }
 
@@ -840,7 +844,7 @@ export class SecurityRecommendationEngine {
           mode !== parseInt('700', 8) ? 'Set permissions to 700' : undefined,
         securityImpact: 'high',
       });
-    } catch (error) {
+    } catch (_error) {
       checks.push({
         id: 'trust-dir-exists',
         category: 'filesystem',

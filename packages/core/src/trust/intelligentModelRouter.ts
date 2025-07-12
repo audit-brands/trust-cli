@@ -459,6 +459,7 @@ export class IntelligentModelRouter {
   private generateReasoning(
     selectedModel: UnifiedModel,
     config: RoutingConfig,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     filterResults: any,
   ): string {
     const reasons = [];

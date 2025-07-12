@@ -7,10 +7,14 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import {
   IntelligentModelRouter,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   ModelRoutingDecision,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   RoutingConfig,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   SystemResources,
 } from './intelligentModelRouter.js';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { UnifiedModel, TaskType } from './unifiedModelManager.js';
 import { TrustConfiguration } from '../config/trustConfig.js';
 

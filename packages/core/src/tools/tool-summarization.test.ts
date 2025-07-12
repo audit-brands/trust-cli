@@ -64,7 +64,7 @@ class MockToolWithSummarizer implements Tool<{ input: string }, ToolResult> {
   async summarizer(
     result: ToolResult,
     contentGenerator: ContentGenerator,
-    signal: AbortSignal,
+    _signal: AbortSignal,
   ): Promise<string> {
     const prompt = `Summarize this tool output concisely: ${JSON.stringify(result.llmContent)}`;
 

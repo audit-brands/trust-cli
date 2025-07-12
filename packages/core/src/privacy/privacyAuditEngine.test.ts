@@ -51,6 +51,7 @@ describe('PrivacyAuditEngine', () => {
     mockPerformanceMonitor = {} as PerformanceMonitor;
     mockPrivacyManager = {
       getPrivacyConfig: vi.fn().mockResolvedValue(mockPrivacyConfig),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any;
     auditEngine = new PrivacyAuditEngine(mockPrivacyManager);
   });
@@ -240,6 +241,7 @@ describe('PrivacyAuditEngine', () => {
       const fs = await import('fs/promises');
       vi.mocked(fs.stat).mockResolvedValue({
         mode: parseInt('755', 8), // Insecure permissions
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any);
 
       const config: PrivacyAuditConfig = {
@@ -515,6 +517,7 @@ describe('PrivacyAuditEngine', () => {
       vi.mocked(fs.readdir).mockResolvedValue([
         'audit-1.json',
         'audit-2.json',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       ] as any);
 
       const report1 = {

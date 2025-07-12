@@ -11,12 +11,14 @@ import {
   beforeEach,
   vi,
   afterEach,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   type MockedFunction,
 } from 'vitest';
 import { TrustContentGenerator } from './trustContentGenerator.js';
 import { TrustModelManagerImpl } from './modelManager.js';
 import { PerformanceMonitor } from './performanceMonitor.js';
 import { PrivacyManager } from './privacyManager.js';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { TrustConfiguration } from './types.js';
 import type { GenerateContentParameters } from '@google/genai';
 
@@ -87,6 +89,7 @@ vi.mock('crypto', () => ({
 // Import mocked fs after mocking
 import * as fs from 'fs/promises';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const mockFs = fs as any;
 
 describe('Trust CLI Integration Tests', () => {
@@ -96,7 +99,7 @@ describe('Trust CLI Integration Tests', () => {
   let privacyManager: PrivacyManager;
 
   const testModelsDir = '/test/models';
-  const testConfigPath = '/test/privacy.json';
+  const _testConfigPath = '/test/privacy.json';
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -119,6 +122,7 @@ describe('Trust CLI Integration Tests', () => {
       setTransparencySettings: vi.fn(),
       setInferenceSettings: vi.fn(),
       save: vi.fn().mockResolvedValue(undefined),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any;
 
     // Initialize components
@@ -131,6 +135,7 @@ describe('Trust CLI Integration Tests', () => {
     vi.spyOn(modelManager, 'verifyModel').mockResolvedValue(true);
 
     // Mock the model client methods on the content generator instance
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     vi.spyOn(contentGenerator as any, 'modelClient', 'get').mockReturnValue({
       loadModel: vi.fn().mockResolvedValue(undefined),
       generateResponse: vi.fn().mockResolvedValue('Mock AI response'),
@@ -148,6 +153,7 @@ describe('Trust CLI Integration Tests', () => {
     mockFs.stat.mockResolvedValue({
       isFile: () => true,
       size: 1000000000,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any);
   });
 
@@ -358,7 +364,7 @@ describe('Trust CLI Integration Tests', () => {
 
       // Get system capabilities
       const systemMetrics = performanceMonitor.getSystemMetrics();
-      const optimalSettings = performanceMonitor.getOptimalModelSettings();
+      const _optimalSettings = performanceMonitor.getOptimalModelSettings();
 
       // Select appropriate model
       const recommendedModel = modelManager.getRecommendedModel(
@@ -394,13 +400,13 @@ describe('Trust CLI Integration Tests', () => {
         };
 
         // Sanitize request if needed
-        const sanitizedRequest = privacyManager.sanitizeData(request);
+        const _sanitizedRequest = privacyManager.sanitizeData(request);
 
         // Record performance metrics
         const startTime = Date.now();
 
         // Simulate content generation (would normally call actual model)
-        const mockResponse = 'def hello_world():\n    print("Hello, World!")';
+        const _mockResponse = 'def hello_world():\n    print("Hello, World!")';
 
         const endTime = Date.now();
         const inferenceTime = endTime - startTime;
@@ -470,7 +476,7 @@ describe('Trust CLI Integration Tests', () => {
       await contentGenerator.initialize();
 
       // Simulate MCP tool call
-      const mockToolCall = {
+      const _mockToolCall = {
         name: 'filesystem_read',
         parameters: {
           path: '/test/file.txt',

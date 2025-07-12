@@ -44,6 +44,7 @@ export interface PrivacyAuditFinding {
   evidence?: {
     type: 'config' | 'log' | 'file' | 'setting';
     source: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     details: any;
   };
   timestamp: Date;

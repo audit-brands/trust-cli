@@ -26,7 +26,9 @@ export class GBNFunctionRegistry {
    * Convert Trust CLI tools to native node-llama-cpp functions
    * This enables grammar-based JSON schema enforcement for reliable function calling
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async createNativeFunctions(): Promise<Record<string, any>> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const functions: Record<string, any> = {};
     const functionDeclarations = this.toolRegistry.getFunctionDeclarations();
 
@@ -47,6 +49,7 @@ export class GBNFunctionRegistry {
       functions[toolName] = defineChatSessionFunction({
         description: declaration.description || `Execute ${toolName} tool`,
         params: this.convertGeminiSchemaToJsonSchema(declaration.parameters),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         handler: async (params: any) => {
           try {
             console.log(
@@ -82,6 +85,7 @@ export class GBNFunctionRegistry {
             }
 
             // Extract result for the model
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             let output: any;
             if (result.responseParts) {
               const parts = Array.isArray(result.responseParts)
@@ -141,6 +145,7 @@ export class GBNFunctionRegistry {
    * Convert Gemini function schema to JSON schema format
    * This ensures compatibility with node-llama-cpp's schema enforcement
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private convertGeminiSchemaToJsonSchema(geminiSchema: any): any {
     if (!geminiSchema || typeof geminiSchema !== 'object') {
       return { type: 'object', properties: {} };
@@ -152,6 +157,7 @@ export class GBNFunctionRegistry {
     }
 
     // Convert Gemini schema format to JSON schema
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const jsonSchema: any = {
       type: 'object',
       properties: {},
@@ -161,6 +167,7 @@ export class GBNFunctionRegistry {
     if (geminiSchema.properties) {
       for (const [key, value] of Object.entries(geminiSchema.properties)) {
         if (value && typeof value === 'object') {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           jsonSchema.properties[key] = this.convertPropertySchema(value as any);
         }
       }
@@ -176,11 +183,13 @@ export class GBNFunctionRegistry {
   /**
    * Convert individual property schema from Gemini to JSON schema format
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private convertPropertySchema(prop: any): any {
     if (!prop || typeof prop !== 'object') {
       return { type: 'string' };
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const converted: any = {};
 
     // Map type
