@@ -911,7 +911,7 @@ export class ModelCommandHandler {
       const { ModelManagerUI } = await import('../ui/modelManagerUI.js');
 
       // Set up exit handler
-      let appInstance: any;
+      let appInstance: any = null;
       const handleExit = () => {
         if (appInstance) {
           appInstance.unmount();
@@ -919,7 +919,7 @@ export class ModelCommandHandler {
         process.exit(0);
       };
 
-      // Render the UI
+      // Render the UI  
       appInstance = render(
         React.createElement(ModelManagerUI, { onExit: handleExit }),
         { exitOnCtrlC: true },

@@ -12,7 +12,6 @@ import {
   Tool,
   GenerateContentResponse,
 } from '@google/genai';
-import { getFolderStructure } from '../utils/getFolderStructure.js';
 import {
   Turn,
   ServerGeminiStreamEvent,
@@ -468,7 +467,7 @@ export class GeminiClient {
     }
 
     // Get token count for recent history to ensure we have room for it
-    const { totalTokens: recentTokens } =
+    const { totalTokens: _recentTokens } =
       await this.getContentGenerator().countTokens({
         model,
         contents: recentHistory,

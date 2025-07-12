@@ -81,7 +81,7 @@ export class TrustConfiguration {
         const configData = await fs.readFile(this.configPath, 'utf-8');
         const loadedConfig = JSON.parse(configData);
         this.config = { ...DEFAULT_TRUST_CONFIG, ...loadedConfig };
-      } catch (error) {
+      } catch (_error) {
         // Config file doesn't exist, create it with defaults
         await this.save();
       }
@@ -230,6 +230,8 @@ export class TrustConfiguration {
       case 'cloud':
         this.config.ai.cloud.enabled = enabled;
         break;
+      default:
+        throw new Error(`Unknown backend: ${backend}`);
     }
   }
 
@@ -381,6 +383,9 @@ export class TrustConfiguration {
         suggestions.push(
           'Using Cloud Shell authentication. Should work automatically.',
         );
+        break;
+      default:
+        // Unknown auth type, no specific suggestions
         break;
     }
 

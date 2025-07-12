@@ -397,7 +397,7 @@ describe('Gemini Client (client.ts)', () => {
       client['chat'] = mockChat as GeminiChat;
 
       // Mock startChat to return different chat instances but with same sendMessage mock
-      const mockStartChat = vi
+      const _mockStartChat = vi
         .spyOn(client as any, 'startChat')
         .mockImplementation(
           async () =>
