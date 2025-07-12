@@ -91,7 +91,7 @@ export class GeminiClient {
       { temperature: 0.3, topP: 0.95 },
       signal,
     );
-    return getResponseText(response);
+    return getResponseText(response) || '';
   }
 
   async addHistory(content: Content) {

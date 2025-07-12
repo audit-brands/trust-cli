@@ -50,7 +50,7 @@ describe('PrivacyAuditEngine', () => {
   beforeEach(() => {
     _mockPerformanceMonitor = {} as PerformanceMonitor;
     mockPrivacyManager = {
-      getPrivacyConfig: vi.fn().mockResolvedValue(mockPrivacyConfig),
+      exportPrivacyConfig: vi.fn().mockResolvedValue(JSON.stringify(mockPrivacyConfig)),
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any;
     auditEngine = new PrivacyAuditEngine(mockPrivacyManager);
@@ -59,8 +59,8 @@ describe('PrivacyAuditEngine', () => {
   describe('Privacy Configuration Audit', () => {
     it('should detect open privacy mode as high risk', async () => {
       const openModeConfig = { ...mockPrivacyConfig, mode: 'open' as const };
-      vi.mocked(mockPrivacyManager.getPrivacyConfig).mockResolvedValue(
-        openModeConfig,
+      vi.mocked(mockPrivacyManager.exportPrivacyConfig).mockResolvedValue(
+        JSON.stringify(openModeConfig),
       );
 
       const config: PrivacyAuditConfig = {
