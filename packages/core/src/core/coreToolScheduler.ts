@@ -646,7 +646,7 @@ export class CoreToolScheduler {
 
         scheduledCall.tool
           .execute(scheduledCall.request.args, signal, liveOutputCallback)
-          .then((toolResult: ToolResult) => {
+          .then(async (toolResult: ToolResult) => {
             if (signal.aborted) {
               this.setStatusInternal(
                 callId,
@@ -654,6 +654,21 @@ export class CoreToolScheduler {
                 'User cancelled tool execution.',
               );
               return;
+            }
+
+            // Check if tool has a summarizer and generate summary
+            let summary: string | undefined;
+            if (scheduledCall.tool.summarizer) {
+              try {
+                summary = await scheduledCall.tool.summarizer(
+                  toolResult,
+                  this.config.getGeminiClient().getContentGenerator(),
+                  signal,
+                );
+              } catch (error) {
+                // Log error but don't fail the tool execution
+                console.error('Failed to generate tool summary:', error);
+              }
             }
 
             const response = convertToFunctionResponse(
@@ -667,6 +682,7 @@ export class CoreToolScheduler {
               responseParts: response,
               resultDisplay: toolResult.returnDisplay,
               error: undefined,
+              summary,
             };
             this.setStatusInternal(callId, 'success', successResponse);
           })

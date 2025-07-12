@@ -71,6 +71,7 @@ export interface ToolCallResponseInfo {
   responseParts: PartListUnion;
   resultDisplay: ToolResultDisplay | undefined;
   error: Error | undefined;
+  summary?: string;
 }
 
 export interface ServerToolCallConfirmationDetails {

@@ -67,6 +67,21 @@ export async function executeToolCall(
       // No live output callback for non-interactive mode
     );
 
+    // Check if tool has a summarizer and generate summary
+    let summary: string | undefined;
+    if (tool.summarizer) {
+      try {
+        summary = await tool.summarizer(
+          toolResult,
+          config.getGeminiClient().getContentGenerator(),
+          effectiveAbortSignal,
+        );
+      } catch (error) {
+        // Log error but don't fail the tool execution
+        console.error('Failed to generate tool summary:', error);
+      }
+    }
+
     const durationMs = Date.now() - startTime;
     logToolCall(config, {
       'event.name': 'tool_call',
@@ -88,6 +103,7 @@ export async function executeToolCall(
       responseParts: response,
       resultDisplay: toolResult.returnDisplay,
       error: undefined,
+      summary,
     };
   } catch (e) {
     const error = e instanceof Error ? e : new Error(String(e));
