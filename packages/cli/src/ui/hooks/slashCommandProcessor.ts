@@ -41,10 +41,16 @@ export interface SlashCommandActionReturn {
   message?: string; // For simple messages or errors
 }
 
+export interface SlashCommandSubCommand {
+  name: string;
+  description?: string;
+}
+
 export interface SlashCommand {
   name: string;
   altName?: string;
   description?: string;
+  subCommands?: SlashCommandSubCommand[];
   completion?: () => Promise<string[]>;
   action: (
     mainCommand: string,
@@ -1135,7 +1141,23 @@ export const useSlashCommandProcessor = (
       },
       {
         name: 'model-enhanced',
-        description: 'unified model management across all backends. Usage: /model-enhanced <list-all|discover|filter|recommend|backends|smart-default|smart-recommend|routing-info|transparency|auto-select|resource-check|optimize|system-report|error-help> [options]',
+        description: 'unified model management across all backends',
+        subCommands: [
+          { name: 'list-all', description: 'List all available models from all backends' },
+          { name: 'discover', description: 'Discover models from all backends' },
+          { name: 'filter', description: 'Filter models based on criteria' },
+          { name: 'recommend', description: 'Get model recommendations' },
+          { name: 'backends', description: 'Show backend information' },
+          { name: 'smart-default', description: 'Get intelligent default model' },
+          { name: 'smart-recommend', description: 'Get smart recommendations' },
+          { name: 'routing-info', description: 'Show routing information' },
+          { name: 'transparency', description: 'Show transparency information' },
+          { name: 'auto-select', description: 'Auto-select best model' },
+          { name: 'resource-check', description: 'Check system resources' },
+          { name: 'optimize', description: 'Optimize model selection' },
+          { name: 'system-report', description: 'Generate system report' },
+          { name: 'error-help', description: 'Get help with errors' },
+        ],
         action: async (_mainCommand, subCommand, args) => {
           try {
             const handler = await import('../../commands/enhancedModelCommands.js');

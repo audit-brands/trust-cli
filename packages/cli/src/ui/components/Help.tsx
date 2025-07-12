@@ -7,7 +7,7 @@
 import React from 'react';
 import { Box, Text } from 'ink';
 import { Colors } from '../colors.js';
-import { SlashCommand } from '../hooks/slashCommandProcessor.js';
+import { SlashCommand, SlashCommandSubCommand } from '../hooks/slashCommandProcessor.js';
 import { useTerminalSize } from '../hooks/useTerminalSize.js';
 
 interface Help {
@@ -122,16 +122,33 @@ function formatInColumns(items: HelpItem[], terminalWidth: number): React.ReactN
 export const Help: React.FC<Help> = ({ commands }) => {
   const { columns: terminalWidth } = useTerminalSize();
   
-  // Prepare commands data
-  const commandItems: HelpItem[] = [
-    ...commands
-      .filter((command) => command.description)
-      .map((command): HelpItem => ({
+  // Prepare commands data with subcommands
+  const commandItems: HelpItem[] = [];
+  
+  // Add main commands
+  commands
+    .filter((command) => command.description)
+    .forEach((command) => {
+      commandItems.push({
         key: `/${command.name}`,
         description: command.description || '',
-      })),
-    { key: '!', description: 'shell command' },
-  ];
+      });
+      
+      // Add subcommands with indentation - upstream commit 870797c1
+      if (command.subCommands && command.subCommands.length > 0) {
+        command.subCommands.forEach((subCommand) => {
+          if (subCommand.description) {
+            commandItems.push({
+              key: `   ${subCommand.name}`,
+              description: subCommand.description,
+            });
+          }
+        });
+      }
+    });
+  
+  // Add shell command
+  commandItems.push({ key: '!', description: 'shell command' });
   
   // Prepare shortcuts data
   const shortcutItems: HelpItem[] = [

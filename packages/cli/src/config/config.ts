@@ -57,7 +57,7 @@ interface CliArgs {
 }
 
 async function parseArguments(): Promise<CliArgs> {
-  const argv = await yargs(hideBin(process.argv))
+  const yargsInstance = yargs(hideBin(process.argv))
     .option('model', {
       alias: 'm',
       type: 'string',
@@ -133,8 +133,12 @@ async function parseArguments(): Promise<CliArgs> {
     .alias('v', 'version')
     .help()
     .alias('h', 'help')
-    .strict().argv;
+    .strict();
 
+  // Use full terminal width for help display - upstream commit 8f2da86a
+  yargsInstance.wrap(yargsInstance.terminalWidth());
+
+  const argv = await yargsInstance.argv;
   return argv;
 }
 
@@ -309,7 +313,9 @@ function findEnvFile(startDir: string): string | null {
       return envPath;
     }
     const parentDir = path.dirname(currentDir);
-    if (parentDir === currentDir || !parentDir) {
+    
+    // Fix infinite loop on Windows - upstream commit f7ad9a7e
+    if (parentDir === currentDir) {
       // check .env under home as fallback, again preferring gemini-specific .env
       const homeGeminiEnvPath = path.join(os.homedir(), GEMINI_DIR, '.env');
       if (fs.existsSync(homeGeminiEnvPath)) {
