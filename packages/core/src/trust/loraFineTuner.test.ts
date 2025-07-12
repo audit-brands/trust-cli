@@ -289,7 +289,7 @@ describe('LoRAFineTuner', () => {
       const modelConfig: TrustModelConfig = {
         name: 'small-model',
         path: 'test.gguf',
-        type: 'test',
+        type: 'phi',
         parameters: '1.5B',
         contextSize: 2048,
         ramRequirement: '2GB',
@@ -329,7 +329,7 @@ describe('LoRAFineTuner', () => {
       const modelConfig: TrustModelConfig = {
         name: 'large-model',
         path: 'test.gguf',
-        type: 'test',
+        type: 'phi',
         parameters: '7B',
         contextSize: 8192,
         ramRequirement: '8GB',
@@ -369,7 +369,7 @@ describe('LoRAFineTuner', () => {
       const modelConfig: TrustModelConfig = {
         name: 'test-model',
         path: 'test.gguf',
-        type: 'test',
+        type: 'phi',
         parameters: '3B',
         contextSize: 4096,
         ramRequirement: '4GB',

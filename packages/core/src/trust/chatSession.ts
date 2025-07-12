@@ -28,7 +28,7 @@ export interface ChatMessage {
 /**
  * Compression information for tracking context reduction
  */
-export interface ChatCompressionInfo {
+export interface TrustChatCompressionInfo {
   originalMessageCount: number;
   compressedMessageCount: number;
   compressionRatio: number;
@@ -304,7 +304,7 @@ export class TrustChatSession {
    * Compress conversation history to preserve recent context while reducing size
    * Based on upstream Gemini CLI context compression implementation
    */
-  async compressHistory(): Promise<ChatCompressionInfo | null> {
+  async compressHistory(): Promise<TrustChatCompressionInfo | null> {
     const nonSystemMessages = this.messages.filter((m) => m.role !== 'system');
 
     if (
@@ -346,7 +346,7 @@ export class TrustChatSession {
       // Replace old messages with compressed summary
       this.messages = [...systemMessages, compressedMessage, ...recentMessages];
 
-      const compressionInfo: ChatCompressionInfo = {
+      const compressionInfo: TrustChatCompressionInfo = {
         originalMessageCount: systemMessages.length + nonSystemMessages.length,
         compressedMessageCount: this.messages.length,
         compressionRatio: olderMessages.length / this.messages.length,

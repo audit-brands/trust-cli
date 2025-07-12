@@ -7,6 +7,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { Tool, ToolResult } from './tools.js';
 import { ContentGenerator } from '../core/contentGenerator.js';
+import { FunctionDeclaration, Schema } from '@google/genai';
 
 // Mock ContentGenerator
 const mockContentGenerator: ContentGenerator = {
@@ -26,16 +27,16 @@ class MockToolWithSummarizer implements Tool<{ input: string }, ToolResult> {
   isOutputMarkdown = true;
   canUpdateOutput = false;
 
-  get schema() {
+  get schema(): FunctionDeclaration {
     return {
       name: this.name,
       description: this.description,
       parameters: {
         type: 'object',
         properties: {
-          input: { type: 'string' },
+          input: { type: 'string' } as Schema,
         },
-      },
+      } as Schema,
     };
   }
 
@@ -125,14 +126,14 @@ describe('Tool Summarization Feature', () => {
       isOutputMarkdown = true;
       canUpdateOutput = false;
 
-      get schema() {
+      get schema(): FunctionDeclaration {
         return {
           name: this.name,
           description: this.description,
           parameters: {
             type: 'object',
-            properties: { input: { type: 'string' } },
-          },
+            properties: { input: { type: 'string' } as Schema },
+          } as Schema,
         };
       }
 
@@ -153,6 +154,7 @@ describe('Tool Summarization Feature', () => {
         };
       }
       // No summarizer method
+      summarizer = undefined;
     }
 
     const tool = new MockToolWithoutSummarizer();

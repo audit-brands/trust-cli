@@ -12,7 +12,7 @@ import {
   TrustModelClient,
   TrustModelConfig,
   GenerationOptions,
-  ModelMetrics,
+  TrustModelMetrics,
 } from './types.js';
 import * as os from 'os';
 
@@ -25,7 +25,7 @@ export class TrustNodeLlamaClient implements TrustModelClient {
   private context: any = null;
   private currentModelConfig: TrustModelConfig | null = null;
   private reusableSession: LlamaChatSession | null = null;
-  private metrics: ModelMetrics = {
+  private metrics: TrustModelMetrics = {
     tokensPerSecond: 0,
     memoryUsage: 0,
     responseTime: 0,
@@ -244,7 +244,7 @@ export class TrustNodeLlamaClient implements TrustModelClient {
     return this.currentModelConfig;
   }
 
-  getMetrics(): ModelMetrics {
+  getMetrics(): TrustModelMetrics {
     return { ...this.metrics };
   }
 

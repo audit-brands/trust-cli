@@ -506,15 +506,17 @@ export class SecurityCommandHandler {
     }
     
     // Reset all sources
-    Object.keys(config.sources).forEach(key => {
-      if (key !== 'custom') {
-        config.sources[key as keyof typeof config.sources] = false;
-      }
-    });
+    if (config.sources) {
+      Object.keys(config.sources).forEach(key => {
+        if (key !== 'custom') {
+          config.sources[key as keyof typeof config.sources] = false;
+        }
+      });
+    }
     
     // Enable specified sources
     sources.forEach(source => {
-      if (source in config.sources) {
+      if (config.sources && source in config.sources) {
         (config.sources as any)[source] = true;
       }
     });

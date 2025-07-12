@@ -86,7 +86,7 @@ export interface GenerationOptions {
 /**
  * Model performance metrics
  */
-export interface ModelMetrics {
+export interface TrustModelMetrics {
   tokensPerSecond: number;
   memoryUsage: number;
   responseTime: number;
@@ -107,7 +107,7 @@ export interface TrustModelClient {
   unloadModel(): Promise<void>;
   createChatSession(): Promise<any>;
   getModelInfo(): TrustModelConfig | null;
-  getMetrics(): ModelMetrics;
+  getMetrics(): TrustModelMetrics;
   isModelLoaded(): boolean;
 }
 

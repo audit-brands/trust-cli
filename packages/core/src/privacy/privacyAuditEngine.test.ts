@@ -231,7 +231,7 @@ describe('PrivacyAuditEngine', () => {
       expect(report.scope.includeSystemAnalysis).toBe(true);
       // Should have system-level findings
       const systemFindings = report.findings.filter(
-        (f) => f.evidence?.type === 'file' || f.evidence?.type === 'system',
+        (f) => f.evidence?.type === 'file',
       );
       expect(systemFindings.length).toBeGreaterThanOrEqual(0);
     });

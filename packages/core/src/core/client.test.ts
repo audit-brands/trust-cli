@@ -406,7 +406,7 @@ describe('Gemini Client (client.ts)', () => {
               ...mockChat,
               getHistory: vi.fn().mockReturnValue([]),
               sendMessage: mockSendMessage,
-            }) as GeminiChat,
+            }) as unknown as GeminiChat,
         );
     });
 

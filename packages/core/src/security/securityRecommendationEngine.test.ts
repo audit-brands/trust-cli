@@ -11,7 +11,7 @@ import {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   SecurityAssessmentReport,
 } from './securityRecommendationEngine.js';
-import { PrivacyManager, PrivacyConfig } from '../trust/privacyManager.js';
+import { PrivacyManager, PrivacyConfigFile } from '../trust/privacyManager.js';
 import { PerformanceMonitor } from '../trust/performanceMonitor.js';
 
 // Mock dependencies
@@ -34,7 +34,7 @@ describe('SecurityRecommendationEngine', () => {
   let mockPrivacyManager: PrivacyManager;
   let mockPerformanceMonitor: PerformanceMonitor;
 
-  const mockPrivacyConfig: PrivacyConfig = {
+  const mockPrivacyConfig: PrivacyConfigFile = {
     mode: 'moderate',
     dataRetention: 30,
     allowTelemetry: false,
