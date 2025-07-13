@@ -492,11 +492,8 @@ class PrivacyAuditCommandHandler {
         console.log(chalk.red('\n🚨 All Critical Issues:'));
         console.log('─'.repeat(30));
         allCritical.forEach((issue, i) => {
-          const title = 'title' in issue ? issue.title : issue.title;
-          const desc =
-            'description' in issue ? issue.description : issue.description;
-          console.log(`${i + 1}. 🔴 ${title}`);
-          console.log(`   ${desc}`);
+          console.log(`${i + 1}. 🔴 ${issue.title}`);
+          console.log(`   ${issue.description}`);
         });
       }
 

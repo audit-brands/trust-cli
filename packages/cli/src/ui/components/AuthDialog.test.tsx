@@ -16,6 +16,10 @@ describe('AuthDialog', () => {
   it('should show an error if the initial auth type is invalid', () => {
     const settings: LoadedSettings = new LoadedSettings(
       {
+        settings: {},
+        path: '/system/settings.json',
+      },
+      {
         settings: {
           selectedAuthType: AuthType.USE_GEMINI,
         },
@@ -44,6 +48,10 @@ describe('AuthDialog', () => {
   it('should prevent exiting when no auth method is selected and show error message', async () => {
     const onSelect = vi.fn();
     const settings: LoadedSettings = new LoadedSettings(
+      {
+        settings: {},
+        path: '/system/settings.json',
+      },
       {
         settings: {
           selectedAuthType: undefined,
@@ -77,6 +85,10 @@ describe('AuthDialog', () => {
   it('should allow exiting when auth method is already selected', async () => {
     const onSelect = vi.fn();
     const settings: LoadedSettings = new LoadedSettings(
+      {
+        settings: {},
+        path: '/system/settings.json',
+      },
       {
         settings: {
           selectedAuthType: AuthType.USE_GEMINI,

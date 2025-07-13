@@ -296,7 +296,7 @@ export class MonitoringCommandHandler {
     }
 
     if (args.filter) {
-      const filtered = metrics.filter(m => m.name.includes(args.filter));
+      const filtered = metrics.filter(m => m.name.includes(args.filter!));
       this.displayMetrics(filtered, args);
     } else {
       this.displayMetrics(metrics, args);

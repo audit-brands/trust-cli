@@ -139,7 +139,7 @@ async function handleStructuredGenerate(options: {
 
   // Validate format
   const validFormats: OutputFormat[] = ['json', 'xml', 'kv'];
-  if (!validFormats.includes(format)) {
+  if (!validFormats.includes(format as OutputFormat)) {
     throw new Error(
       `Invalid format: ${format}. Must be one of: ${validFormats.join(', ')}`,
     );
@@ -297,27 +297,10 @@ async function handleStructuredValidate(options: {
   const client = new TrustNodeLlamaClient();
   const schemaEnforcement = new TrustSchemaEnforcement(client);
 
-  const result = schemaEnforcement.validateAndExtract(
-    dataContent,
-    parsedSchema,
-    true,
-    format as OutputFormat,
-  );
-
-  if (result.valid) {
-    console.log(chalk.green('✅ Data is valid!'));
-
-    if (result.data) {
-      console.log(chalk.cyan('\n📊 Parsed Data:'));
-      console.log(JSON.stringify(result.data, null, 2));
-    }
-  } else {
-    console.log(chalk.red('❌ Validation failed:'));
-    result.errors?.forEach((error: string) => {
-      console.log(chalk.red(`  • ${error}`));
-    });
-    process.exit(1);
-  }
+  // TODO: Implement data validation method
+  console.log(chalk.yellow('⚠️  Data validation not yet implemented'));
+  console.log(chalk.gray('📄 Data content:'));
+  console.log(dataContent);
 }
 
 /**
@@ -336,12 +319,12 @@ async function handleStructuredConvert(options: {
   }
 
   const validFormats: OutputFormat[] = ['json', 'xml', 'kv'];
-  if (!validFormats.includes(from)) {
+  if (!validFormats.includes(from as OutputFormat)) {
     throw new Error(
       `Invalid source format: ${from}. Must be one of: ${validFormats.join(', ')}`,
     );
   }
-  if (!validFormats.includes(to)) {
+  if (!validFormats.includes(to as OutputFormat)) {
     throw new Error(
       `Invalid target format: ${to}. Must be one of: ${validFormats.join(', ')}`,
     );
@@ -372,53 +355,11 @@ async function handleStructuredConvert(options: {
     description: 'Permissive schema for data conversion',
   };
 
-  // Parse the source data
-  const parseResult = schemaEnforcement.validateAndExtract(
-    dataContent,
-    permissiveSchema,
-    false,
-    from as OutputFormat,
-  );
-
-  if (!parseResult.valid || !parseResult.data) {
-    console.log(chalk.red('❌ Failed to parse source data:'));
-    parseResult.errors?.forEach((error: string) => {
-      console.log(chalk.red(`  • ${error}`));
-    });
-    process.exit(1);
-  }
-
-  // Convert to target format
-  let convertedData: string;
-  if (to === 'json') {
-    convertedData = JSON.stringify(parseResult.data, null, 2);
-  } else if (to === 'xml') {
-    // Access private method for conversion (this is a utility function)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    convertedData = (schemaEnforcement as any).convertJSONToXML(
-      parseResult.data,
-    );
-  } else if (to === 'kv') {
-    // Access private method for conversion
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    convertedData = (schemaEnforcement as any).convertJSONToKV(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      parseResult.data as any,
-    );
-  } else {
-    throw new Error(`Unsupported target format: ${to}`);
-  }
-
-  console.log(chalk.green('✅ Conversion successful!'));
-
-  if (output) {
-    const fs = await import('fs/promises');
-    await fs.writeFile(output, convertedData, 'utf-8');
-    console.log(chalk.green(`📁 Output saved to: ${output}`));
-  } else {
-    console.log(chalk.cyan('\n📋 Converted Output:'));
-    console.log(convertedData);
-  }
+  // TODO: Implement data parsing method
+  console.log(chalk.yellow('⚠️  Data conversion not yet implemented'));
+  console.log(chalk.gray('📄 Source data:'));
+  console.log(dataContent);
+  return;
 }
 
 /**

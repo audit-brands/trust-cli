@@ -286,7 +286,13 @@ export class SecurityCommandHandler {
       const config = await this.loadConfig();
       console.log('\n⚙️  Security Scanner Configuration:');
       console.log('═══════════════════════════════════════════════════════════');
-      console.log(`Sources: ${Object.entries(config.sources).filter(([, enabled]) => enabled).map(([name]) => name).join(', ')}`);
+      const enabledSources = [];
+      if (config.sources?.osv) enabledSources.push('osv');
+      if (config.sources?.npm) enabledSources.push('npm');
+      if (config.sources?.github) enabledSources.push('github');
+      if (config.sources?.snyk) enabledSources.push('snyk');
+      if (config.sources?.custom) enabledSources.push(...config.sources.custom);
+      console.log(`Sources: ${enabledSources.join(', ')}`);
       console.log(`Scan Depth: ${config.scanDepth}`);
       console.log(`Include Dev Dependencies: ${config.includeDevDependencies ? '✅' : '❌'}`);
       console.log(`Severity Threshold: ${config.seventy_threshold}`);
@@ -372,7 +378,13 @@ export class SecurityCommandHandler {
     try {
       const config = await this.loadConfig();
       console.log('\n⚙️  Configuration:');
-      console.log(`   Sources: ${Object.entries(config.sources).filter(([, enabled]) => enabled).map(([name]) => name).join(', ')}`);
+      const enabledSourcesStatus = [];
+      if (config.sources?.osv) enabledSourcesStatus.push('osv');
+      if (config.sources?.npm) enabledSourcesStatus.push('npm');
+      if (config.sources?.github) enabledSourcesStatus.push('github');
+      if (config.sources?.snyk) enabledSourcesStatus.push('snyk');
+      if (config.sources?.custom) enabledSourcesStatus.push(...config.sources.custom);
+      console.log(`   Sources: ${enabledSourcesStatus.join(', ')}`);
       console.log(`   Auto-remediation: ${config.autoRemediation?.enabled ? '✅' : '❌'}`);
     } catch {
       console.log('\n⚙️  Configuration: Using defaults');
@@ -495,7 +507,20 @@ export class SecurityCommandHandler {
     if (!config.apiKeys) {
       config.apiKeys = {};
     }
-    config.apiKeys[service] = apiKey;
+    
+    // Type-safe assignment to specific service properties
+    if (service === 'snyk') {
+      config.apiKeys.snyk = apiKey;
+    } else if (service === 'github') {
+      config.apiKeys.github = apiKey;
+    } else {
+      // For custom services
+      if (!config.apiKeys.custom) {
+        config.apiKeys.custom = {};
+      }
+      config.apiKeys.custom[service] = apiKey;
+    }
+    
     await this.saveConfig(config);
   }
 
@@ -507,17 +532,23 @@ export class SecurityCommandHandler {
     
     // Reset all sources
     if (config.sources) {
-      Object.keys(config.sources).forEach(key => {
-        if (key !== 'custom') {
-          config.sources[key as keyof typeof config.sources] = false;
-        }
-      });
+      config.sources.osv = false;
+      config.sources.npm = false;
+      config.sources.github = false;
+      config.sources.snyk = false;
+      // Keep custom array as is
     }
     
     // Enable specified sources
     sources.forEach(source => {
-      if (config.sources && source in config.sources) {
-        (config.sources as any)[source] = true;
+      if (config.sources) {
+        if (source === 'osv') config.sources.osv = true;
+        else if (source === 'npm') config.sources.npm = true;
+        else if (source === 'github') config.sources.github = true;
+        else if (source === 'snyk') config.sources.snyk = true;
+        else if (!config.sources.custom.includes(source)) {
+          config.sources.custom.push(source);
+        }
       }
     });
     

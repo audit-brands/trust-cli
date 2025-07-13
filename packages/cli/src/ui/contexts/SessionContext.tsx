@@ -15,12 +15,12 @@ import React, {
 import {
   uiTelemetryService,
   SessionMetrics,
-  ModelMetrics,
+  TelemetryModelMetrics,
 } from '@trust-cli/trust-cli-core';
 
 // --- Interface Definitions ---
 
-export type { SessionMetrics, ModelMetrics };
+export type { SessionMetrics, TelemetryModelMetrics as ModelMetrics };
 
 interface SessionStatsState {
   sessionStartTime: Date;

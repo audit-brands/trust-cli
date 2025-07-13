@@ -196,7 +196,11 @@ describe('App UI', () => {
         ...settings,
       },
     };
-    return new LoadedSettings(userSettingsFile, workspaceSettingsFile, []);
+    const systemSettingsFile: SettingsFile = {
+      path: '/system/settings.json',
+      settings: {},
+    };
+    return new LoadedSettings(systemSettingsFile, userSettingsFile, workspaceSettingsFile, []);
   };
 
   beforeEach(() => {

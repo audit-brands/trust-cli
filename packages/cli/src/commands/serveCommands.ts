@@ -162,7 +162,7 @@ export class ServeCommandHandler {
           await currentServer.stop();
           console.log('✅ Server stopped successfully');
         } catch (_error) {
-          console.error('❌ Error stopping server:', error);
+          console.error('❌ Error stopping server:', _error);
         }
       }
 

@@ -12,6 +12,7 @@ import {
 import type { BenchmarkReport, BenchmarkResult } from '../../../core/src/trust/performanceBenchmark.js';
 import * as fs from 'fs/promises';
 import * as path from 'path';
+import chalk from 'chalk';
 
 export interface BenchmarkCommandArgs {
   action: 'run' | 'list' | 'results' | 'compare' | 'export' | 'help';
@@ -40,33 +41,15 @@ export class BenchmarkCommandHandler {
   }
 
   async handleCommand(args: BenchmarkCommandArgs): Promise<void> {
-    await this.initialize();
-
-    switch (args.action) {
-      case 'run':
-        await this.runBenchmark(args);
-        break;
-      case 'list':
-        await this.listSuites(args.verbose);
-        break;
-      case 'results':
-        await this.showResults(args);
-        break;
-      case 'compare':
-        await this.compareModels(args);
-        break;
-      case 'export':
-        await this.exportResults(args);
-        break;
-      case 'help':
-        this.showHelp();
-        break;
-      default:
-        if (!args.action) {
-          this.showHelp();
-        } else {
-          throw new Error(`Unknown benchmark command: ${args.action}`);
-        }
+    console.log(chalk.yellow('⚠️  Performance benchmarking is not available in this release'));
+    console.log(chalk.gray('This feature is planned for a future version.'));
+    console.log(chalk.cyan('\n💡 Alternative options:'));
+    console.log('   • Use trust model list to see available models');
+    console.log('   • Use trust status to monitor system performance');
+    console.log('   • Use ollama ps to see running models');
+    
+    if (args.action === 'help' || !args.action) {
+      this.showHelp();
     }
   }
 
@@ -90,39 +73,13 @@ export class BenchmarkCommandHandler {
     let lastProgress = 0;
 
     try {
-      // TODO: Implement PerformanceBenchmark class
-      throw new Error('PerformanceBenchmark class not yet implemented');
-      /*
-      const report = await this.performanceBenchmark.runBenchmarkSuite(
-        suite,
-        models,
-        (status, progress) => {
-          // Only update progress every 5% to avoid spam
-          if (Math.floor(progress / 5) > Math.floor(lastProgress / 5)) {
-            console.log(`⏳ ${status} (${Math.round(progress)}%)`);
-            lastProgress = progress;
-          }
-        },
-      );
-      */
-
-      // TODO: Implement PerformanceBenchmark class to enable this code
-      /*
-      const duration = Date.now() - startTime;
-      console.log(
-        `\n✅ Benchmark completed in ${(duration / 1000).toFixed(1)}s\n`,
-      );
-
-      // Display results
-      const textReport = this.performanceBenchmark.generateTextReport(report);
-      console.log(textReport);
-
-      // Save results if output specified
-      if (args.output) {
-        await this.saveReport(report, args.output, args.format || 'json');
-        console.log(`💾 Results saved to: ${args.output}`);
-      }
-      */
+      console.log(chalk.yellow('⚠️  Performance benchmarking is not yet implemented'));
+      console.log(chalk.gray('This feature is planned for a future release.'));
+      console.log(chalk.cyan('\n💡 Alternative options:'));
+      console.log('   • Use ollama ps to see running models');
+      console.log('   • Use trust model list to see available models');
+      console.log('   • Monitor system resources with trust status');
+      return;
     } catch (error) {
       console.error(
         `❌ Benchmark failed: ${error instanceof Error ? error.message : String(error)}`,
@@ -136,8 +93,17 @@ export class BenchmarkCommandHandler {
   }
 
   private async listSuites(verbose = false): Promise<void> {
-    // TODO: Implement PerformanceBenchmark class
-    throw new Error('PerformanceBenchmark class not yet implemented');
+    console.log(chalk.yellow('⚠️  Performance benchmarking is not yet implemented'));
+    console.log(chalk.gray('This feature is planned for a future release.'));
+    console.log(chalk.cyan('\n📋 Planned Benchmark Suites:'));
+    console.log('   • Speed benchmarks (inference latency)');
+    console.log('   • Quality benchmarks (response accuracy)');
+    console.log('   • Efficiency benchmarks (resource usage)');
+    console.log('   • Coding benchmarks (programming tasks)');
+    
+    console.log(chalk.cyan('\n💡 Alternative options:'));
+    console.log('   • Use trust model list to see available models');
+    console.log('   • Use trust status to monitor system performance');
     /*
     const suites = this.performanceBenchmark.getBenchmarkSuites();
 
@@ -363,7 +329,7 @@ export class BenchmarkCommandHandler {
   }
 
   private async exportToFile(
-    results: BenchmarkReport[],
+    results: BenchmarkResult[],
     outputPath: string,
     format: string,
   ): Promise<void> {

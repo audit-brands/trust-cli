@@ -104,6 +104,10 @@ describe('gemini.tsx main function', () => {
       message: 'Test settings error',
       path: '/test/settings.json',
     };
+    const systemSettingsFile: SettingsFile = {
+      path: '/system/settings.json',
+      settings: {},
+    };
     const userSettingsFile: SettingsFile = {
       path: '/user/settings.json',
       settings: {},
@@ -113,6 +117,7 @@ describe('gemini.tsx main function', () => {
       settings: {},
     };
     const mockLoadedSettings = new LoadedSettings(
+      systemSettingsFile,
       userSettingsFile,
       workspaceSettingsFile,
       [settingsError],
