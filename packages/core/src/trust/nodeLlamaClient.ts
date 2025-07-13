@@ -53,6 +53,7 @@ export class TrustNodeLlamaClient implements TrustModelClient {
 
       this.context = await this.model.createContext({
         contextSize: config?.contextSize || 4096,
+        sequences: 4, // Allow multiple concurrent sequences to prevent "No sequences left"
       });
 
       this.currentModelConfig = config || {
