@@ -247,6 +247,10 @@ export class GeminiChat {
   ): Promise<GenerateContentResponse> {
     await this.sendPromise;
     const userContent = createUserContent(params.message);
+
+    // Truncate history before sending to model
+    await this.truncateHistory(this.config.getMaxHistoryTokens());
+
     const requestContents = this.getHistory(true).concat(userContent);
 
     this._logApiRequest(requestContents, this.config.getModel());
@@ -341,6 +345,10 @@ export class GeminiChat {
   ): Promise<AsyncGenerator<GenerateContentResponse>> {
     await this.sendPromise;
     const userContent = createUserContent(params.message);
+
+    // Truncate history before sending to model
+    await this.truncateHistory(this.config.getMaxHistoryTokens());
+
     const requestContents = this.getHistory(true).concat(userContent);
     this._logApiRequest(requestContents, this.config.getModel());
 
@@ -442,6 +450,37 @@ export class GeminiChat {
   }
   setHistory(history: Content[]): void {
     this.history = history;
+  }
+
+  private async truncateHistory(maxTokens: number): Promise<void> {
+    if (maxTokens <= 0) {
+      this.history = [];
+      return;
+    }
+
+    let currentHistoryTokens = 0;
+    let startIndex = 0;
+
+    // Calculate initial token count and find the starting point for truncation
+    for (let i = this.history.length - 1; i >= 0; i--) {
+      const content = this.history[i];
+      const tokenCountResponse = await this.contentGenerator.countTokens({ contents: [content] });
+      const contentTokens = tokenCountResponse.totalTokens || 0;
+
+      if (currentHistoryTokens + contentTokens <= maxTokens) {
+        currentHistoryTokens += contentTokens;
+        startIndex = i;
+      } else {
+        // This turn exceeds the limit, so we start truncation from here
+        break;
+      }
+    }
+
+    if (startIndex > 0) {
+      const originalLength = this.history.length;
+      this.history = this.history.slice(startIndex);
+      console.log(`[DEBUG] History truncated from ${originalLength} turns to ${this.history.length} turns to fit within ${maxTokens} tokens.`);
+    }
   }
 
   getFinalUsageMetadata(
