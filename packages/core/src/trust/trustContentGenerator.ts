@@ -21,6 +21,7 @@ import { TrustModelManagerImpl } from './modelManager.js';
 import { TrustModelConfig, GenerationOptions, AIBackend } from './types.js';
 import { GBNFunctionRegistry } from './gbnfFunctionRegistry.js';
 import { JsonRepairParser } from './jsonRepairParser.js';
+import { UniversalToolInterface, UniversalToolDefinition } from './universalToolInterface.js';
 import { OllamaContentGenerator } from './ollamaContentGenerator.js';
 import { TrustConfiguration } from '../config/trustConfig.js';
 
@@ -33,6 +34,7 @@ export class TrustContentGenerator implements ContentGenerator {
   private config?: any; // Will be properly typed later
   private toolRegistry?: any; // Will be properly typed later
   private jsonRepairParser: JsonRepairParser;
+  private universalToolInterface: UniversalToolInterface;
   private useOllama = false; // Flag to track if Ollama is available and preferred
   private trustConfig: TrustConfiguration;
   private backendInitHistory: Array<{
@@ -47,6 +49,7 @@ export class TrustContentGenerator implements ContentGenerator {
     this.config = config;
     this.toolRegistry = toolRegistry;
     this.jsonRepairParser = new JsonRepairParser();
+    this.universalToolInterface = new UniversalToolInterface();
     this.trustConfig = new TrustConfiguration();
   }
 
@@ -576,18 +579,9 @@ export class TrustContentGenerator implements ContentGenerator {
       return '';
     }
 
-    let toolsPrompt = '';
-
-    // Model-specific tool calling instructions
-    if (modelName.includes('phi')) {
-      toolsPrompt += `\n<|user|>\nYou have access to the following tools. When you need to use a tool, respond ONLY with a JSON function call in this exact format:\n\`\`\`json\n{"function_call": {"name": "TOOL_NAME", "arguments": {...}}}\n\`\`\`\n\nIMPORTANT: Do not add any explanatory text before or after the JSON. Only output the JSON function call.<|end|>\n\n`;
-    } else {
-      toolsPrompt += `\nTOOLS: You have access to function calling. When you need to use tools, respond ONLY with valid JSON.\n\nFormat: \`\`\`json\n{"function_call": {"name": "TOOL_NAME", "arguments": {...}}}\n\`\`\`\n\nIMPORTANT: Do not add any explanatory text. Only output the JSON function call.\n\n`;
-    }
-
-    // Add function definitions in compact format
-    toolsPrompt += `Available functions:\n`;
-
+    // Convert Gemini tools to universal format
+    const universalTools: UniversalToolDefinition[] = [];
+    
     for (const tool of request.config.tools) {
       if (
         tool &&
@@ -597,20 +591,43 @@ export class TrustContentGenerator implements ContentGenerator {
       ) {
         for (const func of tool.functionDeclarations) {
           if (func.name) {
-            // More compact function description
-            const params = func.parameters?.properties
-              ? Object.keys(func.parameters.properties).join(', ')
-              : 'none';
-            toolsPrompt += `• ${func.name}(${params}): ${func.description || 'No description'}\n`;
+            universalTools.push({
+              name: func.name,
+              description: func.description || 'No description',
+              parameters: {
+                type: 'object',
+                properties: (func.parameters?.properties as Record<string, any>) || {},
+                required: func.parameters?.required
+              }
+            });
           }
         }
       }
     }
 
-    // Add a practical example
-    toolsPrompt += `\nExample:\nUser: List files here\nAssistant: \`\`\`json\n{"function_call": {"name": "list_directory", "arguments": {"path": "."}}}\n\`\`\`<end_of_json>\n\n`;
+    // Determine preferred format based on model
+    const preferredFormat = this.getPreferredToolFormat(modelName);
+    const provider = this.universalToolInterface.getProvider(preferredFormat);
+    
+    if (provider && universalTools.length > 0) {
+      return provider.getToolPrompt(universalTools);
+    }
 
-    return toolsPrompt;
+    return '';
+  }
+
+  /**
+   * Determine preferred tool calling format based on model capabilities
+   */
+  private getPreferredToolFormat(modelName: string): 'xml' | 'json' {
+    // XML format is generally more reliable for local models
+    // as it's more forgiving and easier for models to generate correctly
+    if (modelName.includes('phi') || modelName.includes('llama') || modelName.includes('qwen')) {
+      return 'xml';
+    }
+    
+    // For cloud models that are known to handle JSON well
+    return 'json';
   }
 
   /**
@@ -785,23 +802,65 @@ export class TrustContentGenerator implements ContentGenerator {
     text: string;
     functionCalls: FunctionCall[];
   } {
-    // First try the tolerant parser
-    const parseResult = this.jsonRepairParser.parseFunctionCalls(text);
-
-    if (parseResult.success && parseResult.functionCalls.length > 0) {
-      // Log successful repairs for debugging
-      if (
-        parseResult.repairedJson &&
-        parseResult.errors &&
-        parseResult.errors.length > 0
-      ) {
-        // JSON auto-repair succeeded
-      }
+    // Use universal tool interface to parse calls
+    const currentModel = this.modelManager.getCurrentModel();
+    const modelName = currentModel?.name || 'unknown';
+    const preferredFormat = this.getPreferredToolFormat(modelName);
+    
+    // Try universal tool interface first
+    const universalCalls = this.universalToolInterface.parseToolCalls(text, preferredFormat);
+    
+    if (universalCalls.length > 0) {
+      console.log(`🔧 Found ${universalCalls.length} tool calls using ${preferredFormat} format`);
+      
+      // Convert universal calls to FunctionCall format
+      const functionCalls = universalCalls.map(call => 
+        this.universalToolInterface.toFunctionCall(call)
+      );
 
       // Remove function calls from original text
       let cleanedText = text;
+      
+      if (preferredFormat === 'xml') {
+        // Remove XML function call patterns
+        cleanedText = cleanedText.replace(/<function_calls>.*?<\/function_calls>/gs, '').trim();
+        cleanedText = cleanedText.replace(/<invoke\s+name="[^"]*"[^>]*>.*?<\/invoke>/gs, '').trim();
+      } else {
+        // Remove JSON function call patterns
+        for (const call of universalCalls) {
+          const patterns = [
+            new RegExp(
+              `\\{"function_call":\\s*\\{"name":\\s*"${call.name}"[^}]*\\}\\s*\\}`,
+              'g',
+            ),
+            new RegExp(`\\{"name":\\s*"${call.name}"[^}]*\\}`, 'g'),
+            new RegExp(
+              `\`\`\`(?:json)?[^\\}]*"${call.name}"[^\\}]*\\}\`\`\``,
+              'gs',
+            ),
+          ];
+
+          for (const pattern of patterns) {
+            cleanedText = cleanedText.replace(pattern, '').trim();
+          }
+        }
+      }
+
+      return {
+        text: cleanedText,
+        functionCalls: functionCalls,
+      };
+    }
+
+    // Fallback to original JSON repair parser
+    const parseResult = this.jsonRepairParser.parseFunctionCalls(text);
+
+    if (parseResult.success && parseResult.functionCalls.length > 0) {
+      console.log(`🔧 Found ${parseResult.functionCalls.length} tool calls using JSON repair parser`);
+      
+      // Remove function calls from original text
+      let cleanedText = text;
       for (const call of parseResult.functionCalls) {
-        // Try to remove various patterns
         const patterns = [
           new RegExp(
             `\\{"function_call":\\s*\\{"name":\\s*"${call.name}"[^}]+\\}\\s*\\}`,
@@ -819,67 +878,17 @@ export class TrustContentGenerator implements ContentGenerator {
         }
       }
 
-      return { text: cleanedText, functionCalls: parseResult.functionCalls };
+      return {
+        text: cleanedText,
+        functionCalls: parseResult.functionCalls,
+      };
     }
 
-    // Fall back to original parsing logic if repair fails
-    const functionCalls: FunctionCall[] = [];
-    let cleanedText = text;
-
-    // Look for JSON function call patterns - updated to handle nested objects and multiline formatting
-    // Support both ```json and ```bash blocks since models sometimes use different blocks
-    const functionCallRegex = /```(?:json|bash)\s*\n([\s\S]*?)\n\s*```/gs;
-    let match;
-
-    while ((match = functionCallRegex.exec(text)) !== null) {
-      try {
-        const jsonMatch = match[1].trim();
-        // Only process if it contains function_call
-        if (jsonMatch.includes('function_call')) {
-          const parsed = JSON.parse(jsonMatch);
-
-          if (parsed.function_call && parsed.function_call.name) {
-            const functionCall: FunctionCall = {
-              name: parsed.function_call.name,
-              args: parsed.function_call.arguments || {},
-              id: `call_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-            };
-            functionCalls.push(functionCall);
-
-            // Remove the function call from the text
-            cleanedText = cleanedText.replace(match[0], '').trim();
-          }
-        }
-      } catch (error) {
-        console.warn('Failed to parse function call JSON:', error);
-      }
-    }
-
-    // Also look for simpler patterns without code blocks
-    const simpleFunctionCallRegex =
-      /{"function_call":\s*{"name":\s*"[^"]+",\s*"arguments":\s*{.*?}}}/gs;
-
-    while ((match = simpleFunctionCallRegex.exec(cleanedText)) !== null) {
-      try {
-        const parsed = JSON.parse(match[0]);
-
-        if (parsed.function_call && parsed.function_call.name) {
-          const functionCall: FunctionCall = {
-            name: parsed.function_call.name,
-            args: parsed.function_call.arguments || {},
-            id: `call_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-          };
-          functionCalls.push(functionCall);
-
-          // Remove the function call from the text
-          cleanedText = cleanedText.replace(match[0], '').trim();
-        }
-      } catch (error) {
-        console.warn('Failed to parse simple function call JSON:', error);
-      }
-    }
-
-    return { text: cleanedText, functionCalls };
+    // No function calls found
+    return {
+      text: text,
+      functionCalls: [],
+    };
   }
 
   private convertToGeminiResponse(text: string): GenerateContentResponse {
