@@ -580,9 +580,9 @@ export class TrustContentGenerator implements ContentGenerator {
 
     // Model-specific tool calling instructions
     if (modelName.includes('phi')) {
-      toolsPrompt += `\n<|user|>\nYou have access to the following tools. When you need to use a tool, respond with a JSON function call in this exact format:\n\`\`\`json\n{"function_call": {"name": "TOOL_NAME", "arguments": {...}}}\n\`\`\`<end_of_json>\n\n`;
+      toolsPrompt += `\n<|user|>\nYou have access to the following tools. When you need to use a tool, respond ONLY with a JSON function call in this exact format:\n\`\`\`json\n{"function_call": {"name": "TOOL_NAME", "arguments": {...}}}\n\`\`\`\n\nIMPORTANT: Do not add any explanatory text before or after the JSON. Only output the JSON function call.<|end|>\n\n`;
     } else {
-      toolsPrompt += `\nTOOLS: You have access to function calling. When you need to use tools, respond with valid JSON.\n\nFormat: \`\`\`json\n{"function_call": {"name": "TOOL_NAME", "arguments": {...}}}\n\`\`\`<end_of_json>\n\n`;
+      toolsPrompt += `\nTOOLS: You have access to function calling. When you need to use tools, respond ONLY with valid JSON.\n\nFormat: \`\`\`json\n{"function_call": {"name": "TOOL_NAME", "arguments": {...}}}\n\`\`\`\n\nIMPORTANT: Do not add any explanatory text. Only output the JSON function call.\n\n`;
     }
 
     // Add function definitions in compact format
@@ -1117,7 +1117,7 @@ export class TrustContentGenerator implements ContentGenerator {
   private getOptimalMaxTokens(modelName: string, hasTools: boolean): number {
     // Function calling typically needs fewer tokens
     if (hasTools) {
-      return 1024; // Increased from 512 to allow for complete function calls and explanations
+      return 256; // Reduced to focus on just the function call JSON
     }
 
     // For general chat, allow more tokens for detailed responses

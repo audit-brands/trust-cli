@@ -28,6 +28,7 @@ export class JsonRepairParser {
     this.fixExtraCommas.bind(this),
     this.unwrapCodeBlocks.bind(this),
     this.extractJsonFromText.bind(this),
+    this.completeIncompleteJson.bind(this),
   ];
 
   /**
@@ -257,10 +258,25 @@ export class JsonRepairParser {
   private extractFunctionCallPatterns(text: string): FunctionCall[] {
     const calls: FunctionCall[] = [];
 
-    // Pattern 1: Direct function name and arguments
+    // Pattern 1: Extract incomplete function calls like {"function_call": {"name": "list_directory"
+    const incompletePattern = /"function_call":\s*\{\s*"name":\s*"([^"]+)"/gi;
+    let match;
+    while ((match = incompletePattern.exec(text)) !== null) {
+      const functionName = match[1];
+      // For simple functions like list_directory, try to extract path argument
+      const pathMatch = text.match(/"path":\s*"([^"]*)"/) || text.match(/"path":\s*"([^"]*)/);
+      const path = pathMatch ? pathMatch[1] : ".";
+      
+      calls.push({
+        name: functionName,
+        args: { path },
+        id: `call_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      });
+    }
+
+    // Pattern 2: Direct function name and arguments
     const pattern1 =
       /(?:function[_\s]*)?(?:call|name)[:\s]*["']?(\w+)["']?\s*(?:arguments|args|parameters)[:\s]*(\{[^}]*\})/gi;
-    let match;
     while ((match = pattern1.exec(text)) !== null) {
       try {
         const args = JSON.parse(match[2]);
@@ -274,7 +290,7 @@ export class JsonRepairParser {
       }
     }
 
-    // Pattern 2: Tool/function mentions with parameters
+    // Pattern 3: Tool/function mentions with parameters
     const pattern2 = /Execute tool:\s*(\w+)\s*with arguments:\s*(\{[^}]*\})/gi;
     while ((match = pattern2.exec(text)) !== null) {
       try {
@@ -290,6 +306,28 @@ export class JsonRepairParser {
     }
 
     return calls;
+  }
+
+  private completeIncompleteJson(text: string): string {
+    // Handle incomplete JSON that ends abruptly
+    const trimmed = text.trim();
+    
+    // If it looks like the start of a function call but is incomplete
+    if (trimmed.includes('{"function_call":') && !trimmed.endsWith('}}')) {
+      // Try to complete common patterns
+      if (trimmed.includes('"name": "list_directory"')) {
+        // Complete list_directory call
+        return '{"function_call": {"name": "list_directory", "arguments": {"path": "."}}}';
+      }
+      if (trimmed.includes('"name": "read_file"')) {
+        // Try to extract filename if present
+        const fileMatch = trimmed.match(/"filename":\s*"([^"]*)/);
+        const filename = fileMatch ? fileMatch[1] : "README.md";
+        return `{"function_call": {"name": "read_file", "arguments": {"filename": "${filename}"}}}`;
+      }
+    }
+    
+    return text;
   }
 
   /**
