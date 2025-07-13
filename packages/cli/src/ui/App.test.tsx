@@ -200,7 +200,12 @@ describe('App UI', () => {
       path: '/system/settings.json',
       settings: {},
     };
-    return new LoadedSettings(systemSettingsFile, userSettingsFile, workspaceSettingsFile, []);
+    return new LoadedSettings(
+      systemSettingsFile,
+      userSettingsFile,
+      workspaceSettingsFile,
+      [],
+    );
   };
 
   beforeEach(() => {

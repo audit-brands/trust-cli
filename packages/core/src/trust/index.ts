@@ -8,7 +8,11 @@ export * from './types.js';
 export * from './nodeLlamaClient.js';
 export * from './modelManager.js';
 export * from './unifiedModelManager.js';
-export { IntelligentModelRouter, ModelRoutingDecision, RoutingConfig } from './intelligentModelRouter.js';
+export {
+  IntelligentModelRouter,
+  ModelRoutingDecision,
+  RoutingConfig,
+} from './intelligentModelRouter.js';
 export { RouterSystemResources as SystemResources } from './intelligentModelRouter.js';
 export * from './smartRoutingService.js';
 export * from './resourceMonitor.js';

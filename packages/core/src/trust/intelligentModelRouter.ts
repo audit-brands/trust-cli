@@ -128,9 +128,7 @@ export class IntelligentModelRouter {
 
     // Step 4: Route - Determine routing to target backend
     const step4Start = Date.now();
-    const routingResults = await this.performRouting(
-      selectionResults.selected,
-    );
+    const routingResults = await this.performRouting(selectionResults.selected);
     const step4Duration = Date.now() - step4Start;
 
     const totalDuration = Date.now() - startTime;

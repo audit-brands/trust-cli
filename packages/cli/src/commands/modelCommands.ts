@@ -8,7 +8,7 @@ import {
   TrustModelManagerImpl,
   TrustConfiguration,
   UnifiedModelManager,
-  UnifiedModel,
+  // UnifiedModel,
 } from '@trust-cli/trust-cli-core';
 import * as fs from 'fs/promises';
 import * as path from 'path';
@@ -146,45 +146,71 @@ export class ModelCommandHandler {
     }
 
     // Group models by backend
-    const hfModels = allModels.filter(m => m.backend === 'huggingface');
-    const ollamaModels = allModels.filter(m => m.backend === 'ollama');
+    const hfModels = allModels.filter((m) => m.backend === 'huggingface');
+    const ollamaModels = allModels.filter((m) => m.backend === 'ollama');
 
     // Display unified table with Backend column
     console.log('\n📋 All Models:');
     console.log('');
-    console.log('│ Status │ Backend     │ Model Name                    │ Parameters │ RAM Req │');
-    console.log('├────────┼─────────────┼───────────────────────────────┼────────────┼─────────┤');
+    console.log(
+      '│ Status │ Backend     │ Model Name                    │ Parameters │ RAM Req │',
+    );
+    console.log(
+      '├────────┼─────────────┼───────────────────────────────┼────────────┼─────────┤',
+    );
 
     for (const model of allModels) {
-      const isCurrent = currentModel?.name === model.name && model.backend === 'huggingface';
+      const isCurrent =
+        currentModel?.name === model.name && model.backend === 'huggingface';
       const icon = isCurrent ? '🎯' : model.available ? '✅' : '⚪';
-      const status = isCurrent ? 'current' : model.available ? 'ready' : 'avail';
-      const backend = model.backend === 'huggingface' ? 'HuggingFace' : 'Ollama';
+      const status = isCurrent
+        ? 'current'
+        : model.available
+          ? 'ready'
+          : 'avail';
+      const backend =
+        model.backend === 'huggingface' ? 'HuggingFace' : 'Ollama';
       const params = model.parameters || 'Unknown';
       const ram = model.ramRequirement || 'Unknown';
-      
+
       console.log(
-        `│ ${icon} ${status.padEnd(6)} │ ${backend.padEnd(11)} │ ${model.name.padEnd(29)} │ ${params.padEnd(10)} │ ${ram.padEnd(7)} │`
+        `│ ${icon} ${status.padEnd(6)} │ ${backend.padEnd(11)} │ ${model.name.padEnd(29)} │ ${params.padEnd(10)} │ ${ram.padEnd(7)} │`,
       );
 
       if (verbose) {
-        console.log(`│        │             │   📝 ${model.description || 'No description'}`.padEnd(79) + '│');
+        console.log(
+          `│        │             │   📝 ${model.description || 'No description'}`.padEnd(
+            79,
+          ) + '│',
+        );
         if (model.backend === 'huggingface' && !model.available) {
-          console.log(`│        │             │   🚀 trust model download ${model.name}`.padEnd(79) + '│');
+          console.log(
+            `│        │             │   🚀 trust model download ${model.name}`.padEnd(
+              79,
+            ) + '│',
+          );
         }
-        console.log('├────────┼─────────────┼───────────────────────────────┼────────────┼─────────┤');
+        console.log(
+          '├────────┼─────────────┼───────────────────────────────┼────────────┼─────────┤',
+        );
       }
     }
-    console.log('└────────┴─────────────┴───────────────────────────────┴────────────┴─────────┘');
+    console.log(
+      '└────────┴─────────────┴───────────────────────────────┴────────────┴─────────┘',
+    );
 
     // Show summary
     console.log('');
     console.log(`📊 Summary: ${allModels.length} total models`);
-    console.log(`   • HuggingFace: ${hfModels.length} models (${hfModels.filter(m => m.available).length} downloaded)`);
+    console.log(
+      `   • HuggingFace: ${hfModels.length} models (${hfModels.filter((m) => m.available).length} downloaded)`,
+    );
     console.log(`   • Ollama: ${ollamaModels.length} models (all available)`);
 
-    if (hfModels.filter(m => !m.available).length > 0) {
-      console.log('\n🚀 To download HuggingFace models: trust model download <model-name>');
+    if (hfModels.filter((m) => !m.available).length > 0) {
+      console.log(
+        '\n🚀 To download HuggingFace models: trust model download <model-name>',
+      );
     }
     if (ollamaModels.length === 0) {
       console.log('\n💡 To add Ollama models: ollama pull <model-name>');
@@ -192,17 +218,21 @@ export class ModelCommandHandler {
 
     // Show quick actions
     console.log('\n🚀 Quick Actions:');
-    const downloadedHfModels = hfModels.filter(m => m.available);
-    const availableHfModels = hfModels.filter(m => !m.available);
-    
+    const downloadedHfModels = hfModels.filter((m) => m.available);
+    const availableHfModels = hfModels.filter((m) => !m.available);
+
     if (downloadedHfModels.length > 0 && !currentModel) {
       console.log(`   trust model switch ${downloadedHfModels[0].name}`);
     }
     if (availableHfModels.length > 0) {
-      const recommended = availableHfModels.find((m) => m.name.includes('qwen')) || availableHfModels[0];
+      const recommended =
+        availableHfModels.find((m) => m.name.includes('qwen')) ||
+        availableHfModels[0];
       console.log(`   trust model download ${recommended.name}`);
     }
-    console.log('   trust model recommend <task>              # Get recommendations');
+    console.log(
+      '   trust model recommend <task>              # Get recommendations',
+    );
 
     if (!verbose) {
       console.log('\n💡 Use --verbose for detailed information');
@@ -235,10 +265,12 @@ export class ModelCommandHandler {
       } catch (error) {
         clearInterval(loadingInterval);
         process.stdout.write('\r\x1b[K');
-        
+
         // Show available models on error
         const allModels = await this.unifiedManager.listAllModels();
-        console.log(`❌ ${error instanceof Error ? error.message : String(error)}`);
+        console.log(
+          `❌ ${error instanceof Error ? error.message : String(error)}`,
+        );
         console.log('\n📝 Available models:');
         allModels.forEach((m) => console.log(`   - ${m.name} (${m.backend})`));
         throw error;
@@ -261,7 +293,9 @@ export class ModelCommandHandler {
 
   private async downloadModel(modelName: string): Promise<void> {
     console.log(`\n🚀 Downloading model: ${modelName}`);
-    console.log('⏳ This may take several minutes depending on model size and connection...');
+    console.log(
+      '⏳ This may take several minutes depending on model size and connection...',
+    );
 
     try {
       // Use unified manager for downloading
@@ -269,15 +303,21 @@ export class ModelCommandHandler {
 
       console.log(`✅ Successfully downloaded ${modelName}`);
       console.log(`\n🚀 Quick Start:`);
-      console.log(`   trust model switch ${modelName}     # Set as active model`);
+      console.log(
+        `   trust model switch ${modelName}     # Set as active model`,
+      );
       console.log(`   trust model verify ${modelName}     # Verify integrity`);
-      console.log(`   trust                               # Start using the model`);
+      console.log(
+        `   trust                               # Start using the model`,
+      );
     } catch (error) {
       console.error(`❌ Failed to download model: ${error}`);
       console.log(`\n🔧 Troubleshooting:`);
       console.log('   • Check your internet connection');
       console.log('   • Verify disk space availability (models can be 1-8GB)');
-      console.log('   • Check HuggingFace service status or Ollama availability');
+      console.log(
+        '   • Check HuggingFace service status or Ollama availability',
+      );
       console.log('   • Try downloading a smaller model first');
       console.log('   • Alternative: Use Ollama (ollama pull qwen2.5:1.5b)');
       throw error;
@@ -839,7 +879,7 @@ export class ModelCommandHandler {
         process.exit(0);
       };
 
-      // Render the UI  
+      // Render the UI
       appInstance = render(
         React.createElement(ModelManagerUI, { onExit: handleExit }),
         { exitOnCtrlC: true },

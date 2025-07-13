@@ -4,7 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { PrivacyManager, PrivacyConfigFile as PrivacyConfig } from '../trust/privacyManager.js';
+import {
+  PrivacyManager,
+  PrivacyConfigFile as PrivacyConfig,
+} from '../trust/privacyManager.js';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import * as os from 'os';
@@ -195,7 +198,9 @@ export class PrivacyAuditEngine {
 
     // Custom checks
     if (config.customChecks) {
-      const privacyConfig = JSON.parse(await this.privacyManager.exportPrivacyConfig());
+      const privacyConfig = JSON.parse(
+        await this.privacyManager.exportPrivacyConfig(),
+      );
       for (const customCheck of config.customChecks) {
         try {
           const customFindings = await customCheck.check(privacyConfig);

@@ -9,7 +9,11 @@ import * as fs from 'fs/promises';
 import * as path from 'path';
 import { spawn } from 'child_process';
 import { glob } from 'glob';
-import { DependencyVulnerabilityScanner, ScanResult, SecurityRecommendation } from './dependencyScanner.js';
+import {
+  DependencyVulnerabilityScanner,
+  ScanResult,
+  SecurityRecommendation,
+} from './dependencyScanner.js';
 
 export interface DependencyUpdate {
   name: string;
@@ -46,7 +50,7 @@ export interface UpdatePolicy {
   };
   notifications: {
     enabled: boolean;
-    channels: ('console' | 'file' | 'webhook' | 'email')[];
+    channels: Array<'console' | 'file' | 'webhook' | 'email'>;
     severity: 'all' | 'security' | 'breaking';
   };
   scheduling: {
@@ -114,7 +118,7 @@ export class DependencyUpdater extends EventEmitter {
 
   async initialize(): Promise<void> {
     console.log('🔄 Initializing Dependency Updater');
-    
+
     // Ensure directories exist
     await fs.mkdir(path.dirname(this.configPath), { recursive: true });
     await fs.mkdir(this.backupDir, { recursive: true });
@@ -131,13 +135,13 @@ export class DependencyUpdater extends EventEmitter {
     try {
       // Scan for vulnerabilities first
       const scanResult = await this.scanner.scanProject(this.projectPath);
-      
+
       // Discover dependency files
       const dependencyFiles = await this.discoverDependencyFiles();
-      
+
       // Analyze each dependency file
       const updates: DependencyUpdate[] = [];
-      
+
       for (const file of dependencyFiles) {
         const fileUpdates = await this.analyzeFile(file, scanResult);
         updates.push(...fileUpdates);
@@ -145,8 +149,17 @@ export class DependencyUpdater extends EventEmitter {
 
       // Sort by priority (security updates first)
       updates.sort((a, b) => {
-        const priorityOrder = { security: 3, 'bug-fix': 2, compatibility: 1, feature: 0, maintenance: 0 };
-        return priorityOrder[b.reason as keyof typeof priorityOrder] - priorityOrder[a.reason as keyof typeof priorityOrder];
+        const priorityOrder = {
+          security: 3,
+          'bug-fix': 2,
+          compatibility: 1,
+          feature: 0,
+          maintenance: 0,
+        };
+        return (
+          priorityOrder[b.reason as keyof typeof priorityOrder] -
+          priorityOrder[a.reason as keyof typeof priorityOrder]
+        );
       });
 
       console.log(`📊 Found ${updates.length} potential updates`);
@@ -163,7 +176,7 @@ export class DependencyUpdater extends EventEmitter {
     console.log('📋 Creating update plan...');
 
     const planned: DependencyUpdate[] = [];
-    
+
     for (const update of updates) {
       // Check exclusions
       if (this.isExcluded(update)) {
@@ -173,7 +186,9 @@ export class DependencyUpdater extends EventEmitter {
 
       // Check policy compliance
       if (!this.isPolicyCompliant(update)) {
-        console.log(`📝 Policy prevents update: ${update.name} (${update.updateType})`);
+        console.log(
+          `📝 Policy prevents update: ${update.name} (${update.updateType})`,
+        );
         continue;
       }
 
@@ -184,7 +199,9 @@ export class DependencyUpdater extends EventEmitter {
       planned.push(update);
     }
 
-    console.log(`📋 Planned ${planned.length} updates (${planned.filter(u => u.automated).length} automated)`);
+    console.log(
+      `📋 Planned ${planned.length} updates (${planned.filter((u) => u.automated).length} automated)`,
+    );
     this.emit('update-planned', planned);
 
     return planned;
@@ -226,7 +243,9 @@ export class DependencyUpdater extends EventEmitter {
       // Execute updates sequentially for safety
       for (let i = 0; i < updates.length; i++) {
         const update = updates[i];
-        console.log(`\n📦 [${i + 1}/${updates.length}] Updating ${update.name}...`);
+        console.log(
+          `\n📦 [${i + 1}/${updates.length}] Updating ${update.name}...`,
+        );
 
         try {
           const result = await this.executeUpdate(update);
@@ -234,11 +253,15 @@ export class DependencyUpdater extends EventEmitter {
 
           if (result.success) {
             batch.summary.successful++;
-            console.log(`✅ Successfully updated ${update.name} to ${update.targetVersion}`);
+            console.log(
+              `✅ Successfully updated ${update.name} to ${update.targetVersion}`,
+            );
           } else {
             batch.summary.failed++;
-            console.error(`❌ Failed to update ${update.name}: ${result.error}`);
-            
+            console.error(
+              `❌ Failed to update ${update.name}: ${result.error}`,
+            );
+
             // Handle rollback if enabled
             if (this.policy.rollback.enabled && this.shouldRollback(result)) {
               console.log(`🔄 Rolling back ${update.name}...`);
@@ -247,7 +270,6 @@ export class DependencyUpdater extends EventEmitter {
               batch.summary.rolledBack++;
             }
           }
-
         } catch (error) {
           const result: UpdateResult = {
             success: false,
@@ -259,20 +281,26 @@ export class DependencyUpdater extends EventEmitter {
             error: error instanceof Error ? error.message : String(error),
             warnings: [],
           };
-          
+
           batch.results.push(result);
           batch.summary.failed++;
           console.error(`❌ Update failed for ${update.name}: ${error}`);
         }
 
-        this.emit('update-progress', { batch, current: i + 1, total: updates.length });
+        this.emit('update-progress', {
+          batch,
+          current: i + 1,
+          total: updates.length,
+        });
       }
 
       batch.status = batch.summary.failed === 0 ? 'completed' : 'partial';
       batch.duration = Date.now() - startTime;
 
       console.log('\n📊 Update Summary:');
-      console.log('═══════════════════════════════════════════════════════════');
+      console.log(
+        '═══════════════════════════════════════════════════════════',
+      );
       console.log(`✅ Successful: ${batch.summary.successful}`);
       console.log(`❌ Failed: ${batch.summary.failed}`);
       console.log(`🔄 Rolled back: ${batch.summary.rolledBack}`);
@@ -283,7 +311,6 @@ export class DependencyUpdater extends EventEmitter {
 
       this.emit('batch-completed', batch);
       return batch;
-
     } catch (error) {
       batch.status = 'failed';
       batch.duration = Date.now() - startTime;
@@ -301,11 +328,11 @@ export class DependencyUpdater extends EventEmitter {
 
     console.log('⏰ Setting up scheduled dependency updates...');
     console.log(`📅 Schedule: ${this.policy.scheduling.cron}`);
-    
+
     // In a real implementation, this would set up a cron job or similar
     // For now, we'll just simulate the scheduling
     console.log('✅ Scheduled updates configured');
-    
+
     this.emit('updates-scheduled', {
       cron: this.policy.scheduling.cron,
       maintenance: this.policy.scheduling.maintenance,
@@ -313,22 +340,31 @@ export class DependencyUpdater extends EventEmitter {
   }
 
   async getUpdateHistory(): Promise<UpdateBatch[]> {
-    const historyDir = path.join(path.dirname(this.configPath), 'update-history');
-    
+    const historyDir = path.join(
+      path.dirname(this.configPath),
+      'update-history',
+    );
+
     try {
       const files = await fs.readdir(historyDir);
       const batches: UpdateBatch[] = [];
-      
-      for (const file of files.filter(f => f.endsWith('.json'))) {
+
+      for (const file of files.filter((f) => f.endsWith('.json'))) {
         try {
-          const content = await fs.readFile(path.join(historyDir, file), 'utf-8');
+          const content = await fs.readFile(
+            path.join(historyDir, file),
+            'utf-8',
+          );
           batches.push(JSON.parse(content));
         } catch (error) {
           console.error(`Failed to load batch history: ${file}`);
         }
       }
-      
-      return batches.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+
+      return batches.sort(
+        (a, b) =>
+          new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
+      );
     } catch (error) {
       return [];
     }
@@ -424,13 +460,18 @@ export class DependencyUpdater extends EventEmitter {
         cwd: this.projectPath,
         ignore: ['**/node_modules/**', '**/vendor/**', '**/target/**'],
       });
-      files.push(...matches.map(file => path.resolve(this.projectPath, file)));
+      files.push(
+        ...matches.map((file) => path.resolve(this.projectPath, file)),
+      );
     }
 
     return Array.from(new Set(files));
   }
 
-  private async analyzeFile(filePath: string, scanResult: ScanResult): Promise<DependencyUpdate[]> {
+  private async analyzeFile(
+    filePath: string,
+    scanResult: ScanResult,
+  ): Promise<DependencyUpdate[]> {
     const fileName = path.basename(filePath);
     const updates: DependencyUpdate[] = [];
 
@@ -450,7 +491,10 @@ export class DependencyUpdater extends EventEmitter {
     return updates;
   }
 
-  private async analyzeNpmFile(filePath: string, scanResult: ScanResult): Promise<DependencyUpdate[]> {
+  private async analyzeNpmFile(
+    filePath: string,
+    scanResult: ScanResult,
+  ): Promise<DependencyUpdate[]> {
     const content = await fs.readFile(filePath, 'utf-8');
     const packageJson = JSON.parse(content);
     const updates: DependencyUpdate[] = [];
@@ -464,19 +508,29 @@ export class DependencyUpdater extends EventEmitter {
       if (typeof currentVersion !== 'string') continue;
 
       // Check if there's a security vulnerability
-      const vulnerability = scanResult.vulnerabilities.find(v => v.affectedPackage.name === name);
-      const recommendation = scanResult.recommendations.find(r => r.packageName === name);
+      const vulnerability = scanResult.vulnerabilities.find(
+        (v) => v.affectedPackage.name === name,
+      );
+      const recommendation = scanResult.recommendations.find(
+        (r) => r.packageName === name,
+      );
 
       if (vulnerability && recommendation) {
         updates.push({
           name,
           currentVersion: currentVersion as string,
           targetVersion: recommendation.recommendedVersion || 'latest',
-          updateType: this.determineUpdateType(currentVersion as string, recommendation.recommendedVersion || 'latest'),
+          updateType: this.determineUpdateType(
+            currentVersion as string,
+            recommendation.recommendedVersion || 'latest',
+          ),
           ecosystem: 'npm',
           reason: 'security',
           riskLevel: this.mapSeverityToRisk(vulnerability.severity),
-          breaking: this.isBreakingChange(currentVersion as string, recommendation.recommendedVersion || 'latest'),
+          breaking: this.isBreakingChange(
+            currentVersion as string,
+            recommendation.recommendedVersion || 'latest',
+          ),
           automated: recommendation.automatable,
           dependents: [],
         });
@@ -488,12 +542,21 @@ export class DependencyUpdater extends EventEmitter {
             name,
             currentVersion: currentVersion as string,
             targetVersion: latestVersion,
-            updateType: this.determineUpdateType(currentVersion as string, latestVersion),
+            updateType: this.determineUpdateType(
+              currentVersion as string,
+              latestVersion,
+            ),
             ecosystem: 'npm',
             reason: 'maintenance',
             riskLevel: 'low',
-            breaking: this.isBreakingChange(currentVersion as string, latestVersion),
-            automated: !this.isBreakingChange(currentVersion as string, latestVersion),
+            breaking: this.isBreakingChange(
+              currentVersion as string,
+              latestVersion,
+            ),
+            automated: !this.isBreakingChange(
+              currentVersion as string,
+              latestVersion,
+            ),
             dependents: [],
           });
         }
@@ -503,22 +566,37 @@ export class DependencyUpdater extends EventEmitter {
     return updates;
   }
 
-  private async analyzePipFile(filePath: string, scanResult: ScanResult): Promise<DependencyUpdate[]> {
+  private async analyzePipFile(
+    filePath: string,
+    scanResult: ScanResult,
+  ): Promise<DependencyUpdate[]> {
     // Simplified pip analysis - similar pattern to npm
     return [];
   }
 
-  private async getLatestVersion(packageName: string, ecosystem: string): Promise<string | null> {
+  private async getLatestVersion(
+    packageName: string,
+    ecosystem: string,
+  ): Promise<string | null> {
     // Simplified - would query package registries
     // For npm: https://registry.npmjs.org/{package}/latest
     // For pip: https://pypi.org/pypi/{package}/json
     return null;
   }
 
-  private determineUpdateType(current: string, target: string): 'major' | 'minor' | 'patch' | 'security' {
+  private determineUpdateType(
+    current: string,
+    target: string,
+  ): 'major' | 'minor' | 'patch' | 'security' {
     // Simplified semver comparison
-    const currentParts = current.replace(/[^0-9.]/g, '').split('.').map(Number);
-    const targetParts = target.replace(/[^0-9.]/g, '').split('.').map(Number);
+    const currentParts = current
+      .replace(/[^0-9.]/g, '')
+      .split('.')
+      .map(Number);
+    const targetParts = target
+      .replace(/[^0-9.]/g, '')
+      .split('.')
+      .map(Number);
 
     if (targetParts[0] > currentParts[0]) return 'major';
     if (targetParts[1] > currentParts[1]) return 'minor';
@@ -548,7 +626,7 @@ export class DependencyUpdater extends EventEmitter {
       return true;
     }
 
-    return this.policy.exclusions.patterns.some(pattern => {
+    return this.policy.exclusions.patterns.some((pattern) => {
       const regex = new RegExp(pattern);
       return regex.test(update.name);
     });
@@ -634,7 +712,6 @@ export class DependencyUpdater extends EventEmitter {
 
       result.success = true;
       result.duration = Date.now() - startTime;
-
     } catch (error) {
       result.error = error instanceof Error ? error.message : String(error);
       result.duration = Date.now() - startTime;
@@ -647,21 +724,32 @@ export class DependencyUpdater extends EventEmitter {
     // Simplified update implementation
     switch (update.ecosystem) {
       case 'npm':
-        await this.runCommand(`npm install ${update.name}@${update.targetVersion}`);
+        await this.runCommand(
+          `npm install ${update.name}@${update.targetVersion}`,
+        );
         break;
       case 'pip':
-        await this.runCommand(`pip install ${update.name}==${update.targetVersion}`);
+        await this.runCommand(
+          `pip install ${update.name}==${update.targetVersion}`,
+        );
         break;
       default:
         throw new Error(`Unsupported ecosystem: ${update.ecosystem}`);
     }
   }
 
-  private async runTests(): Promise<{ passed: boolean; output: string; duration: number }> {
+  private async runTests(): Promise<{
+    passed: boolean;
+    output: string;
+    duration: number;
+  }> {
     const startTime = Date.now();
-    
+
     try {
-      const output = await this.runCommand(this.policy.testing.testCommand, this.policy.testing.timeout);
+      const output = await this.runCommand(
+        this.policy.testing.testCommand,
+        this.policy.testing.timeout,
+      );
       return {
         passed: true,
         output,
@@ -719,28 +807,39 @@ export class DependencyUpdater extends EventEmitter {
   }
 
   private async rollbackUpdate(update: DependencyUpdate): Promise<void> {
-    console.log(`🔄 Rolling back ${update.name} to ${update.currentVersion}...`);
-    
+    console.log(
+      `🔄 Rolling back ${update.name} to ${update.currentVersion}...`,
+    );
+
     switch (update.ecosystem) {
       case 'npm':
-        await this.runCommand(`npm install ${update.name}@${update.currentVersion}`);
+        await this.runCommand(
+          `npm install ${update.name}@${update.currentVersion}`,
+        );
         break;
       case 'pip':
-        await this.runCommand(`pip install ${update.name}==${update.currentVersion}`);
+        await this.runCommand(
+          `pip install ${update.name}==${update.currentVersion}`,
+        );
         break;
       default:
-        throw new Error(`Rollback not supported for ecosystem: ${update.ecosystem}`);
+        throw new Error(
+          `Rollback not supported for ecosystem: ${update.ecosystem}`,
+        );
     }
   }
 
   private async saveBatchResults(batch: UpdateBatch): Promise<void> {
-    const historyDir = path.join(path.dirname(this.configPath), 'update-history');
+    const historyDir = path.join(
+      path.dirname(this.configPath),
+      'update-history',
+    );
     await fs.mkdir(historyDir, { recursive: true });
-    
+
     const filename = `${batch.id}.json`;
     await fs.writeFile(
       path.join(historyDir, filename),
-      JSON.stringify(batch, null, 2)
+      JSON.stringify(batch, null, 2),
     );
   }
 }

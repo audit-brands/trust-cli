@@ -4,10 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import {
-  getLlama,
-  LlamaChatSession,
-} from 'node-llama-cpp';
+import { getLlama, LlamaChatSession } from 'node-llama-cpp';
 import {
   TrustModelClient,
   TrustModelConfig,
@@ -104,7 +101,7 @@ export class TrustNodeLlamaClient implements TrustModelClient {
     console.log('🆕 Creating new chat session...');
     const contextSequence = this.context.getSequence();
     const session = new LlamaChatSession({
-      contextSequence: contextSequence,
+      contextSequence,
     });
     console.log('✅ LlamaChatSession created successfully');
 
@@ -159,7 +156,10 @@ export class TrustNodeLlamaClient implements TrustModelClient {
         try {
           await session.dispose();
         } catch (disposeError) {
-          console.warn('Warning: Failed to dispose chat session:', disposeError);
+          console.warn(
+            'Warning: Failed to dispose chat session:',
+            disposeError,
+          );
         }
       }
     }
@@ -215,7 +215,7 @@ export class TrustNodeLlamaClient implements TrustModelClient {
 
         // Build prompt options with native function calling support
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const promptOptions: any = {
+        const promptOptions: any = {
           temperature: options?.temperature ?? 0.7,
           topP: options?.topP ?? 0.9,
           topK: options?.topK ?? 40,
@@ -245,7 +245,10 @@ export class TrustNodeLlamaClient implements TrustModelClient {
         try {
           await session.dispose();
         } catch (disposeError) {
-          console.warn('Warning: Failed to dispose chat session:', disposeError);
+          console.warn(
+            'Warning: Failed to dispose chat session:',
+            disposeError,
+          );
         }
       }
     }

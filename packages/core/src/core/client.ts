@@ -32,11 +32,11 @@ import { getErrorMessage } from '../utils/errors.js';
 import { tokenLimit } from './tokenLimits.js';
 import { ProxyAgent, setGlobalDispatcher } from 'undici';
 import { DEFAULT_GEMINI_FLASH_MODEL } from '../config/models.js';
-import { 
-  ContentGenerator, 
-  ContentGeneratorConfig, 
+import {
+  ContentGenerator,
+  ContentGeneratorConfig,
   createContentGenerator,
-  AuthType
+  AuthType,
 } from './contentGenerator.js';
 
 function isThinkingSupported(model: string) {

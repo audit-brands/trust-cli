@@ -33,12 +33,12 @@ describe('LoRAFineTuner', () => {
     errorCollector = {
       getErrorsByTool: vi.fn(),
       getAnalytics: vi.fn(),
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any;
 
     performanceBenchmark = {
       getResultsForModel: vi.fn(),
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any;
 
     fineTuner = new LoRAFineTuner(
@@ -77,7 +77,7 @@ describe('LoRAFineTuner', () => {
         { id: '1', failureType: 'parse_error' },
         { id: '2', failureType: 'wrong_tool' },
         { id: '3', failureType: 'parse_error' },
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       ] as any);
 
       vi.mocked(errorCollector.getAnalytics).mockReturnValue({
@@ -122,7 +122,7 @@ describe('LoRAFineTuner', () => {
         { id: '1', failureType: 'wrong_tool' },
         { id: '2', failureType: 'wrong_tool' },
         { id: '3', failureType: 'wrong_args' },
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       ] as any);
 
       vi.mocked(errorCollector.getAnalytics).mockReturnValue({
@@ -253,7 +253,7 @@ describe('LoRAFineTuner', () => {
     it('should throw error when insufficient samples', async () => {
       vi.mocked(errorCollector.getErrorsByTool).mockReturnValue([
         { id: 'error1', failureType: 'parse_error' },
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       ] as any);
 
       await expect(

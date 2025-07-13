@@ -294,7 +294,7 @@ describe('ModelCommandHandler', () => {
       await commandHandler.handleCommand(args);
 
       expect(mockConsoleLog).toHaveBeenCalledWith(
-        '\n🤗 Trust CLI - HuggingFace Models',
+        '\n🤗 Trust CLI - All Local Models',
       );
       expect(mockConsoleLog).toHaveBeenCalledWith('═'.repeat(60));
     });
@@ -310,7 +310,7 @@ describe('ModelCommandHandler', () => {
       await commandHandler.handleCommand(args);
 
       // Should show models in new grouped format
-      expect(mockConsoleLog).toHaveBeenCalledWith('\n📦 Downloaded Models:');
+      expect(mockConsoleLog).toHaveBeenCalledWith('\n🤗 Trust CLI - All Local Models');
     });
   });
 

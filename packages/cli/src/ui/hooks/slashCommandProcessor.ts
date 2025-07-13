@@ -1511,19 +1511,19 @@ export const useSlashCommandProcessor = (
             // Parse arguments based on structure
             if (args) {
               const argParts = args.trim().split(/\s+/);
-              
+
               // Handle different argument patterns
               if (argParts.length > 0 && argParts[0] !== '') {
                 commandArgs.subaction = argParts[0];
-                
+
                 if (argParts.length > 1) {
                   commandArgs.target = argParts[1];
                 }
-                
+
                 if (argParts.length > 2) {
                   commandArgs.value = argParts.slice(2).join(' ');
                 }
-                
+
                 // Parse flags
                 if (args.includes('--force')) {
                   commandArgs.force = true;
@@ -1531,18 +1531,18 @@ export const useSlashCommandProcessor = (
                 if (args.includes('--verbose')) {
                   commandArgs.verbose = true;
                 }
-                
+
                 // Parse specific options
                 const policyMatch = args.match(/--policy\s+(\S+)/);
                 if (policyMatch) {
                   commandArgs.policy = policyMatch[1];
                 }
-                
+
                 const frameworkMatch = args.match(/--framework\s+(\S+)/);
                 if (frameworkMatch) {
                   commandArgs.framework = frameworkMatch[1];
                 }
-                
+
                 const outputMatch = args.match(/--output\s+(\S+)/);
                 if (outputMatch) {
                   commandArgs.output = outputMatch[1];
@@ -1611,15 +1611,15 @@ export const useSlashCommandProcessor = (
             // Parse arguments based on structure
             if (args) {
               const argParts = args.trim().split(/\s+/);
-              
+
               // Handle different argument patterns
               if (argParts.length > 0 && argParts[0] !== '') {
                 commandArgs.subaction = argParts[0];
-                
+
                 if (argParts.length > 1) {
                   commandArgs.path = argParts[1];
                 }
-                
+
                 // Parse flags
                 if (args.includes('--autofix')) {
                   commandArgs.autofix = true;
@@ -1633,38 +1633,38 @@ export const useSlashCommandProcessor = (
                 if (args.includes('--continuous')) {
                   commandArgs.continuous = true;
                 }
-                
+
                 // Parse specific options
                 const formatMatch = args.match(/--format\s+(\S+)/);
                 if (formatMatch) {
                   commandArgs.format = formatMatch[1];
                 }
-                
+
                 const outputMatch = args.match(/--output\s+(\S+)/);
                 if (outputMatch) {
                   commandArgs.output = outputMatch[1];
                 }
-                
+
                 const severityMatch = args.match(/--severity\s+(\S+)/);
                 if (severityMatch) {
                   commandArgs.severity = severityMatch[1];
                 }
-                
+
                 const intervalMatch = args.match(/--interval-hours\s+(\d+)/);
                 if (intervalMatch) {
                   commandArgs.intervalHours = parseInt(intervalMatch[1], 10);
                 }
-                
+
                 const sourceMatch = args.match(/--sources\s+([^\s]+)/);
                 if (sourceMatch) {
                   commandArgs.sources = sourceMatch[1].split(',');
                 }
-                
+
                 const apiKeyMatch = args.match(/--api-key\s+(\S+)/);
                 if (apiKeyMatch) {
                   commandArgs.apiKey = apiKeyMatch[1];
                 }
-                
+
                 const serviceMatch = args.match(/--service\s+(\S+)/);
                 if (serviceMatch) {
                   commandArgs.service = serviceMatch[1];
@@ -1736,15 +1736,15 @@ export const useSlashCommandProcessor = (
             // Parse arguments based on structure
             if (args) {
               const argParts = args.trim().split(/\s+/);
-              
+
               // Handle different argument patterns
               if (argParts.length > 0 && argParts[0] !== '') {
                 commandArgs.subaction = argParts[0];
-                
+
                 if (argParts.length > 1) {
                   commandArgs.widgetId = argParts[1];
                 }
-                
+
                 // Parse flags
                 if (args.includes('--watch')) {
                   commandArgs.watch = true;
@@ -1752,35 +1752,39 @@ export const useSlashCommandProcessor = (
                 if (args.includes('--verbose')) {
                   commandArgs.verbose = true;
                 }
-                
+
                 // Parse specific options
                 const formatMatch = args.match(/--format\s+(\S+)/);
                 if (formatMatch) {
                   commandArgs.format = formatMatch[1];
                 }
-                
+
                 const outputMatch = args.match(/--output\s+(\S+)/);
                 if (outputMatch) {
                   commandArgs.output = outputMatch[1];
                 }
-                
+
                 const intervalMatch = args.match(/--interval\s+(\d+)/);
                 if (intervalMatch) {
                   commandArgs.interval = parseInt(intervalMatch[1], 10);
                 }
-                
+
                 const durationMatch = args.match(/--duration\s+(\S+)/);
                 if (durationMatch) {
                   commandArgs.duration = durationMatch[1];
                 }
-                
+
                 const filterMatch = args.match(/--filter\s+(\S+)/);
                 if (filterMatch) {
                   commandArgs.filter = filterMatch[1];
                 }
-                
+
                 // Widget type for add command
-                if (subCommand === 'widget' && argParts[0] === 'add' && argParts[1]) {
+                if (
+                  subCommand === 'widget' &&
+                  argParts[0] === 'add' &&
+                  argParts[1]
+                ) {
                   commandArgs.widgetType = argParts[1];
                 }
               }
@@ -1851,18 +1855,26 @@ export const useSlashCommandProcessor = (
             // Parse arguments based on structure
             if (args) {
               const argParts = args.trim().split(/\s+/);
-              
+
               // Handle different argument patterns
               if (argParts.length > 0 && argParts[0] !== '') {
                 // For commands that take a name (install, uninstall, info, enable, disable)
-                if (['install', 'uninstall', 'info', 'enable', 'disable'].includes(subCommand || '')) {
+                if (
+                  [
+                    'install',
+                    'uninstall',
+                    'info',
+                    'enable',
+                    'disable',
+                  ].includes(subCommand || '')
+                ) {
                   commandArgs.name = argParts[0];
                 } else if (subCommand === 'search') {
                   commandArgs.query = argParts.join(' ');
                 } else if (subCommand === 'marketplace') {
                   commandArgs.subaction = argParts[0];
                 }
-                
+
                 // Parse flags
                 if (args.includes('--force')) {
                   commandArgs.force = true;
@@ -1885,38 +1897,38 @@ export const useSlashCommandProcessor = (
                 if (args.includes('--development')) {
                   commandArgs.development = true;
                 }
-                
+
                 // Parse specific options
                 const formatMatch = args.match(/--format\s+(\S+)/);
                 if (formatMatch) {
                   commandArgs.format = formatMatch[1];
                 }
-                
+
                 const categoryMatch = args.match(/--category\s+(\S+)/);
                 if (categoryMatch) {
                   commandArgs.category = categoryMatch[1];
                 }
-                
+
                 const sortByMatch = args.match(/--sort-by\s+(\S+)/);
                 if (sortByMatch) {
                   commandArgs.sortBy = sortByMatch[1];
                 }
-                
+
                 const sortOrderMatch = args.match(/--sort-order\s+(\S+)/);
                 if (sortOrderMatch) {
                   commandArgs.sortOrder = sortOrderMatch[1];
                 }
-                
+
                 const limitMatch = args.match(/--limit\s+(\d+)/);
                 if (limitMatch) {
                   commandArgs.limit = parseInt(limitMatch[1], 10);
                 }
-                
+
                 const offsetMatch = args.match(/--offset\s+(\d+)/);
                 if (offsetMatch) {
                   commandArgs.offset = parseInt(offsetMatch[1], 10);
                 }
-                
+
                 const sourceMatch = args.match(/--source\s+(\S+)/);
                 if (sourceMatch) {
                   commandArgs.source = sourceMatch[1];
@@ -1954,7 +1966,10 @@ export const useSlashCommandProcessor = (
       name: 'update',
       description: 'automated dependency update management',
       subCommands: [
-        { name: 'analyze', description: 'Analyze available dependency updates' },
+        {
+          name: 'analyze',
+          description: 'Analyze available dependency updates',
+        },
         { name: 'plan', description: 'Create dependency update plan' },
         { name: 'execute', description: 'Execute dependency updates' },
         { name: 'schedule', description: 'Manage scheduled updates' },
@@ -1987,16 +2002,19 @@ export const useSlashCommandProcessor = (
             // Parse arguments based on structure
             if (args) {
               const argParts = args.trim().split(/\s+/);
-              
+
               // Handle different argument patterns
               if (argParts.length > 0 && argParts[0] !== '') {
                 // For commands that take specific values
                 if (subCommand === 'rollback') {
                   commandArgs.batchId = argParts[0];
-                } else if (subCommand === 'schedule' || subCommand === 'policy') {
+                } else if (
+                  subCommand === 'schedule' ||
+                  subCommand === 'policy'
+                ) {
                   commandArgs.subaction = argParts[0];
                 }
-                
+
                 // Parse flags
                 if (args.includes('--force')) {
                   commandArgs.force = true;
@@ -2016,33 +2034,35 @@ export const useSlashCommandProcessor = (
                 if (args.includes('--verbose')) {
                   commandArgs.verbose = true;
                 }
-                
+
                 // Parse specific options
                 const formatMatch = args.match(/--format\s+(\S+)/);
                 if (formatMatch) {
                   commandArgs.format = formatMatch[1];
                 }
-                
+
                 const ecosystemMatch = args.match(/--ecosystem\s+(\S+)/);
                 if (ecosystemMatch) {
                   commandArgs.ecosystem = ecosystemMatch[1];
                 }
-                
+
                 const packageMatch = args.match(/--package\s+(\S+)/);
                 if (packageMatch) {
                   commandArgs.package = packageMatch[1];
                 }
-                
-                const testCommandMatch = args.match(/--test-command\s+(.+?)(?:\s--|$)/);
+
+                const testCommandMatch = args.match(
+                  /--test-command\s+(.+?)(?:\s--|$)/,
+                );
                 if (testCommandMatch) {
                   commandArgs.testCommand = testCommandMatch[1].trim();
                 }
-                
+
                 const scheduleMatch = args.match(/--schedule\s+"([^"]+)"/);
                 if (scheduleMatch) {
                   commandArgs.schedule = scheduleMatch[1];
                 }
-                
+
                 const severityMatch = args.match(/--severity\s+(\S+)/);
                 if (severityMatch) {
                   commandArgs.severity = severityMatch[1];

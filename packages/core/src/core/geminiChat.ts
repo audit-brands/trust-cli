@@ -464,7 +464,10 @@ export class GeminiChat {
     // Calculate initial token count and find the starting point for truncation
     for (let i = this.history.length - 1; i >= 0; i--) {
       const content = this.history[i];
-      const tokenCountResponse = await this.contentGenerator.countTokens({ contents: [content] });
+      const tokenCountResponse = await this.contentGenerator.countTokens({
+        model: DEFAULT_GEMINI_FLASH_MODEL,
+        contents: [content],
+      });
       const contentTokens = tokenCountResponse.totalTokens || 0;
 
       if (currentHistoryTokens + contentTokens <= maxTokens) {
@@ -479,7 +482,9 @@ export class GeminiChat {
     if (startIndex > 0) {
       const originalLength = this.history.length;
       this.history = this.history.slice(startIndex);
-      console.log(`[DEBUG] History truncated from ${originalLength} turns to ${this.history.length} turns to fit within ${maxTokens} tokens.`);
+      console.log(
+        `[DEBUG] History truncated from ${originalLength} turns to ${this.history.length} turns to fit within ${maxTokens} tokens.`,
+      );
     }
   }
 

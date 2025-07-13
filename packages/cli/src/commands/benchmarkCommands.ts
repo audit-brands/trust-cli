@@ -6,10 +6,12 @@
 
 import {
   // PerformanceBenchmark, // TODO: Class not implemented yet
-  globalPerformanceMonitor,
   TrustModelManagerImpl,
 } from '@trust-cli/trust-cli-core';
-import type { BenchmarkReport, BenchmarkResult } from '../../../core/src/trust/performanceBenchmark.js';
+import type {
+  BenchmarkReport,
+  BenchmarkResult,
+} from '@trust-cli/trust-cli-core';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import chalk from 'chalk';
@@ -41,13 +43,17 @@ export class BenchmarkCommandHandler {
   }
 
   async handleCommand(args: BenchmarkCommandArgs): Promise<void> {
-    console.log(chalk.yellow('⚠️  Performance benchmarking is not available in this release'));
+    console.log(
+      chalk.yellow(
+        '⚠️  Performance benchmarking is not available in this release',
+      ),
+    );
     console.log(chalk.gray('This feature is planned for a future version.'));
     console.log(chalk.cyan('\n💡 Alternative options:'));
     console.log('   • Use trust model list to see available models');
     console.log('   • Use trust status to monitor system performance');
     console.log('   • Use ollama ps to see running models');
-    
+
     if (args.action === 'help' || !args.action) {
       this.showHelp();
     }
@@ -69,11 +75,13 @@ export class BenchmarkCommandHandler {
     console.log(`📊 Testing ${models.length} model(s): ${models.join(', ')}`);
     console.log('─'.repeat(60));
 
-    const startTime = Date.now();
-    let lastProgress = 0;
+    const _startTime = Date.now();
+    const _lastProgress = 0;
 
     try {
-      console.log(chalk.yellow('⚠️  Performance benchmarking is not yet implemented'));
+      console.log(
+        chalk.yellow('⚠️  Performance benchmarking is not yet implemented'),
+      );
       console.log(chalk.gray('This feature is planned for a future release.'));
       console.log(chalk.cyan('\n💡 Alternative options:'));
       console.log('   • Use ollama ps to see running models');
@@ -92,15 +100,17 @@ export class BenchmarkCommandHandler {
     }
   }
 
-  private async listSuites(verbose = false): Promise<void> {
-    console.log(chalk.yellow('⚠️  Performance benchmarking is not yet implemented'));
+  private async listSuites(_verbose = false): Promise<void> {
+    console.log(
+      chalk.yellow('⚠️  Performance benchmarking is not yet implemented'),
+    );
     console.log(chalk.gray('This feature is planned for a future release.'));
     console.log(chalk.cyan('\n📋 Planned Benchmark Suites:'));
     console.log('   • Speed benchmarks (inference latency)');
     console.log('   • Quality benchmarks (response accuracy)');
     console.log('   • Efficiency benchmarks (resource usage)');
     console.log('   • Coding benchmarks (programming tasks)');
-    
+
     console.log(chalk.cyan('\n💡 Alternative options:'));
     console.log('   • Use trust model list to see available models');
     console.log('   • Use trust status to monitor system performance');
@@ -136,7 +146,7 @@ export class BenchmarkCommandHandler {
     */
   }
 
-  private async showResults(args: BenchmarkCommandArgs): Promise<void> {
+  private async showResults(_args: BenchmarkCommandArgs): Promise<void> {
     // TODO: Implement PerformanceBenchmark class
     throw new Error('PerformanceBenchmark class not yet implemented');
     /*
@@ -186,8 +196,9 @@ export class BenchmarkCommandHandler {
         console.log('   Individual Tests:');
         for (const result of modelResults) {
           const status = result.success ? '✅' : '❌';
+          // TODO: Fix when BenchmarkResult.metrics type is properly defined
           console.log(
-            `     ${status} ${result.testId}: ${result.metrics.tokensPerSecond.toFixed(1)} tokens/sec`,
+            `     ${status} ${result.testId}: [metrics not implemented] tokens/sec`,
           );
         }
       }
@@ -197,7 +208,7 @@ export class BenchmarkCommandHandler {
     */
   }
 
-  private async compareModels(args: BenchmarkCommandArgs): Promise<void> {
+  private async compareModels(_args: BenchmarkCommandArgs): Promise<void> {
     // TODO: Implement PerformanceBenchmark class
     throw new Error('PerformanceBenchmark class not yet implemented');
     /*
@@ -271,7 +282,7 @@ export class BenchmarkCommandHandler {
     */
   }
 
-  private async exportResults(args: BenchmarkCommandArgs): Promise<void> {
+  private async exportResults(_args: BenchmarkCommandArgs): Promise<void> {
     // TODO: Implement PerformanceBenchmark class
     throw new Error('PerformanceBenchmark class not yet implemented');
     /*
@@ -298,9 +309,9 @@ export class BenchmarkCommandHandler {
   }
 
   private async saveReport(
-    report: BenchmarkReport,
-    outputPath: string,
-    format: string,
+    _report: BenchmarkReport,
+    _outputPath: string,
+    _format: string,
   ): Promise<void> {
     // TODO: Implement PerformanceBenchmark class
     throw new Error('PerformanceBenchmark class not yet implemented');
@@ -362,16 +373,8 @@ export class BenchmarkCommandHandler {
       'Best Categories',
     ];
 
-    const rows = report.models.map((model) => [
-      model.modelName,
-      model.overallScore.toFixed(1),
-      model.averageSpeed.toFixed(1),
-      model.efficiency.toFixed(1),
-      model.reliability.toFixed(1),
-      model.totalTests.toString(),
-      model.successfulTests.toString(),
-      model.bestCategories.join('; '),
-    ]);
+    // TODO: Implement when BenchmarkReport.models type is properly defined
+    const rows: string[][] = []; // Placeholder for future implementation
 
     return [headers.join(','), ...rows.map((row) => row.join(','))].join('\n');
   }
@@ -389,16 +392,17 @@ export class BenchmarkCommandHandler {
       'CPU Usage (%)',
     ];
 
+    // TODO: Fix when BenchmarkResult.metrics type is properly defined
     const rows = results.map((result) => [
       result.timestamp.toISOString(),
       result.modelName,
       result.testId,
       result.success.toString(),
-      result.metrics.tokensPerSecond.toFixed(2),
-      result.metrics.totalTokens.toString(),
-      result.metrics.inferenceTime.toString(),
-      result.metrics.memoryUsed.toString(),
-      result.metrics.cpuUsage.toFixed(1),
+      '0', // result.metrics.tokensPerSecond.toFixed(2),
+      '0', // result.metrics.totalTokens.toString(),
+      '0', // result.metrics.inferenceTime.toString(),
+      '0', // result.metrics.memoryUsed.toString(),
+      '0', // result.metrics.cpuUsage.toFixed(1),
     ]);
 
     return [headers.join(','), ...rows.map((row) => row.join(','))].join('\n');

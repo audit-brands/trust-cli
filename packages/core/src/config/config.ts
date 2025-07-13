@@ -166,6 +166,7 @@ export class Config {
   };
   private readonly contextCompression: {
     preserveRecentTurns: number;
+    maxHistoryTokens: number;
   };
   private fileDiscoveryService: FileDiscoveryService | null = null;
   private gitService: GitService | undefined = undefined;

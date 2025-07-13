@@ -52,7 +52,10 @@ class MockToolWithSummarizer implements Tool<{ input: string }, ToolResult> {
     return Promise.resolve(false);
   }
 
-  async execute(_params: { input: string }, _signal?: AbortSignal): Promise<ToolResult> {
+  async execute(
+    _params: { input: string },
+    _signal?: AbortSignal,
+  ): Promise<ToolResult> {
     return {
       llmContent:
         'Tool executed successfully with lots of detailed output that could benefit from summarization',
@@ -90,7 +93,10 @@ describe('Tool Summarization Feature', () => {
 
   it('should generate summary when tool has summarizer', async () => {
     const tool = new MockToolWithSummarizer();
-    const toolResult = await tool.execute({ input: 'test' }, new AbortController().signal);
+    const toolResult = await tool.execute(
+      { input: 'test' },
+      new AbortController().signal,
+    );
 
     expect(toolResult.llmContent).toBeDefined();
     expect(toolResult.returnDisplay).toBeDefined();
@@ -147,7 +153,10 @@ describe('Tool Summarization Feature', () => {
         return Promise.resolve(false);
       }
 
-      async execute(_params: { input: string }, _signal?: AbortSignal): Promise<ToolResult> {
+      async execute(
+        _params: { input: string },
+        _signal?: AbortSignal,
+      ): Promise<ToolResult> {
         return {
           llmContent: 'Tool executed without summarizer',
           returnDisplay: 'Tool executed without summarizer',
@@ -160,7 +169,10 @@ describe('Tool Summarization Feature', () => {
     const tool = new MockToolWithoutSummarizer();
     expect(tool.summarizer).toBeUndefined();
 
-    const result = await tool.execute({ input: 'test' }, new AbortController().signal);
+    const result = await tool.execute(
+      { input: 'test' },
+      new AbortController().signal,
+    );
     expect(result.llmContent).toBeDefined();
     expect(result.returnDisplay).toBeDefined();
     expect(result.summary).toBeUndefined();

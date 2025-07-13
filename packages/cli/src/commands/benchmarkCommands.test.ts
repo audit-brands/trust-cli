@@ -366,8 +366,11 @@ describe.skip('BenchmarkCommandHandler - DISABLED: Feature not implemented', () 
       );
       const mockPerformanceMonitor = {};
       const mockModelManager = {};
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const mockBenchmark = new PerformanceBenchmark(mockPerformanceMonitor as any, mockModelManager as any);
+
+      const mockBenchmark = new PerformanceBenchmark(
+        mockPerformanceMonitor as any,
+        mockModelManager as any,
+      );
       vi.mocked(mockBenchmark.getResults).mockReturnValue([
         {
           testId: 'quick-response',
@@ -463,8 +466,11 @@ describe.skip('BenchmarkCommandHandler - DISABLED: Feature not implemented', () 
       );
       const mockPerformanceMonitor = {};
       const mockModelManager = {};
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const mockBenchmark = new PerformanceBenchmark(mockPerformanceMonitor as any, mockModelManager as any);
+
+      const mockBenchmark = new PerformanceBenchmark(
+        mockPerformanceMonitor as any,
+        mockModelManager as any,
+      );
 
       vi.mocked(mockBenchmark.getResults)
         .mockReturnValueOnce([

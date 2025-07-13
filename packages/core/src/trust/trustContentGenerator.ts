@@ -18,11 +18,7 @@ import {
 import { ContentGenerator } from '../core/contentGenerator.js';
 import { TrustNodeLlamaClient } from './nodeLlamaClient.js';
 import { TrustModelManagerImpl } from './modelManager.js';
-import {
-  TrustModelConfig,
-  GenerationOptions,
-  AIBackend,
-} from './types.js';
+import { TrustModelConfig, GenerationOptions, AIBackend } from './types.js';
 import { GBNFunctionRegistry } from './gbnfFunctionRegistry.js';
 import { JsonRepairParser } from './jsonRepairParser.js';
 import { OllamaContentGenerator } from './ollamaContentGenerator.js';
@@ -346,7 +342,15 @@ export class TrustContentGenerator implements ContentGenerator {
       }
 
       // Generate response using local model
+      console.log(
+        '🎯 About to call modelClient.generateText with prompt length:',
+        prompt.length,
+      );
       const response = await this.modelClient.generateText(prompt, options);
+      console.log(
+        '✅ modelClient.generateText completed, response length:',
+        response.length,
+      );
 
       // Convert to Gemini response format
       const geminiResponse = this.convertToGeminiResponse(response);

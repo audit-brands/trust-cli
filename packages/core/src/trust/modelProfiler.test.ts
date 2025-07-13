@@ -5,10 +5,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import {
-  ModelProfiler,
-  WorkloadPattern,
-} from './modelProfiler.js';
+import { ModelProfiler, WorkloadPattern } from './modelProfiler.js';
 import {
   PerformanceMonitor,
   InferenceMetrics,
@@ -72,7 +69,7 @@ describe('ModelProfiler', () => {
   beforeEach(() => {
     mockPerformanceMonitor = {
       getSystemMetrics: vi.fn().mockReturnValue(mockSystemMetrics),
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

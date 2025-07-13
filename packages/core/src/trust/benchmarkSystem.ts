@@ -85,7 +85,11 @@ export class TrustBenchmarkSystem {
       includeCustomTests?: boolean;
     } = {},
   ): Promise<BenchmarkReport> {
-    const { tests, iterations = 1, includeCustomTests: _includeCustomTests = false } = options;
+    const {
+      tests,
+      iterations = 1,
+      includeCustomTests: _includeCustomTests = false,
+    } = options;
 
     // Load the model if not already loaded
     if (

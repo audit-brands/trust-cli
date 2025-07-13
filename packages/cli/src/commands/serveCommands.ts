@@ -132,7 +132,7 @@ export class ServeCommandHandler {
 
       // Keep the process alive
       await new Promise(() => {}); // This will run until the process is killed
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       console.error(`❌ Failed to start server: ${error}`);
 

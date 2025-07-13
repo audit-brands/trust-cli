@@ -540,7 +540,8 @@ export class TrustModelManagerImpl implements TrustModelManager {
             (m) => m.type === 'gemma' && m.parameters === '2.6B',
           ) ||
           suitableModels.reduce((smallest, current) =>
-            parseInt(current.ramRequirement, 10) < parseInt(smallest.ramRequirement, 10)
+            parseInt(current.ramRequirement, 10) <
+            parseInt(smallest.ramRequirement, 10)
               ? current
               : smallest,
           )

@@ -7,10 +7,10 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import {
   SmartRoutingService,
-  DefaultModelSelection,
-  SmartRoutingRecommendation,
+  // DefaultModelSelection,
+  // SmartRoutingRecommendation,
 } from './smartRoutingService.js';
-import { UnifiedModel, TaskType } from './unifiedModelManager.js';
+import {} from /* UnifiedModel, TaskType */ './unifiedModelManager.js';
 import { TrustConfiguration } from '../config/trustConfig.js';
 
 // Mock dependencies

@@ -132,7 +132,7 @@ describe('ModelIntegrityChecker', () => {
       const mockStats = {
         size: 1000,
         isFile: () => true,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any;
       vi.mocked(fs.stat).mockResolvedValue(mockStats);
 
@@ -186,7 +186,7 @@ describe('ModelIntegrityChecker', () => {
       const mockStats = {
         size: 1000,
         isFile: () => true,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any;
       vi.mocked(fs.stat).mockResolvedValue(mockStats);
 
@@ -228,7 +228,7 @@ describe('ModelIntegrityChecker', () => {
       const mockStats = {
         size: 1000,
         isFile: () => true,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any;
       vi.mocked(fs.stat).mockResolvedValue(mockStats);
 
@@ -323,7 +323,7 @@ describe('ModelIntegrityChecker', () => {
         size: 1500,
         isFile: () => true,
         birthtime: new Date('2025-01-01'),
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any;
       vi.mocked(fs.stat).mockResolvedValue(mockStats);
 
@@ -384,7 +384,7 @@ describe('ModelIntegrityChecker', () => {
         size: 1000,
         isFile: () => true,
         birthtime: new Date('2025-01-01'),
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any;
       vi.mocked(fs.stat).mockResolvedValue(mockStats);
 
@@ -425,13 +425,13 @@ describe('ModelIntegrityChecker', () => {
         'model1.gguf',
         'model2.gguf',
         'other.txt',
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       ] as any);
 
       const mockStats = {
         size: 1000,
         isFile: () => true,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any;
       vi.mocked(fs.stat).mockResolvedValue(mockStats);
 

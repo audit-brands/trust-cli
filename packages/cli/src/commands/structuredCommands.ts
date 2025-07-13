@@ -146,16 +146,16 @@ async function handleStructuredGenerate(options: {
   }
 
   // Parse schema
-  let parsedSchema: JSONSchema;
+  let _parsedSchema: JSONSchema;
   try {
     // Try to parse as JSON first
-    parsedSchema = JSON.parse(schema);
+    _parsedSchema = JSON.parse(schema);
   } catch {
     // If not JSON, try to read as file
     const fs = await import('fs/promises');
     try {
       const schemaContent = await fs.readFile(schema, 'utf-8');
-      parsedSchema = JSON.parse(schemaContent);
+      _parsedSchema = JSON.parse(schemaContent);
     } catch {
       throw new Error(
         `Invalid schema: ${schema}. Must be valid JSON or a file path.`,
@@ -200,7 +200,7 @@ async function handleStructuredGenerate(options: {
 
   const request: StructuredRequest = {
     prompt,
-    schema: parsedSchema,
+    schema: _parsedSchema,
     format: format as OutputFormat,
     maxRetries: parseInt(retries, 10),
     validationStrict: strict,
@@ -250,7 +250,7 @@ async function handleStructuredValidate(options: {
   schema: string;
   data: string;
 }): Promise<void> {
-  const { format, schema, data } = options;
+  const { format: _format, schema, data } = options;
 
   if (!schema) {
     throw new Error('Schema is required. Use -s or --schema option.');
@@ -261,14 +261,14 @@ async function handleStructuredValidate(options: {
   }
 
   // Parse schema
-  let parsedSchema: JSONSchema;
+  let _parsedSchema: JSONSchema;
   try {
-    parsedSchema = JSON.parse(schema);
+    _parsedSchema = JSON.parse(schema);
   } catch {
     const fs = await import('fs/promises');
     try {
       const schemaContent = await fs.readFile(schema, 'utf-8');
-      parsedSchema = JSON.parse(schemaContent);
+      _parsedSchema = JSON.parse(schemaContent);
     } catch {
       throw new Error(
         `Invalid schema: ${schema}. Must be valid JSON or a file path.`,
@@ -295,7 +295,7 @@ async function handleStructuredValidate(options: {
 
   // Initialize schema enforcement
   const client = new TrustNodeLlamaClient();
-  const schemaEnforcement = new TrustSchemaEnforcement(client);
+  const _schemaEnforcement = new TrustSchemaEnforcement(client);
 
   // TODO: Implement data validation method
   console.log(chalk.yellow('⚠️  Data validation not yet implemented'));
@@ -312,7 +312,7 @@ async function handleStructuredConvert(options: {
   data: string;
   output?: string;
 }): Promise<void> {
-  const { from, to, data, output } = options;
+  const { from, to, data, output: _output } = options;
 
   if (!data) {
     throw new Error('Data is required. Use -d or --data option.');
@@ -347,10 +347,10 @@ async function handleStructuredConvert(options: {
 
   // Initialize schema enforcement
   const client = new TrustNodeLlamaClient();
-  const schemaEnforcement = new TrustSchemaEnforcement(client);
+  const _schemaEnforcement = new TrustSchemaEnforcement(client);
 
   // Create a permissive schema for conversion
-  const permissiveSchema: JSONSchema = {
+  const _permissiveSchema: JSONSchema = {
     type: 'object',
     description: 'Permissive schema for data conversion',
   };
@@ -440,14 +440,14 @@ async function handleLogitBias(options: {
     console.log(chalk.blue('\n🧪 Testing bias configuration...'));
 
     // Parse schema
-    let parsedSchema: JSONSchema;
+    let _parsedSchema: JSONSchema;
     try {
-      parsedSchema = JSON.parse(schema);
+      _parsedSchema = JSON.parse(schema);
     } catch {
       const fs = await import('fs/promises');
       try {
         const schemaContent = await fs.readFile(schema, 'utf-8');
-        parsedSchema = JSON.parse(schemaContent);
+        _parsedSchema = JSON.parse(schemaContent);
       } catch {
         throw new Error(
           `Invalid schema: ${schema}. Must be valid JSON or a file path.`,
@@ -461,7 +461,7 @@ async function handleLogitBias(options: {
 
     const request: StructuredRequest = {
       prompt: test,
-      schema: parsedSchema,
+      schema: _parsedSchema,
       format: 'json',
       maxRetries: 1,
       validationStrict: true,

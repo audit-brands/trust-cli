@@ -109,7 +109,7 @@ export class ExtensionManager extends EventEmitter {
 
   async initialize(): Promise<void> {
     console.log('🔌 Initializing Trust CLI Extension Manager');
-    
+
     // Ensure extensions directory exists
     await fs.mkdir(this.extensionsDir, { recursive: true });
 
@@ -127,7 +127,7 @@ export class ExtensionManager extends EventEmitter {
 
   async refreshRegistry(): Promise<void> {
     console.log('🔄 Refreshing extension registry...');
-    
+
     try {
       // In a real implementation, this would fetch from the registry URL
       // For now, we'll create a mock registry
@@ -139,7 +139,8 @@ export class ExtensionManager extends EventEmitter {
             manifest: {
               name: 'trust-audit-helper',
               version: '1.2.0',
-              description: 'Advanced audit workflow automation and compliance checking',
+              description:
+                'Advanced audit workflow automation and compliance checking',
               author: 'Trust CLI Team',
               license: 'Apache-2.0',
               homepage: 'https://trust-cli.org/extensions/audit-helper',
@@ -155,7 +156,8 @@ export class ExtensionManager extends EventEmitter {
                 downloads: 15420,
               },
             },
-            downloadUrl: 'https://registry.trust-cli.org/packages/trust-audit-helper-1.2.0.tgz',
+            downloadUrl:
+              'https://registry.trust-cli.org/packages/trust-audit-helper-1.2.0.tgz',
             checksum: 'sha256:abcd1234...',
             size: 2048000,
             publishDate: '2025-01-01T00:00:00Z',
@@ -169,7 +171,8 @@ export class ExtensionManager extends EventEmitter {
             manifest: {
               name: 'security-scanner-pro',
               version: '2.1.5',
-              description: 'Enhanced security scanning with advanced threat detection',
+              description:
+                'Enhanced security scanning with advanced threat detection',
               author: 'Security Solutions Inc',
               license: 'MIT',
               homepage: 'https://securitysolutions.io/trust-scanner',
@@ -183,7 +186,8 @@ export class ExtensionManager extends EventEmitter {
                 downloads: 8950,
               },
             },
-            downloadUrl: 'https://registry.trust-cli.org/packages/security-scanner-pro-2.1.5.tgz',
+            downloadUrl:
+              'https://registry.trust-cli.org/packages/security-scanner-pro-2.1.5.tgz',
             checksum: 'sha256:efgh5678...',
             size: 3072000,
             publishDate: '2024-12-15T00:00:00Z',
@@ -209,7 +213,8 @@ export class ExtensionManager extends EventEmitter {
                 downloads: 3240,
               },
             },
-            downloadUrl: 'https://registry.trust-cli.org/packages/data-analytics-suite-1.0.3.tgz',
+            downloadUrl:
+              'https://registry.trust-cli.org/packages/data-analytics-suite-1.0.3.tgz',
             checksum: 'sha256:ijkl9012...',
             size: 1536000,
             publishDate: '2024-11-20T00:00:00Z',
@@ -220,14 +225,23 @@ export class ExtensionManager extends EventEmitter {
             downloadCount: 3240,
           },
         ],
-        categories: ['productivity', 'audit', 'security', 'tools', 'analytics', 'reporting'],
+        categories: [
+          'productivity',
+          'audit',
+          'security',
+          'tools',
+          'analytics',
+          'reporting',
+        ],
         featured: ['trust-audit-helper'],
       };
 
       this.registryCache = registry;
       await this.saveRegistryCache();
 
-      console.log(`✅ Registry updated with ${registry.extensions.length} extensions`);
+      console.log(
+        `✅ Registry updated with ${registry.extensions.length} extensions`,
+      );
       this.emit('registry-updated', registry);
     } catch (error) {
       console.error(`❌ Failed to refresh registry: ${error}`);
@@ -235,7 +249,9 @@ export class ExtensionManager extends EventEmitter {
     }
   }
 
-  async searchExtensions(options: ExtensionSearchOptions = {}): Promise<MarketplaceExtension[]> {
+  async searchExtensions(
+    options: ExtensionSearchOptions = {},
+  ): Promise<MarketplaceExtension[]> {
     if (!this.registryCache) {
       await this.refreshRegistry();
     }
@@ -245,34 +261,39 @@ export class ExtensionManager extends EventEmitter {
     // Apply filters
     if (options.query) {
       const query = options.query.toLowerCase();
-      extensions = extensions.filter(ext => 
-        ext.manifest.name.toLowerCase().includes(query) ||
-        ext.manifest.description.toLowerCase().includes(query) ||
-        ext.manifest.keywords?.some(k => k.toLowerCase().includes(query))
+      extensions = extensions.filter(
+        (ext) =>
+          ext.manifest.name.toLowerCase().includes(query) ||
+          ext.manifest.description.toLowerCase().includes(query) ||
+          ext.manifest.keywords?.some((k) => k.toLowerCase().includes(query)),
       );
     }
 
     if (options.category) {
-      extensions = extensions.filter(ext => 
-        ext.manifest.categories?.includes(options.category!)
+      extensions = extensions.filter((ext) =>
+        ext.manifest.categories?.includes(options.category!),
       );
     }
 
     if (options.verified !== undefined) {
-      extensions = extensions.filter(ext => ext.verified === options.verified);
+      extensions = extensions.filter(
+        (ext) => ext.verified === options.verified,
+      );
     }
 
     if (options.featured !== undefined) {
-      extensions = extensions.filter(ext => ext.featured === options.featured);
+      extensions = extensions.filter(
+        (ext) => ext.featured === options.featured,
+      );
     }
 
     // Apply sorting
     const sortBy = options.sortBy || 'rating';
     const sortOrder = options.sortOrder || 'desc';
-    
+
     extensions.sort((a, b) => {
       let comparison = 0;
-      
+
       switch (sortBy) {
         case 'name':
           comparison = a.manifest.name.localeCompare(b.manifest.name);
@@ -284,10 +305,13 @@ export class ExtensionManager extends EventEmitter {
           comparison = a.downloadCount - b.downloadCount;
           break;
         case 'updated':
-          comparison = new Date(a.updateDate).getTime() - new Date(b.updateDate).getTime();
+          comparison =
+            new Date(a.updateDate).getTime() - new Date(b.updateDate).getTime();
           break;
         case 'created':
-          comparison = new Date(a.publishDate).getTime() - new Date(b.publishDate).getTime();
+          comparison =
+            new Date(a.publishDate).getTime() -
+            new Date(b.publishDate).getTime();
           break;
       }
 
@@ -297,7 +321,7 @@ export class ExtensionManager extends EventEmitter {
     // Apply pagination
     const offset = options.offset || 0;
     const limit = options.limit || extensions.length;
-    
+
     return extensions.slice(offset, offset + limit);
   }
 
@@ -309,7 +333,9 @@ export class ExtensionManager extends EventEmitter {
 
     // Check if already installed
     if (this.installedExtensions.has(extensionName) && !options.force) {
-      throw new Error(`Extension ${extensionName} is already installed. Use --force to reinstall.`);
+      throw new Error(
+        `Extension ${extensionName} is already installed. Use --force to reinstall.`,
+      );
     }
 
     try {
@@ -320,14 +346,18 @@ export class ExtensionManager extends EventEmitter {
         if (!this.registryCache) {
           await this.refreshRegistry();
         }
-        
-        const found = this.registryCache!.extensions.find(ext => ext.manifest.name === extensionName);
+
+        const found = this.registryCache!.extensions.find(
+          (ext) => ext.manifest.name === extensionName,
+        );
         if (!found) {
           throw new Error(`Extension ${extensionName} not found in registry`);
         }
         extension = found;
       } else {
-        throw new Error(`Installation from ${options.source} not yet implemented`);
+        throw new Error(
+          `Installation from ${options.source} not yet implemented`,
+        );
       }
 
       // Create installation directory
@@ -362,7 +392,6 @@ export class ExtensionManager extends EventEmitter {
 
       console.log(`✅ Extension ${extensionName} installed successfully`);
       this.emit('extension-installed', installedExtension);
-
     } catch (error) {
       console.error(`❌ Failed to install ${extensionName}: ${error}`);
       throw error;
@@ -387,7 +416,6 @@ export class ExtensionManager extends EventEmitter {
 
       console.log(`✅ Extension ${extensionName} uninstalled successfully`);
       this.emit('extension-uninstalled', extension);
-
     } catch (error) {
       console.error(`❌ Failed to uninstall ${extensionName}: ${error}`);
       throw error;
@@ -407,8 +435,10 @@ export class ExtensionManager extends EventEmitter {
       if (!this.registryCache) {
         await this.refreshRegistry();
       }
-      
-      const latest = this.registryCache!.extensions.find(ext => ext.manifest.name === extensionName);
+
+      const latest = this.registryCache!.extensions.find(
+        (ext) => ext.manifest.name === extensionName,
+      );
       if (!latest) {
         throw new Error(`Extension ${extensionName} not found in registry`);
       }
@@ -422,8 +452,9 @@ export class ExtensionManager extends EventEmitter {
       // Update the extension (reinstall with force)
       await this.installExtension(extensionName, { force: true });
 
-      console.log(`✅ Extension ${extensionName} updated from ${installed.manifest.version} to ${latest.manifest.version}`);
-
+      console.log(
+        `✅ Extension ${extensionName} updated from ${installed.manifest.version} to ${latest.manifest.version}`,
+      );
     } catch (error) {
       console.error(`❌ Failed to update ${extensionName}: ${error}`);
       throw error;
@@ -463,22 +494,30 @@ export class ExtensionManager extends EventEmitter {
   }
 
   getEnabledExtensions(): InstalledExtension[] {
-    return this.getInstalledExtensions().filter(ext => ext.enabled);
+    return this.getInstalledExtensions().filter((ext) => ext.enabled);
   }
 
   isExtensionInstalled(extensionName: string): boolean {
     return this.installedExtensions.has(extensionName);
   }
 
-  async checkForUpdates(): Promise<{ name: string; currentVersion: string; latestVersion: string }[]> {
+  async checkForUpdates(): Promise<
+    Array<{ name: string; currentVersion: string; latestVersion: string }>
+  > {
     if (!this.registryCache) {
       await this.refreshRegistry();
     }
 
-    const updates: { name: string; currentVersion: string; latestVersion: string }[] = [];
+    const updates: Array<{
+      name: string;
+      currentVersion: string;
+      latestVersion: string;
+    }> = [];
 
     for (const [name, installed] of Array.from(this.installedExtensions)) {
-      const latest = this.registryCache!.extensions.find(ext => ext.manifest.name === name);
+      const latest = this.registryCache!.extensions.find(
+        (ext) => ext.manifest.name === name,
+      );
       if (latest && latest.manifest.version !== installed.manifest.version) {
         updates.push({
           name,
@@ -493,7 +532,7 @@ export class ExtensionManager extends EventEmitter {
 
   async updateAllExtensions(): Promise<void> {
     console.log('🔄 Checking for extension updates...');
-    
+
     const updates = await this.checkForUpdates();
     if (updates.length === 0) {
       console.log('✅ All extensions are up to date');
@@ -501,7 +540,7 @@ export class ExtensionManager extends EventEmitter {
     }
 
     console.log(`📦 Found ${updates.length} update(s) available`);
-    
+
     for (const update of updates) {
       try {
         await this.updateExtension(update.name);
@@ -517,13 +556,15 @@ export class ExtensionManager extends EventEmitter {
     try {
       const content = await fs.readFile(this.installedExtensionsFile, 'utf-8');
       const data = JSON.parse(content);
-      
+
       this.installedExtensions.clear();
       for (const [name, extension] of Object.entries(data)) {
         this.installedExtensions.set(name, extension as InstalledExtension);
       }
-      
-      console.log(`📦 Loaded ${this.installedExtensions.size} installed extension(s)`);
+
+      console.log(
+        `📦 Loaded ${this.installedExtensions.size} installed extension(s)`,
+      );
     } catch (error) {
       console.log('📦 No installed extensions found');
     }
@@ -531,14 +572,19 @@ export class ExtensionManager extends EventEmitter {
 
   private async saveInstalledExtensions(): Promise<void> {
     const data = Object.fromEntries(this.installedExtensions);
-    await fs.writeFile(this.installedExtensionsFile, JSON.stringify(data, null, 2));
+    await fs.writeFile(
+      this.installedExtensionsFile,
+      JSON.stringify(data, null, 2),
+    );
   }
 
   private async loadRegistryCache(): Promise<void> {
     try {
       const content = await fs.readFile(this.registryCacheFile, 'utf-8');
       this.registryCache = JSON.parse(content);
-      console.log(`📦 Registry cache loaded with ${this.registryCache!.extensions.length} extension(s)`);
+      console.log(
+        `📦 Registry cache loaded with ${this.registryCache!.extensions.length} extension(s)`,
+      );
     } catch (error) {
       console.log('📦 No registry cache found, will refresh on first use');
     }
@@ -546,7 +592,10 @@ export class ExtensionManager extends EventEmitter {
 
   private async saveRegistryCache(): Promise<void> {
     if (this.registryCache) {
-      await fs.writeFile(this.registryCacheFile, JSON.stringify(this.registryCache, null, 2));
+      await fs.writeFile(
+        this.registryCacheFile,
+        JSON.stringify(this.registryCache, null, 2),
+      );
     }
   }
 
@@ -555,23 +604,27 @@ export class ExtensionManager extends EventEmitter {
       try {
         // Check if extension directory exists
         await fs.access(extension.installPath);
-        
+
         // Check if manifest file exists
         const manifestPath = path.join(extension.installPath, 'package.json');
         await fs.access(manifestPath);
-        
+
         extension.status = extension.enabled ? 'active' : 'inactive';
       } catch (error) {
         console.error(`⚠️  Extension ${name} validation failed: ${error}`);
         extension.status = 'error';
-        extension.errorMessage = error instanceof Error ? error.message : String(error);
+        extension.errorMessage =
+          error instanceof Error ? error.message : String(error);
       }
     }
-    
+
     await this.saveInstalledExtensions();
   }
 
-  private async downloadExtension(extension: MarketplaceExtension, installPath: string): Promise<void> {
+  private async downloadExtension(
+    extension: MarketplaceExtension,
+    installPath: string,
+  ): Promise<void> {
     // Simulate download by creating a basic package structure
     const packageJson = {
       ...extension.manifest,
@@ -579,7 +632,7 @@ export class ExtensionManager extends EventEmitter {
 
     await fs.writeFile(
       path.join(installPath, 'package.json'),
-      JSON.stringify(packageJson, null, 2)
+      JSON.stringify(packageJson, null, 2),
     );
 
     // Create a basic main file
@@ -599,12 +652,20 @@ module.exports = {
 };
 `;
 
-    await fs.writeFile(path.join(installPath, extension.manifest.main), mainFile);
+    await fs.writeFile(
+      path.join(installPath, extension.manifest.main),
+      mainFile,
+    );
   }
 
-  private async verifyChecksum(installPath: string, expectedChecksum: string): Promise<void> {
+  private async verifyChecksum(
+    installPath: string,
+    expectedChecksum: string,
+  ): Promise<void> {
     // Simplified checksum verification (in real implementation, would hash the package)
-    console.log(`✅ Package integrity verified (${expectedChecksum.substring(0, 16)}...)`);
+    console.log(
+      `✅ Package integrity verified (${expectedChecksum.substring(0, 16)}...)`,
+    );
   }
 
   private async installDependencies(installPath: string): Promise<void> {

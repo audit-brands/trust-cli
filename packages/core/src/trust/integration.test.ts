@@ -122,7 +122,7 @@ describe('Trust CLI Integration Tests', () => {
       setTransparencySettings: vi.fn(),
       setInferenceSettings: vi.fn(),
       save: vi.fn().mockResolvedValue(undefined),
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any;
 
     // Initialize components
@@ -153,7 +153,7 @@ describe('Trust CLI Integration Tests', () => {
     mockFs.stat.mockResolvedValue({
       isFile: () => true,
       size: 1000000000,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any);
   });
 

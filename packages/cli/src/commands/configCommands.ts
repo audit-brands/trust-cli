@@ -233,7 +233,9 @@ export class ConfigCommandHandler {
   private async setBackend(
     backend: 'ollama' | 'huggingface' | 'cloud',
   ): Promise<void> {
-    this.config.setPreferredBackend(backend as 'ollama' | 'huggingface' | 'cloud');
+    this.config.setPreferredBackend(
+      backend as 'ollama' | 'huggingface' | 'cloud',
+    );
     await this.config.save();
 
     console.log(`✅ Preferred AI backend set to: ${backend}`);
@@ -258,7 +260,9 @@ export class ConfigCommandHandler {
       );
     }
 
-    this.config.setFallbackOrder(order as Array<'ollama' | 'huggingface' | 'cloud'>);
+    this.config.setFallbackOrder(
+      order as Array<'ollama' | 'huggingface' | 'cloud'>,
+    );
     await this.config.save();
 
     console.log(`✅ Fallback order set to: ${order.join(' → ')}`);
@@ -266,7 +270,9 @@ export class ConfigCommandHandler {
     // Show which backends are enabled
     console.log('\n📊 Backend Status:');
     for (const backend of order) {
-      const enabled = this.config.isBackendEnabled(backend as 'ollama' | 'huggingface' | 'cloud');
+      const enabled = this.config.isBackendEnabled(
+        backend as 'ollama' | 'huggingface' | 'cloud',
+      );
       console.log(`   ${backend}: ${enabled ? '✅ Enabled' : '❌ Disabled'}`);
     }
   }

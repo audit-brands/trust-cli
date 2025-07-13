@@ -103,7 +103,9 @@ export async function handleAssuranceCommand(options: {
 export class AssuranceCommandHandler {
   async handleCommand(args: string[]): Promise<void> {
     if (args.length === 0) {
-      console.log('Missing command\nUsage: /assurance <new|list|report> [options]');
+      console.log(
+        'Missing command\nUsage: /assurance <new|list|report> [options]',
+      );
       return;
     }
 

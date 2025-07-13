@@ -320,7 +320,7 @@ export class TrustGitIntegration {
         encoding: 'utf-8',
         stdio: ['pipe', 'pipe', 'pipe'],
       });
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       throw new Error(`Git command failed: ${error.message}`);
     }

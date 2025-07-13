@@ -399,7 +399,9 @@ export class EnhancedModelCommandHandler {
     const grouped = await this.unifiedManager.getModelsByBackend();
 
     for (const [backend, models] of Object.entries(grouped)) {
-      const enabled = this.trustConfig.isBackendEnabled(backend as 'ollama' | 'huggingface' | 'cloud');
+      const enabled = this.trustConfig.isBackendEnabled(
+        backend as 'ollama' | 'huggingface' | 'cloud',
+      );
       const status = enabled ? '✅' : '❌';
       const icon = this.getBackendIcon(backend);
 

@@ -167,7 +167,10 @@ export class DependencyVulnerabilityScanner {
 
       const scanDuration = Date.now() - startTime;
       const summary = this.summarizeVulnerabilities(vulnerabilities);
-      const riskScore = this.calculateRiskScore(vulnerabilities, dependencies.length);
+      const riskScore = this.calculateRiskScore(
+        vulnerabilities,
+        dependencies.length,
+      );
 
       const result: ScanResult = {
         timestamp: new Date().toISOString(),
@@ -208,7 +211,11 @@ export class DependencyVulnerabilityScanner {
 
     // Check OSV database
     if (this.config.sources.osv) {
-      const osvResults = await this.queryOSVDatabase(packageName, version, ecosystem);
+      const osvResults = await this.queryOSVDatabase(
+        packageName,
+        version,
+        ecosystem,
+      );
       vulnerabilities.push(...osvResults);
     }
 
@@ -220,13 +227,21 @@ export class DependencyVulnerabilityScanner {
 
     // Check GitHub Advisory Database
     if (this.config.sources.github) {
-      const githubResults = await this.queryGitHubAdvisories(packageName, version, ecosystem);
+      const githubResults = await this.queryGitHubAdvisories(
+        packageName,
+        version,
+        ecosystem,
+      );
       vulnerabilities.push(...githubResults);
     }
 
     // Check Snyk (if API key provided)
     if (this.config.sources.snyk && this.config.apiKeys?.snyk) {
-      const snykResults = await this.querySnykDatabase(packageName, version, ecosystem);
+      const snykResults = await this.querySnykDatabase(
+        packageName,
+        version,
+        ecosystem,
+      );
       vulnerabilities.push(...snykResults);
     }
 
@@ -237,7 +252,10 @@ export class DependencyVulnerabilityScanner {
   /**
    * Generate security report
    */
-  async generateReport(scanResult: ScanResult, format: 'json' | 'html' | 'pdf' | 'sarif' = 'json'): Promise<string> {
+  async generateReport(
+    scanResult: ScanResult,
+    format: 'json' | 'html' | 'pdf' | 'sarif' = 'json',
+  ): Promise<string> {
     switch (format) {
       case 'json':
         return JSON.stringify(scanResult, null, 2);
@@ -267,7 +285,9 @@ export class DependencyVulnerabilityScanner {
 
     for (const recommendation of recommendations) {
       if (!recommendation.automatable) {
-        console.log(`⏭️  Skipping manual recommendation for ${recommendation.packageName}`);
+        console.log(
+          `⏭️  Skipping manual recommendation for ${recommendation.packageName}`,
+        );
         continue;
       }
 
@@ -289,7 +309,9 @@ export class DependencyVulnerabilityScanner {
             );
             break;
           default:
-            console.log(`⏭️  Unsupported remediation type: ${recommendation.type}`);
+            console.log(
+              `⏭️  Unsupported remediation type: ${recommendation.type}`,
+            );
         }
       } catch (error) {
         console.error(
@@ -302,10 +324,19 @@ export class DependencyVulnerabilityScanner {
   /**
    * Continuous monitoring setup
    */
-  async setupContinuousMonitoring(projectPath: string, intervalHours = 24): Promise<void> {
-    console.log(`🕐 Setting up continuous monitoring (every ${intervalHours}h)`);
+  async setupContinuousMonitoring(
+    projectPath: string,
+    intervalHours = 24,
+  ): Promise<void> {
+    console.log(
+      `🕐 Setting up continuous monitoring (every ${intervalHours}h)`,
+    );
 
-    const configFile = path.join(projectPath, '.trustcli', 'security-monitoring.json');
+    const configFile = path.join(
+      projectPath,
+      '.trustcli',
+      'security-monitoring.json',
+    );
     const config = {
       enabled: true,
       intervalHours,
@@ -323,7 +354,9 @@ export class DependencyVulnerabilityScanner {
 
   // Private methods
 
-  private async discoverDependencyFiles(projectPath: string): Promise<string[]> {
+  private async discoverDependencyFiles(
+    projectPath: string,
+  ): Promise<string[]> {
     const patterns = [
       '**/package.json',
       '**/requirements.txt',
@@ -343,13 +376,15 @@ export class DependencyVulnerabilityScanner {
         cwd: projectPath,
         ignore: this.config.excludePatterns,
       });
-      files.push(...matches.map(file => path.resolve(projectPath, file)));
+      files.push(...matches.map((file) => path.resolve(projectPath, file)));
     }
 
     return Array.from(new Set(files)); // Remove duplicates
   }
 
-  private async parseDependencies(dependencyFiles: string[]): Promise<DependencyInfo[]> {
+  private async parseDependencies(
+    dependencyFiles: string[],
+  ): Promise<DependencyInfo[]> {
     const dependencies: DependencyInfo[] = [];
 
     for (const filePath of dependencyFiles) {
@@ -410,7 +445,9 @@ export class DependencyVulnerabilityScanner {
 
     // Parse dev dependencies if enabled
     if (this.config.includeDevDependencies && packageJson.devDependencies) {
-      for (const [name, version] of Object.entries(packageJson.devDependencies)) {
+      for (const [name, version] of Object.entries(
+        packageJson.devDependencies,
+      )) {
         dependencies.push({
           name,
           version: version as string,
@@ -426,7 +463,9 @@ export class DependencyVulnerabilityScanner {
     return dependencies;
   }
 
-  private async parseRequirementsTxt(filePath: string): Promise<DependencyInfo[]> {
+  private async parseRequirementsTxt(
+    filePath: string,
+  ): Promise<DependencyInfo[]> {
     const content = await fs.readFile(filePath, 'utf-8');
     const dependencies: DependencyInfo[] = [];
 
@@ -462,12 +501,16 @@ export class DependencyVulnerabilityScanner {
     return [];
   }
 
-  private async parseComposerJson(_filePath: string): Promise<DependencyInfo[]> {
+  private async parseComposerJson(
+    _filePath: string,
+  ): Promise<DependencyInfo[]> {
     // Placeholder implementation for PHP packages
     return [];
   }
 
-  private async scanForVulnerabilities(dependencies: DependencyInfo[]): Promise<Vulnerability[]> {
+  private async scanForVulnerabilities(
+    dependencies: DependencyInfo[],
+  ): Promise<Vulnerability[]> {
     const vulnerabilities: Vulnerability[] = [];
 
     for (const dependency of dependencies) {
@@ -513,7 +556,10 @@ export class DependencyVulnerabilityScanner {
     }
   }
 
-  private async queryNpmAudit(packageName: string, version: string): Promise<Vulnerability[]> {
+  private async queryNpmAudit(
+    packageName: string,
+    version: string,
+  ): Promise<Vulnerability[]> {
     // npm audit API integration
     const cacheKey = `npm_${packageName}_${version}`;
     const cached = await this.getCachedResult(cacheKey);
@@ -581,9 +627,11 @@ export class DependencyVulnerabilityScanner {
     }
   }
 
-  private deduplicateVulnerabilities(vulnerabilities: Vulnerability[]): Vulnerability[] {
+  private deduplicateVulnerabilities(
+    vulnerabilities: Vulnerability[],
+  ): Vulnerability[] {
     const seen = new Set<string>();
-    return vulnerabilities.filter(vuln => {
+    return vulnerabilities.filter((vuln) => {
       const key = `${vuln.id}_${vuln.affectedPackage.name}_${vuln.affectedPackage.version}`;
       if (seen.has(key)) {
         return false;
@@ -610,7 +658,10 @@ export class DependencyVulnerabilityScanner {
     return summary;
   }
 
-  private calculateRiskScore(vulnerabilities: Vulnerability[], totalDependencies: number): number {
+  private calculateRiskScore(
+    vulnerabilities: Vulnerability[],
+    totalDependencies: number,
+  ): number {
     let score = 0;
     const weights = { critical: 10, high: 7, moderate: 4, low: 2, info: 1 };
 
@@ -647,8 +698,16 @@ export class DependencyVulnerabilityScanner {
   }
 
   private calculateRiskReduction(vulnerability: Vulnerability): number {
-    const severityMultipliers = { critical: 1.0, high: 0.8, moderate: 0.6, low: 0.4, info: 0.2 };
-    return (vulnerability.cvss / 10) * severityMultipliers[vulnerability.severity];
+    const severityMultipliers = {
+      critical: 1.0,
+      high: 0.8,
+      moderate: 0.6,
+      low: 0.4,
+      info: 0.2,
+    };
+    return (
+      (vulnerability.cvss / 10) * severityMultipliers[vulnerability.severity]
+    );
   }
 
   private generateHtmlReport(scanResult: ScanResult): string {
@@ -700,7 +759,7 @@ export class DependencyVulnerabilityScanner {
     <h2>Vulnerabilities</h2>
     ${scanResult.vulnerabilities
       .map(
-        vuln => `
+        (vuln) => `
         <div class="vulnerability ${vuln.severity}">
             <h3>${vuln.title} (${vuln.id})</h3>
             <p><strong>Package:</strong> ${vuln.affectedPackage.name}@${vuln.affectedPackage.version}</p>
@@ -724,7 +783,8 @@ export class DependencyVulnerabilityScanner {
     // SARIF (Static Analysis Results Interchange Format) for CI/CD integration
     const sarif = {
       version: '2.1.0',
-      $schema: 'https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json',
+      $schema:
+        'https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json',
       runs: [
         {
           tool: {
@@ -734,7 +794,7 @@ export class DependencyVulnerabilityScanner {
               informationUri: 'https://github.com/audit-brands/trust-cli',
             },
           },
-          results: scanResult.vulnerabilities.map(vuln => ({
+          results: scanResult.vulnerabilities.map((vuln) => ({
             ruleId: vuln.id,
             level: this.severityToSarifLevel(vuln.severity),
             message: {
@@ -744,9 +804,10 @@ export class DependencyVulnerabilityScanner {
               {
                 physicalLocation: {
                   artifactLocation: {
-                    uri: scanResult.dependencyTree.find(
-                      dep => dep.name === vuln.affectedPackage.name,
-                    )?.filePath || '',
+                    uri:
+                      scanResult.dependencyTree.find(
+                        (dep) => dep.name === vuln.affectedPackage.name,
+                      )?.filePath || '',
                   },
                 },
               },
@@ -781,7 +842,10 @@ export class DependencyVulnerabilityScanner {
     }
   }
 
-  private async updatePackage(packageName: string, version: string): Promise<void> {
+  private async updatePackage(
+    packageName: string,
+    version: string,
+  ): Promise<void> {
     console.log(`🔄 Updating ${packageName} to ${version}`);
     // Implementation would depend on package manager
   }
@@ -791,7 +855,10 @@ export class DependencyVulnerabilityScanner {
     // Implementation would depend on package manager
   }
 
-  private async replacePackage(oldPackage: string, newPackage: string): Promise<void> {
+  private async replacePackage(
+    oldPackage: string,
+    newPackage: string,
+  ): Promise<void> {
     console.log(`🔄 Replacing ${oldPackage} with ${newPackage}`);
     // Implementation would depend on package manager
   }
@@ -804,8 +871,10 @@ export class DependencyVulnerabilityScanner {
     try {
       const cacheFile = path.join(this.cacheDir, `${key}.json`);
       const stat = await fs.stat(cacheFile);
-      const isExpired = Date.now() - stat.mtime.getTime() > this.config.cacheExpiryHours * 60 * 60 * 1000;
-      
+      const isExpired =
+        Date.now() - stat.mtime.getTime() >
+        this.config.cacheExpiryHours * 60 * 60 * 1000;
+
       if (isExpired) {
         return null;
       }
@@ -830,7 +899,10 @@ export class DependencyVulnerabilityScanner {
     }
   }
 
-  private async cacheResults(projectPath: string, result: ScanResult): Promise<void> {
+  private async cacheResults(
+    projectPath: string,
+    result: ScanResult,
+  ): Promise<void> {
     const cacheKey = `scan_${Buffer.from(projectPath).toString('base64')}`;
     await this.setCachedResult(cacheKey, result);
   }

@@ -8,15 +8,23 @@ import {
   RealTimeMonitor,
   DashboardWidgetFactory,
   DashboardWidget,
-  SystemHealth,
-  PerformanceMetrics,
+  // SystemHealth,
+  // PerformanceMetrics,
   Alert,
 } from '@trust-cli/trust-cli-core';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
 export interface MonitoringCommandArgs {
-  action: 'start' | 'stop' | 'status' | 'dashboard' | 'alerts' | 'metrics' | 'widget' | 'health';
+  action:
+    | 'start'
+    | 'stop'
+    | 'status'
+    | 'dashboard'
+    | 'alerts'
+    | 'metrics'
+    | 'widget'
+    | 'health';
   subaction?: string;
   widgetId?: string;
   widgetType?: 'overview' | 'security' | 'alerts' | 'performance';
@@ -76,13 +84,15 @@ export class MonitoringCommandHandler {
 
     try {
       await this.monitor.start();
-      
+
       // Setup default widgets if none exist
       const widgets = this.monitor.getWidgets();
       if (widgets.length === 0) {
         console.log('📊 Setting up default dashboard widgets...');
         this.monitor.addWidget(DashboardWidgetFactory.createSystemOverview());
-        this.monitor.addWidget(DashboardWidgetFactory.createSecurityDashboard());
+        this.monitor.addWidget(
+          DashboardWidgetFactory.createSecurityDashboard(),
+        );
         this.monitor.addWidget(DashboardWidgetFactory.createAlertTable());
         this.monitor.addWidget(DashboardWidgetFactory.createPerformanceChart());
       }
@@ -90,23 +100,28 @@ export class MonitoringCommandHandler {
       console.log('✅ Monitoring started successfully');
       console.log('📊 Dashboard widgets configured');
       console.log(`🗂️  Config saved to: ${this.configPath}`);
-      
+
       if (args.watch) {
         console.log('\n👀 Watching system metrics (Press Ctrl+C to stop)...');
-        console.log('═══════════════════════════════════════════════════════════');
+        console.log(
+          '═══════════════════════════════════════════════════════════',
+        );
         await this.startWatchMode();
       } else {
-        console.log('\n💡 Use `trust monitoring dashboard` to view real-time data');
+        console.log(
+          '\n💡 Use `trust monitoring dashboard` to view real-time data',
+        );
         console.log('💡 Use `trust monitoring stop` to stop monitoring');
       }
-
     } catch (error) {
-      console.error(`❌ Failed to start monitoring: ${error instanceof Error ? error.message : String(error)}`);
+      console.error(
+        `❌ Failed to start monitoring: ${error instanceof Error ? error.message : String(error)}`,
+      );
       throw error;
     }
   }
 
-  private async handleStopCommand(args: MonitoringCommandArgs): Promise<void> {
+  private async handleStopCommand(_args: MonitoringCommandArgs): Promise<void> {
     console.log('⏹️  Stopping Trust CLI Real-Time Monitoring');
     console.log('═══════════════════════════════════════════════════════════');
 
@@ -115,12 +130,16 @@ export class MonitoringCommandHandler {
       console.log('✅ Monitoring stopped successfully');
       console.log('💾 Configuration and data saved');
     } catch (error) {
-      console.error(`❌ Failed to stop monitoring: ${error instanceof Error ? error.message : String(error)}`);
+      console.error(
+        `❌ Failed to stop monitoring: ${error instanceof Error ? error.message : String(error)}`,
+      );
       throw error;
     }
   }
 
-  private async handleStatusCommand(args: MonitoringCommandArgs): Promise<void> {
+  private async handleStatusCommand(
+    args: MonitoringCommandArgs,
+  ): Promise<void> {
     console.log('🖥️  Trust CLI Monitoring Status');
     console.log('═══════════════════════════════════════════════════════════');
 
@@ -135,27 +154,41 @@ export class MonitoringCommandHandler {
       const healthIcon = this.getHealthIcon(health.overall);
       console.log(`   Overall: ${healthIcon} ${health.overall.toUpperCase()}`);
       console.log(`   Uptime: ${this.formatUptime(health.uptime)}`);
-      console.log(`   Last Update: ${new Date(health.lastUpdate).toLocaleString()}`);
+      console.log(
+        `   Last Update: ${new Date(health.lastUpdate).toLocaleString()}`,
+      );
 
       console.log('\n📊 Component Status:');
       Object.entries(health.components).forEach(([component, status]) => {
         const icon = this.getHealthIcon(status);
-        console.log(`   ${component.toUpperCase().padEnd(8)}: ${icon} ${status}`);
+        console.log(
+          `   ${component.toUpperCase().padEnd(8)}: ${icon} ${status}`,
+        );
       });
 
       // Performance Metrics
       console.log('\n⚡ Performance Metrics:');
       console.log(`   CPU Usage: ${metrics.cpu.usage.toFixed(1)}%`);
-      console.log(`   Memory Usage: ${((metrics.memory.used / metrics.memory.total) * 100).toFixed(1)}%`);
-      console.log(`   Disk Usage: ${((metrics.disk.used / metrics.disk.total) * 100).toFixed(1)}%`);
-      console.log(`   Load Average: [${metrics.cpu.load.map(l => l.toFixed(2)).join(', ')}]`);
+      console.log(
+        `   Memory Usage: ${((metrics.memory.used / metrics.memory.total) * 100).toFixed(1)}%`,
+      );
+      console.log(
+        `   Disk Usage: ${((metrics.disk.used / metrics.disk.total) * 100).toFixed(1)}%`,
+      );
+      console.log(
+        `   Load Average: [${metrics.cpu.load.map((l) => l.toFixed(2)).join(', ')}]`,
+      );
 
       // Active Alerts
       console.log(`\n🚨 Active Alerts: ${alerts.length}`);
       if (alerts.length > 0) {
-        const criticalCount = alerts.filter(a => a.severity === 'critical').length;
-        const warningCount = alerts.filter(a => a.severity === 'warning').length;
-        const infoCount = alerts.filter(a => a.severity === 'info').length;
+        const criticalCount = alerts.filter(
+          (a) => a.severity === 'critical',
+        ).length;
+        const warningCount = alerts.filter(
+          (a) => a.severity === 'warning',
+        ).length;
+        const infoCount = alerts.filter((a) => a.severity === 'info').length;
 
         if (criticalCount > 0) console.log(`   🔴 Critical: ${criticalCount}`);
         if (warningCount > 0) console.log(`   🟡 Warning: ${warningCount}`);
@@ -170,18 +203,23 @@ export class MonitoringCommandHandler {
 
       if (args.verbose) {
         console.log('\n📈 Widget Details:');
-        widgets.forEach(widget => {
-          console.log(`   • ${widget.title} (${widget.type}) - ${widget.refreshInterval}ms refresh`);
+        widgets.forEach((widget) => {
+          console.log(
+            `   • ${widget.title} (${widget.type}) - ${widget.refreshInterval}ms refresh`,
+          );
         });
       }
-
     } catch (error) {
-      console.error(`❌ Failed to get status: ${error instanceof Error ? error.message : String(error)}`);
+      console.error(
+        `❌ Failed to get status: ${error instanceof Error ? error.message : String(error)}`,
+      );
       throw error;
     }
   }
 
-  private async handleDashboardCommand(args: MonitoringCommandArgs): Promise<void> {
+  private async handleDashboardCommand(
+    args: MonitoringCommandArgs,
+  ): Promise<void> {
     if (args.subaction === 'export') {
       await this.exportDashboard(args);
       return;
@@ -193,7 +231,7 @@ export class MonitoringCommandHandler {
     try {
       const widgets = this.monitor.getWidgets();
       const metrics = this.monitor.getMetrics();
-      const health = await this.monitor.getSystemHealth();
+      const _health = await this.monitor.getSystemHealth();
 
       if (widgets.length === 0) {
         console.log('⚠️  No dashboard widgets configured');
@@ -202,34 +240,43 @@ export class MonitoringCommandHandler {
       }
 
       console.log(`\n🎛️  Dashboard Overview (${widgets.length} widgets):`);
-      widgets.forEach(widget => {
+      widgets.forEach((widget) => {
         console.log(`\n📊 ${widget.title}`);
         console.log(`   Type: ${widget.type}`);
-        console.log(`   Position: ${widget.position.x},${widget.position.y} (${widget.position.width}x${widget.position.height})`);
+        console.log(
+          `   Position: ${widget.position.x},${widget.position.y} (${widget.position.width}x${widget.position.height})`,
+        );
         console.log(`   Refresh: ${widget.refreshInterval}ms`);
         console.log(`   Data Source: ${widget.dataSource}`);
       });
 
       console.log(`\n📈 Available Metrics (${metrics.length} series):`);
-      metrics.forEach(metric => {
+      metrics.forEach((metric) => {
         const latest = metric.points[metric.points.length - 1];
         if (latest) {
-          console.log(`   ${metric.name}: ${latest.value.toFixed(2)} ${metric.unit} (${metric.type})`);
+          console.log(
+            `   ${metric.name}: ${latest.value.toFixed(2)} ${metric.unit} (${metric.type})`,
+          );
         }
       });
 
       console.log('\n💡 Dashboard Commands:');
-      console.log('   trust monitoring dashboard export --format json --output dashboard.json');
+      console.log(
+        '   trust monitoring dashboard export --format json --output dashboard.json',
+      );
       console.log('   trust monitoring widget add overview');
       console.log('   trust monitoring widget list');
-
     } catch (error) {
-      console.error(`❌ Failed to display dashboard: ${error instanceof Error ? error.message : String(error)}`);
+      console.error(
+        `❌ Failed to display dashboard: ${error instanceof Error ? error.message : String(error)}`,
+      );
       throw error;
     }
   }
 
-  private async handleAlertsCommand(args: MonitoringCommandArgs): Promise<void> {
+  private async handleAlertsCommand(
+    args: MonitoringCommandArgs,
+  ): Promise<void> {
     if (args.subaction === 'ack' && args.filter) {
       this.monitor.acknowledgeAlert(args.filter);
       console.log(`✅ Alert ${args.filter} acknowledged`);
@@ -245,7 +292,10 @@ export class MonitoringCommandHandler {
     console.log('🚨 Trust CLI Monitoring Alerts');
     console.log('═══════════════════════════════════════════════════════════');
 
-    const alerts = args.subaction === 'all' ? this.monitor.getAlerts() : this.monitor.getActiveAlerts();
+    const alerts =
+      args.subaction === 'all'
+        ? this.monitor.getAlerts()
+        : this.monitor.getActiveAlerts();
 
     if (alerts.length === 0) {
       console.log('✅ No alerts found');
@@ -255,20 +305,26 @@ export class MonitoringCommandHandler {
     console.log(`\n📋 Found ${alerts.length} alert(s):`);
 
     // Group alerts by severity
-    const grouped = alerts.reduce((acc, alert) => {
-      if (!acc[alert.severity]) acc[alert.severity] = [];
-      acc[alert.severity].push(alert);
-      return acc;
-    }, {} as Record<string, Alert[]>);
+    const grouped = alerts.reduce(
+      (acc, alert) => {
+        if (!acc[alert.severity]) acc[alert.severity] = [];
+        acc[alert.severity].push(alert);
+        return acc;
+      },
+      {} as Record<string, Alert[]>,
+    );
 
-    ['critical', 'warning', 'info'].forEach(severity => {
+    ['critical', 'warning', 'info'].forEach((severity) => {
       const severityAlerts = grouped[severity] || [];
       if (severityAlerts.length === 0) return;
 
-      const icon = severity === 'critical' ? '🔴' : severity === 'warning' ? '🟡' : 'ℹ️';
-      console.log(`\n${icon} ${severity.toUpperCase()} (${severityAlerts.length}):`);
+      const icon =
+        severity === 'critical' ? '🔴' : severity === 'warning' ? '🟡' : 'ℹ️';
+      console.log(
+        `\n${icon} ${severity.toUpperCase()} (${severityAlerts.length}):`,
+      );
 
-      severityAlerts.forEach(alert => {
+      severityAlerts.forEach((alert) => {
         const status = alert.acknowledged ? '✅' : '❌';
         const time = new Date(alert.timestamp).toLocaleString();
         console.log(`   ${status} [${alert.id}] ${alert.title}`);
@@ -278,12 +334,18 @@ export class MonitoringCommandHandler {
     });
 
     console.log('\n💡 Alert Commands:');
-    console.log('   trust monitoring alerts ack <alert-id>     # Acknowledge alert');
+    console.log(
+      '   trust monitoring alerts ack <alert-id>     # Acknowledge alert',
+    );
     console.log('   trust monitoring alerts clear <alert-id>   # Clear alert');
-    console.log('   trust monitoring alerts all                # Show all alerts');
+    console.log(
+      '   trust monitoring alerts all                # Show all alerts',
+    );
   }
 
-  private async handleMetricsCommand(args: MonitoringCommandArgs): Promise<void> {
+  private async handleMetricsCommand(
+    args: MonitoringCommandArgs,
+  ): Promise<void> {
     console.log('📈 Trust CLI Monitoring Metrics');
     console.log('═══════════════════════════════════════════════════════════');
 
@@ -296,14 +358,16 @@ export class MonitoringCommandHandler {
     }
 
     if (args.filter) {
-      const filtered = metrics.filter(m => m.name.includes(args.filter!));
+      const filtered = metrics.filter((m) => m.name.includes(args.filter!));
       this.displayMetrics(filtered, args);
     } else {
       this.displayMetrics(metrics, args);
     }
   }
 
-  private async handleWidgetCommand(args: MonitoringCommandArgs): Promise<void> {
+  private async handleWidgetCommand(
+    args: MonitoringCommandArgs,
+  ): Promise<void> {
     if (args.subaction === 'add' && args.widgetType) {
       await this.addWidget(args.widgetType);
       return;
@@ -318,22 +382,34 @@ export class MonitoringCommandHandler {
     if (args.subaction === 'list') {
       const widgets = this.monitor.getWidgets();
       console.log(`📊 Dashboard Widgets (${widgets.length}):`);
-      widgets.forEach(widget => {
+      widgets.forEach((widget) => {
         console.log(`   • ${widget.id}: ${widget.title} (${widget.type})`);
       });
       return;
     }
 
     console.log('🎛️  Widget Management Commands:');
-    console.log('   trust monitoring widget add overview      # Add system overview');
-    console.log('   trust monitoring widget add security      # Add security dashboard');
-    console.log('   trust monitoring widget add alerts        # Add alerts table');
-    console.log('   trust monitoring widget add performance   # Add performance chart');
-    console.log('   trust monitoring widget list              # List all widgets');
+    console.log(
+      '   trust monitoring widget add overview      # Add system overview',
+    );
+    console.log(
+      '   trust monitoring widget add security      # Add security dashboard',
+    );
+    console.log(
+      '   trust monitoring widget add alerts        # Add alerts table',
+    );
+    console.log(
+      '   trust monitoring widget add performance   # Add performance chart',
+    );
+    console.log(
+      '   trust monitoring widget list              # List all widgets',
+    );
     console.log('   trust monitoring widget remove <id>       # Remove widget');
   }
 
-  private async handleHealthCommand(args: MonitoringCommandArgs): Promise<void> {
+  private async handleHealthCommand(
+    _args: MonitoringCommandArgs,
+  ): Promise<void> {
     console.log('🏥 Trust CLI System Health Check');
     console.log('═══════════════════════════════════════════════════════════');
 
@@ -343,21 +419,27 @@ export class MonitoringCommandHandler {
 
       // Overall health
       const healthIcon = this.getHealthIcon(health.overall);
-      console.log(`\n🎯 Overall Status: ${healthIcon} ${health.overall.toUpperCase()}`);
+      console.log(
+        `\n🎯 Overall Status: ${healthIcon} ${health.overall.toUpperCase()}`,
+      );
       console.log(`⏰ Uptime: ${this.formatUptime(health.uptime)}`);
-      console.log(`🔄 Last Update: ${new Date(health.lastUpdate).toLocaleString()}`);
+      console.log(
+        `🔄 Last Update: ${new Date(health.lastUpdate).toLocaleString()}`,
+      );
 
       // Detailed component analysis
       console.log('\n🔍 Component Analysis:');
-      
+
       // CPU Health
       const cpuIcon = this.getHealthIcon(health.components.cpu);
       console.log(`\n🖥️  CPU: ${cpuIcon} ${health.components.cpu}`);
       console.log(`   Usage: ${metrics.cpu.usage.toFixed(1)}%`);
       console.log(`   Cores: ${metrics.cpu.cores}`);
-      console.log(`   Load Average: [${metrics.cpu.load.map(l => l.toFixed(2)).join(', ')}]`);
+      console.log(
+        `   Load Average: [${metrics.cpu.load.map((l) => l.toFixed(2)).join(', ')}]`,
+      );
 
-      // Memory Health  
+      // Memory Health
       const memIcon = this.getHealthIcon(health.components.memory);
       const memUsage = (metrics.memory.used / metrics.memory.total) * 100;
       console.log(`\n💾 Memory: ${memIcon} ${health.components.memory}`);
@@ -385,21 +467,31 @@ export class MonitoringCommandHandler {
 
       // Recommendations
       console.log('\n💡 Recommendations:');
-      if (health.components.cpu === 'warning' || health.components.cpu === 'critical') {
+      if (
+        health.components.cpu === 'warning' ||
+        health.components.cpu === 'critical'
+      ) {
         console.log('   • Consider reducing CPU load or scaling resources');
       }
-      if (health.components.memory === 'warning' || health.components.memory === 'critical') {
+      if (
+        health.components.memory === 'warning' ||
+        health.components.memory === 'critical'
+      ) {
         console.log('   • Free up memory or increase available RAM');
       }
-      if (health.components.disk === 'warning' || health.components.disk === 'critical') {
+      if (
+        health.components.disk === 'warning' ||
+        health.components.disk === 'critical'
+      ) {
         console.log('   • Clean up disk space or add storage capacity');
       }
       if (health.overall === 'healthy') {
         console.log('   ✅ System is running optimally');
       }
-
     } catch (error) {
-      console.error(`❌ Health check failed: ${error instanceof Error ? error.message : String(error)}`);
+      console.error(
+        `❌ Health check failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
       throw error;
     }
   }
@@ -414,7 +506,9 @@ export class MonitoringCommandHandler {
     });
 
     this.monitor.on('error', (error: { collector: string; error: Error }) => {
-      console.error(`❌ Monitoring error in ${error.collector}: ${error.error.message}`);
+      console.error(
+        `❌ Monitoring error in ${error.collector}: ${error.error.message}`,
+      );
     });
   }
 
@@ -423,26 +517,37 @@ export class MonitoringCommandHandler {
       try {
         console.clear();
         console.log('👀 Trust CLI Real-Time Monitor - Watch Mode');
-        console.log('═══════════════════════════════════════════════════════════');
+        console.log(
+          '═══════════════════════════════════════════════════════════',
+        );
         console.log(`🕒 Updated: ${new Date().toLocaleString()}`);
-        
+
         const health = await this.monitor.getSystemHealth();
         const metrics = await this.monitor.getPerformanceMetrics();
         const alerts = this.monitor.getActiveAlerts();
 
         // Quick status
         const healthIcon = this.getHealthIcon(health.overall);
-        console.log(`\n🎯 Status: ${healthIcon} ${health.overall.toUpperCase()} | Alerts: ${alerts.length}`);
+        console.log(
+          `\n🎯 Status: ${healthIcon} ${health.overall.toUpperCase()} | Alerts: ${alerts.length}`,
+        );
 
         // Real-time metrics
         console.log('\n📊 Live Metrics:');
-        console.log(`   CPU: ${metrics.cpu.usage.toFixed(1)}% | Memory: ${((metrics.memory.used / metrics.memory.total) * 100).toFixed(1)}% | Disk: ${((metrics.disk.used / metrics.disk.total) * 100).toFixed(1)}%`);
+        console.log(
+          `   CPU: ${metrics.cpu.usage.toFixed(1)}% | Memory: ${((metrics.memory.used / metrics.memory.total) * 100).toFixed(1)}% | Disk: ${((metrics.disk.used / metrics.disk.total) * 100).toFixed(1)}%`,
+        );
 
         // Recent alerts
         if (alerts.length > 0) {
           console.log('\n🚨 Active Alerts:');
-          alerts.slice(0, 5).forEach(alert => {
-            const icon = alert.severity === 'critical' ? '🔴' : alert.severity === 'warning' ? '🟡' : 'ℹ️';
+          alerts.slice(0, 5).forEach((alert) => {
+            const icon =
+              alert.severity === 'critical'
+                ? '🔴'
+                : alert.severity === 'warning'
+                  ? '🟡'
+                  : 'ℹ️';
             console.log(`   ${icon} ${alert.title} (${alert.source})`);
           });
         }
@@ -464,25 +569,35 @@ export class MonitoringCommandHandler {
   private displayMetrics(metrics: any[], args: MonitoringCommandArgs): void {
     console.log(`\n📊 Metrics (${metrics.length} series):`);
 
-    metrics.forEach(metric => {
+    metrics.forEach((metric) => {
       console.log(`\n📈 ${metric.name} (${metric.type}):`);
       console.log(`   Unit: ${metric.unit}`);
       console.log(`   Points: ${metric.points.length}`);
-      
+
       if (metric.labels) {
-        console.log(`   Labels: ${Object.entries(metric.labels).map(([k, v]) => `${k}=${v}`).join(', ')}`);
+        console.log(
+          `   Labels: ${Object.entries(metric.labels)
+            .map(([k, v]) => `${k}=${v}`)
+            .join(', ')}`,
+        );
       }
 
       if (metric.points.length > 0) {
         const latest = metric.points[metric.points.length - 1];
         const oldest = metric.points[0];
-        console.log(`   Latest: ${latest.value.toFixed(2)} @ ${new Date(latest.timestamp).toLocaleString()}`);
-        console.log(`   Range: ${new Date(oldest.timestamp).toLocaleString()} - ${new Date(latest.timestamp).toLocaleString()}`);
+        console.log(
+          `   Latest: ${latest.value.toFixed(2)} @ ${new Date(latest.timestamp).toLocaleString()}`,
+        );
+        console.log(
+          `   Range: ${new Date(oldest.timestamp).toLocaleString()} - ${new Date(latest.timestamp).toLocaleString()}`,
+        );
 
         if (args.verbose && metric.points.length > 1) {
           console.log(`   Recent values:`);
           metric.points.slice(-5).forEach((point: any) => {
-            console.log(`     ${point.value.toFixed(2)} @ ${new Date(point.timestamp).toLocaleTimeString()}`);
+            console.log(
+              `     ${point.value.toFixed(2)} @ ${new Date(point.timestamp).toLocaleTimeString()}`,
+            );
           });
         }
       }
@@ -498,8 +613,8 @@ export class MonitoringCommandHandler {
       exported: new Date().toISOString(),
       version: '1.0.0',
       health,
-      widgets: widgets.map(w => ({ ...w, data: undefined })), // Remove runtime data
-      metrics: metrics.map(m => ({
+      widgets: widgets.map((w) => ({ ...w, data: undefined })), // Remove runtime data
+      metrics: metrics.map((m) => ({
         name: m.name,
         unit: m.unit,
         type: m.type,
@@ -565,10 +680,14 @@ ${dashboard.metrics.map((m: any) => `  - ${m.name}: ${m.latestValue} ${m.unit}`)
 
   private getHealthIcon(status: string): string {
     switch (status) {
-      case 'healthy': return '✅';
-      case 'warning': return '⚠️';
-      case 'critical': return '🔴';
-      default: return '❓';
+      case 'healthy':
+        return '✅';
+      case 'warning':
+        return '⚠️';
+      case 'critical':
+        return '🔴';
+      default:
+        return '❓';
     }
   }
 
@@ -600,7 +719,9 @@ ${dashboard.metrics.map((m: any) => `  - ${m.name}: ${m.latestValue} ${m.unit}`)
   }
 }
 
-export async function handleMonitoringCommand(args: MonitoringCommandArgs): Promise<void> {
+export async function handleMonitoringCommand(
+  args: MonitoringCommandArgs,
+): Promise<void> {
   const handler = new MonitoringCommandHandler();
   await handler.handleCommand(args);
 }

@@ -65,11 +65,11 @@ export interface SecurityStatus {
     low: number;
   };
   lastScan: number;
-  compliance: {
+  compliance: Array<{
     framework: string;
     score: number;
     checks: { passed: number; failed: number; total: number };
-  }[];
+  }>;
   threats: {
     detected: number;
     blocked: number;
@@ -199,7 +199,7 @@ export class RealTimeMonitor extends EventEmitter {
     const series = this.metrics.get(name);
     if (series) {
       series.points.push(point);
-      
+
       // Keep only last 1000 points for performance
       if (series.points.length > 1000) {
         series.points = series.points.slice(-1000);
@@ -243,7 +243,7 @@ export class RealTimeMonitor extends EventEmitter {
   }
 
   getActiveAlerts(): Alert[] {
-    return this.getAlerts().filter(alert => !alert.acknowledged);
+    return this.getAlerts().filter((alert) => !alert.acknowledged);
   }
 
   async getSystemHealth(): Promise<SystemHealth> {
@@ -259,17 +259,35 @@ export class RealTimeMonitor extends EventEmitter {
     // Determine component health
     const components = {
       cpu: cpuUsage > 90 ? 'critical' : cpuUsage > 75 ? 'warning' : 'healthy',
-      memory: memoryInfo.usagePercent > 90 ? 'critical' : memoryInfo.usagePercent > 80 ? 'warning' : 'healthy',
-      disk: diskInfo.usagePercent > 95 ? 'critical' : diskInfo.usagePercent > 85 ? 'warning' : 'healthy',
+      memory:
+        memoryInfo.usagePercent > 90
+          ? 'critical'
+          : memoryInfo.usagePercent > 80
+            ? 'warning'
+            : 'healthy',
+      disk:
+        diskInfo.usagePercent > 95
+          ? 'critical'
+          : diskInfo.usagePercent > 85
+            ? 'warning'
+            : 'healthy',
       network: 'healthy', // Simplified for now
-      security: securityInfo.vulnerabilities.critical > 0 ? 'critical' : 
-                securityInfo.vulnerabilities.high > 0 ? 'warning' : 'healthy',
+      security:
+        securityInfo.vulnerabilities.critical > 0
+          ? 'critical'
+          : securityInfo.vulnerabilities.high > 0
+            ? 'warning'
+            : 'healthy',
     } as const;
 
     // Determine overall health
     const hasAnyCritical = Object.values(components).includes('critical');
     const hasAnyWarning = Object.values(components).includes('warning');
-    const overall = hasAnyCritical ? 'critical' : hasAnyWarning ? 'warning' : 'healthy';
+    const overall = hasAnyCritical
+      ? 'critical'
+      : hasAnyWarning
+        ? 'warning'
+        : 'healthy';
 
     return {
       overall,
@@ -312,21 +330,24 @@ export class RealTimeMonitor extends EventEmitter {
       const metrics = await this.getPerformanceMetrics();
       const now = Date.now();
 
-      this.updateMetric('cpu.usage', { timestamp: now, value: metrics.cpu.usage });
-      this.updateMetric('memory.usage', { 
-        timestamp: now, 
-        value: (metrics.memory.used / metrics.memory.total) * 100 
+      this.updateMetric('cpu.usage', {
+        timestamp: now,
+        value: metrics.cpu.usage,
       });
-      this.updateMetric('disk.usage', { 
-        timestamp: now, 
-        value: (metrics.disk.used / metrics.disk.total) * 100 
+      this.updateMetric('memory.usage', {
+        timestamp: now,
+        value: (metrics.memory.used / metrics.memory.total) * 100,
+      });
+      this.updateMetric('disk.usage', {
+        timestamp: now,
+        value: (metrics.disk.used / metrics.disk.total) * 100,
       });
     });
 
     // Health checker
     this.collectors.set('health-check', async () => {
       const health = await this.getSystemHealth();
-      
+
       // Generate alerts for critical issues
       if (health.overall === 'critical') {
         const criticalComponents = Object.entries(health.components)
@@ -382,7 +403,11 @@ export class RealTimeMonitor extends EventEmitter {
     return Math.min(100, (loadAvg / cpuCount) * 100);
   }
 
-  private async getMemoryInfo(): Promise<{ usagePercent: number; used: number; total: number }> {
+  private async getMemoryInfo(): Promise<{
+    usagePercent: number;
+    used: number;
+    total: number;
+  }> {
     const total = os.totalmem();
     const free = os.freemem();
     const used = total - free;
@@ -391,13 +416,19 @@ export class RealTimeMonitor extends EventEmitter {
     return { usagePercent, used, total };
   }
 
-  private async getDiskInfo(): Promise<{ usagePercent: number; used: number; total: number; free: number; iops: number }> {
+  private async getDiskInfo(): Promise<{
+    usagePercent: number;
+    used: number;
+    total: number;
+    free: number;
+    iops: number;
+  }> {
     // This is a simplified implementation
     // In a real implementation, you'd use platform-specific APIs
     const total = 100 * 1024 * 1024 * 1024; // 100GB
     const used = 50 * 1024 * 1024 * 1024; // 50GB
     const free = total - used;
-    
+
     return {
       usagePercent: 50, // Placeholder
       used,
@@ -493,10 +524,10 @@ export class RealTimeMonitor extends EventEmitter {
 
     try {
       await fs.mkdir(this.configPath, { recursive: true });
-      
+
       const config = {
         widgets: Array.from(this.widgets.values()),
-        metrics: Array.from(this.metrics.values()).map(m => ({
+        metrics: Array.from(this.metrics.values()).map((m) => ({
           name: m.name,
           unit: m.unit,
           type: m.type,

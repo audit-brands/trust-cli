@@ -159,11 +159,21 @@ export class AdminCommandHandler {
         break;
       default:
         console.log('📋 Available policy commands:');
-        console.log('   trust admin policy list               - List all policies');
-        console.log('   trust admin policy create <name>     - Create new policy');
-        console.log('   trust admin policy apply <id>        - Apply policy to users');
-        console.log('   trust admin policy validate <id>     - Validate policy rules');
-        console.log('   trust admin policy show <id>         - Show policy details');
+        console.log(
+          '   trust admin policy list               - List all policies',
+        );
+        console.log(
+          '   trust admin policy create <name>     - Create new policy',
+        );
+        console.log(
+          '   trust admin policy apply <id>        - Apply policy to users',
+        );
+        console.log(
+          '   trust admin policy validate <id>     - Validate policy rules',
+        );
+        console.log(
+          '   trust admin policy show <id>         - Show policy details',
+        );
     }
   }
 
@@ -196,10 +206,18 @@ export class AdminCommandHandler {
       default:
         console.log('👥 Available user commands:');
         console.log('   trust admin users list               - List all users');
-        console.log('   trust admin users scan               - Scan for user configs');
-        console.log('   trust admin users profile <user>    - Show user profile');
-        console.log('   trust admin users suspend <user>    - Suspend user access');
-        console.log('   trust admin users activate <user>   - Activate user access');
+        console.log(
+          '   trust admin users scan               - Scan for user configs',
+        );
+        console.log(
+          '   trust admin users profile <user>    - Show user profile',
+        );
+        console.log(
+          '   trust admin users suspend <user>    - Suspend user access',
+        );
+        console.log(
+          '   trust admin users activate <user>   - Activate user access',
+        );
     }
   }
 
@@ -223,9 +241,15 @@ export class AdminCommandHandler {
       default:
         console.log('📊 Available audit commands:');
         console.log('   trust admin audit log [days]        - Show audit log');
-        console.log('   trust admin audit export <file>     - Export audit log');
-        console.log('   trust admin audit cleanup [days]    - Cleanup old logs');
-        console.log('   trust admin audit stats             - Show audit statistics');
+        console.log(
+          '   trust admin audit export <file>     - Export audit log',
+        );
+        console.log(
+          '   trust admin audit cleanup [days]    - Cleanup old logs',
+        );
+        console.log(
+          '   trust admin audit stats             - Show audit statistics',
+        );
     }
   }
 
@@ -251,10 +275,18 @@ export class AdminCommandHandler {
         break;
       default:
         console.log('⚙️  Available defaults commands:');
-        console.log('   trust admin defaults set <key> <val> - Set system default');
-        console.log('   trust admin defaults show            - Show all defaults');
-        console.log('   trust admin defaults reset [--force] - Reset to factory');
-        console.log('   trust admin defaults template <name> - Create config template');
+        console.log(
+          '   trust admin defaults set <key> <val> - Set system default',
+        );
+        console.log(
+          '   trust admin defaults show            - Show all defaults',
+        );
+        console.log(
+          '   trust admin defaults reset [--force] - Reset to factory',
+        );
+        console.log(
+          '   trust admin defaults template <name> - Create config template',
+        );
     }
   }
 
@@ -274,10 +306,18 @@ export class AdminCommandHandler {
         break;
       default:
         console.log('🔒 Available security commands:');
-        console.log('   trust admin security scan           - Run security scan');
-        console.log('   trust admin security harden         - Apply security hardening');
-        console.log('   trust admin security permissions    - Check file permissions');
-        console.log('   trust admin security keys [action]  - Manage security keys');
+        console.log(
+          '   trust admin security scan           - Run security scan',
+        );
+        console.log(
+          '   trust admin security harden         - Apply security hardening',
+        );
+        console.log(
+          '   trust admin security permissions    - Check file permissions',
+        );
+        console.log(
+          '   trust admin security keys [action]  - Manage security keys',
+        );
     }
   }
 
@@ -297,9 +337,15 @@ export class AdminCommandHandler {
         break;
       default:
         console.log('📋 Available compliance commands:');
-        console.log('   trust admin compliance check <framework> - Check compliance');
-        console.log('   trust admin compliance report [framework] - Generate report');
-        console.log('   trust admin compliance frameworks        - List frameworks');
+        console.log(
+          '   trust admin compliance check <framework> - Check compliance',
+        );
+        console.log(
+          '   trust admin compliance report [framework] - Generate report',
+        );
+        console.log(
+          '   trust admin compliance frameworks        - List frameworks',
+        );
     }
   }
 
@@ -325,9 +371,15 @@ export class AdminCommandHandler {
         break;
       default:
         console.log('🔄 Available bulk commands:');
-        console.log('   trust admin bulk update <key> <val> - Bulk update config');
-        console.log('   trust admin bulk policy <id>        - Bulk apply policy');
-        console.log('   trust admin bulk migrate <version>  - Bulk migrate configs');
+        console.log(
+          '   trust admin bulk update <key> <val> - Bulk update config',
+        );
+        console.log(
+          '   trust admin bulk policy <id>        - Bulk apply policy',
+        );
+        console.log(
+          '   trust admin bulk migrate <version>  - Bulk migrate configs',
+        );
     }
   }
 
@@ -353,9 +405,15 @@ export class AdminCommandHandler {
         break;
       default:
         console.log('🔧 Available override commands:');
-        console.log('   trust admin override set <user> <key> - Set user override');
-        console.log('   trust admin override remove <user> <key> - Remove override');
-        console.log('   trust admin override list <user>    - List user overrides');
+        console.log(
+          '   trust admin override set <user> <key> - Set user override',
+        );
+        console.log(
+          '   trust admin override remove <user> <key> - Remove override',
+        );
+        console.log(
+          '   trust admin override list <user>    - List user overrides',
+        );
     }
   }
 
@@ -369,12 +427,20 @@ export class AdminCommandHandler {
     const policies = await this.loadPolicies();
     const auditEvents = await this.loadAuditEvents();
 
-    console.log(`   Active Users: ${users.filter(u => u.status === 'active').length}`);
+    console.log(
+      `   Active Users: ${users.filter((u) => u.status === 'active').length}`,
+    );
     console.log(`   Total Users: ${users.length}`);
     console.log(`   Active Policies: ${policies.length}`);
-    console.log(`   Audit Events (30d): ${auditEvents.filter(e => 
-      Date.now() - new Date(e.timestamp).getTime() < 30 * 24 * 60 * 60 * 1000
-    ).length}`);
+    console.log(
+      `   Audit Events (30d): ${
+        auditEvents.filter(
+          (e) =>
+            Date.now() - new Date(e.timestamp).getTime() <
+            30 * 24 * 60 * 60 * 1000,
+        ).length
+      }`,
+    );
 
     // Security Status
     console.log('\n🔒 Security Status:');
@@ -384,13 +450,18 @@ export class AdminCommandHandler {
     // Recent Activity
     console.log('\n📈 Recent Activity:');
     const recentEvents = auditEvents
-      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+      .sort(
+        (a, b) =>
+          new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
+      )
       .slice(0, 5);
 
     if (recentEvents.length > 0) {
-      recentEvents.forEach(event => {
+      recentEvents.forEach((event) => {
         const time = new Date(event.timestamp).toLocaleString();
-        console.log(`   ${time}: ${event.action} by ${event.user} - ${event.result}`);
+        console.log(
+          `   ${time}: ${event.action} by ${event.user} - ${event.result}`,
+        );
       });
     } else {
       console.log('   No recent activity');
@@ -407,7 +478,7 @@ export class AdminCommandHandler {
   // Policy Management Methods
   private async listPolicies(): Promise<void> {
     const policies = await this.loadPolicies();
-    
+
     if (policies.length === 0) {
       console.log('📋 No policies found');
       console.log('💡 Create one with: trust admin policy create <name>');
@@ -416,8 +487,8 @@ export class AdminCommandHandler {
 
     console.log('\n📋 Administrative Policies:');
     console.log('═══════════════════════════════════════════════════════════');
-    
-    policies.forEach(policy => {
+
+    policies.forEach((policy) => {
       console.log(`\n📄 ${policy.name} (${policy.id})`);
       console.log(`   Description: ${policy.description}`);
       console.log(`   Version: ${policy.version}`);
@@ -441,12 +512,12 @@ export class AdminCommandHandler {
           operator: 'equals',
           value: 'strict',
           message: 'Privacy mode must be set to strict',
-          severity: 'warning'
-        }
+          severity: 'warning',
+        },
       ],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      createdBy: os.userInfo().username
+      createdBy: os.userInfo().username,
     };
 
     const policyPath = path.join(this.policiesDir, `${policy.id}.json`);
@@ -457,7 +528,10 @@ export class AdminCommandHandler {
     console.log('💡 Edit the policy file to customize rules');
   }
 
-  private async applyPolicy(policyId: string, targetUser?: string): Promise<void> {
+  private async applyPolicy(
+    policyId: string,
+    targetUser?: string,
+  ): Promise<void> {
     const policy = await this.loadPolicy(policyId);
     if (!policy) {
       throw new Error(`Policy not found: ${policyId}`);
@@ -492,7 +566,9 @@ export class AdminCommandHandler {
         console.log(`✅ Rule ${rule.id}: Valid`);
         validRules++;
       } catch (error) {
-        console.log(`❌ Rule ${rule.id}: ${error instanceof Error ? error.message : String(error)}`);
+        console.log(
+          `❌ Rule ${rule.id}: ${error instanceof Error ? error.message : String(error)}`,
+        );
         invalidRules++;
       }
     }
@@ -500,7 +576,9 @@ export class AdminCommandHandler {
     console.log(`\n📊 Validation Results:`);
     console.log(`   Valid Rules: ${validRules}`);
     console.log(`   Invalid Rules: ${invalidRules}`);
-    console.log(`   Overall Status: ${invalidRules === 0 ? '✅ Valid' : '❌ Invalid'}`);
+    console.log(
+      `   Overall Status: ${invalidRules === 0 ? '✅ Valid' : '❌ Invalid'}`,
+    );
   }
 
   private async showPolicy(policyId: string): Promise<void> {
@@ -515,12 +593,16 @@ export class AdminCommandHandler {
     console.log(`Description: ${policy.description}`);
     console.log(`Version: ${policy.version}`);
     console.log(`Enforcement: ${policy.enforcement}`);
-    console.log(`Created: ${new Date(policy.createdAt).toLocaleString()} by ${policy.createdBy}`);
+    console.log(
+      `Created: ${new Date(policy.createdAt).toLocaleString()} by ${policy.createdBy}`,
+    );
     console.log(`Updated: ${new Date(policy.updatedAt).toLocaleString()}`);
 
     console.log(`\n📋 Rules (${policy.rules.length}):`);
     policy.rules.forEach((rule, index) => {
-      console.log(`   ${index + 1}. ${rule.path} ${rule.operator} ${JSON.stringify(rule.value)}`);
+      console.log(
+        `   ${index + 1}. ${rule.path} ${rule.operator} ${JSON.stringify(rule.value)}`,
+      );
       console.log(`      Severity: ${rule.severity}`);
       if (rule.message) {
         console.log(`      Message: ${rule.message}`);
@@ -531,7 +613,7 @@ export class AdminCommandHandler {
   // User Management Methods
   private async listUsers(verbose = false): Promise<void> {
     const users = await this.loadUserProfiles();
-    
+
     if (users.length === 0) {
       console.log('👥 No users found');
       console.log('💡 Run "trust admin users scan" to discover users');
@@ -540,15 +622,22 @@ export class AdminCommandHandler {
 
     console.log('\n👥 Trust CLI Users:');
     console.log('═══════════════════════════════════════════════════════════');
-    
-    users.forEach(user => {
-      const statusIcon = user.status === 'active' ? '✅' : user.status === 'suspended' ? '⏸️' : '📦';
+
+    users.forEach((user) => {
+      const statusIcon =
+        user.status === 'active'
+          ? '✅'
+          : user.status === 'suspended'
+            ? '⏸️'
+            : '📦';
       console.log(`\n${statusIcon} ${user.username} (${user.id})`);
       console.log(`   Status: ${user.status}`);
-      console.log(`   Last Access: ${new Date(user.lastAccess).toLocaleString()}`);
+      console.log(
+        `   Last Access: ${new Date(user.lastAccess).toLocaleString()}`,
+      );
       console.log(`   Policies: ${user.policies.length}`);
       console.log(`   Overrides: ${Object.keys(user.overrides).length}`);
-      
+
       if (verbose) {
         console.log(`   Config: ${user.configPath}`);
         console.log(`   Version: ${user.version}`);
@@ -560,8 +649,15 @@ export class AdminCommandHandler {
     console.log('🔍 Scanning for Trust CLI user configurations...');
 
     // Look for config files in common locations
-    const homePattern = path.join(os.homedir(), '**', '.trustcli', 'config.json');
-    const configFiles = await glob(homePattern, { ignore: ['**/node_modules/**'] });
+    const homePattern = path.join(
+      os.homedir(),
+      '**',
+      '.trustcli',
+      'config.json',
+    );
+    const configFiles = await glob(homePattern, {
+      ignore: ['**/node_modules/**'],
+    });
 
     console.log(`📂 Found ${configFiles.length} configuration files`);
 
@@ -572,7 +668,7 @@ export class AdminCommandHandler {
       try {
         const configData = await fs.readFile(configFile, 'utf-8');
         const config = JSON.parse(configData);
-        
+
         // Extract username from path or system
         const username = this.extractUsernameFromPath(configFile);
         const userId = `user_${username}_${Date.now()}`;
@@ -585,11 +681,11 @@ export class AdminCommandHandler {
           version: config.version || '1.0.0',
           policies: [],
           overrides: {},
-          status: 'active'
+          status: 'active',
         };
 
         const userFile = path.join(this.adminDir, 'users', `${username}.json`);
-        
+
         try {
           await fs.access(userFile);
           existingUsers++;
@@ -600,7 +696,9 @@ export class AdminCommandHandler {
           console.log(`   ✅ Added user: ${username}`);
         }
       } catch (error) {
-        console.log(`   ❌ Failed to process ${configFile}: ${error instanceof Error ? error.message : String(error)}`);
+        console.log(
+          `   ❌ Failed to process ${configFile}: ${error instanceof Error ? error.message : String(error)}`,
+        );
       }
     }
 
@@ -626,14 +724,16 @@ export class AdminCommandHandler {
 
     console.log(`\n📋 Applied Policies (${user.policies.length}):`);
     if (user.policies.length > 0) {
-      user.policies.forEach(policyId => {
+      user.policies.forEach((policyId) => {
         console.log(`   - ${policyId}`);
       });
     } else {
       console.log('   No policies applied');
     }
 
-    console.log(`\n🔧 Configuration Overrides (${Object.keys(user.overrides).length}):`);
+    console.log(
+      `\n🔧 Configuration Overrides (${Object.keys(user.overrides).length}):`,
+    );
     if (Object.keys(user.overrides).length > 0) {
       Object.entries(user.overrides).forEach(([key, value]) => {
         console.log(`   ${key}: ${JSON.stringify(value)}`);
@@ -651,7 +751,7 @@ export class AdminCommandHandler {
       this.auditDir,
       path.join(this.adminDir, 'users'),
       path.join(this.adminDir, 'templates'),
-      path.join(this.adminDir, 'defaults')
+      path.join(this.adminDir, 'defaults'),
     ];
 
     for (const dir of dirs) {
@@ -724,8 +824,8 @@ export class AdminCommandHandler {
       const auditData = await fs.readFile(auditFile, 'utf-8');
       return auditData
         .split('\n')
-        .filter(line => line.trim())
-        .map(line => JSON.parse(line));
+        .filter((line) => line.trim())
+        .map((line) => JSON.parse(line));
     } catch {
       return [];
     }
@@ -734,18 +834,23 @@ export class AdminCommandHandler {
   private extractUsernameFromPath(configPath: string): string {
     // Extract username from path like /home/username/.trustcli/config.json
     const parts = configPath.split(path.sep);
-    const homeIndex = parts.findIndex(part => part === 'home');
+    const homeIndex = parts.findIndex((part) => part === 'home');
     if (homeIndex !== -1 && homeIndex + 1 < parts.length) {
       return parts[homeIndex + 1];
     }
-    
+
     // Fallback to system user
     return os.userInfo().username;
   }
 
   // Placeholder implementations for remaining methods
-  private async applyPolicyToUser(_policy: AdminPolicy, _username: string): Promise<void> {
-    console.log('🚧 Policy application to specific user - implementation pending');
+  private async applyPolicyToUser(
+    _policy: AdminPolicy,
+    _username: string,
+  ): Promise<void> {
+    console.log(
+      '🚧 Policy application to specific user - implementation pending',
+    );
   }
 
   private async applyPolicyToAllUsers(_policy: AdminPolicy): Promise<void> {
@@ -789,7 +894,9 @@ export class AdminCommandHandler {
   }
 
   private async createConfigTemplate(_name: string): Promise<void> {
-    console.log(`🚧 Config template creation: ${_name} - implementation pending`);
+    console.log(
+      `🚧 Config template creation: ${_name} - implementation pending`,
+    );
   }
 
   private async runSecurityScan(): Promise<void> {
@@ -809,10 +916,15 @@ export class AdminCommandHandler {
   }
 
   private async checkCompliance(_framework: string): Promise<void> {
-    console.log(`🚧 Compliance check for ${_framework} - implementation pending`);
+    console.log(
+      `🚧 Compliance check for ${_framework} - implementation pending`,
+    );
   }
 
-  private async generateComplianceReport(_framework?: string, _output?: string): Promise<void> {
+  private async generateComplianceReport(
+    _framework?: string,
+    _output?: string,
+  ): Promise<void> {
     console.log('🚧 Compliance report generation - implementation pending');
   }
 
@@ -834,14 +946,23 @@ export class AdminCommandHandler {
   }
 
   private async bulkMigrateConfigs(_version: string): Promise<void> {
-    console.log(`🚧 Bulk config migration to ${_version} - implementation pending`);
+    console.log(
+      `🚧 Bulk config migration to ${_version} - implementation pending`,
+    );
   }
 
-  private async setUserOverride(_username: string, _key: string, _value?: string): Promise<void> {
+  private async setUserOverride(
+    _username: string,
+    _key: string,
+    _value?: string,
+  ): Promise<void> {
     console.log('🚧 User override setting - implementation pending');
   }
 
-  private async removeUserOverride(_username: string, _key: string): Promise<void> {
+  private async removeUserOverride(
+    _username: string,
+    _key: string,
+  ): Promise<void> {
     console.log('🚧 User override removal - implementation pending');
   }
 
@@ -850,7 +971,9 @@ export class AdminCommandHandler {
   }
 }
 
-export async function handleAdminCommand(args: AdminCommandArgs): Promise<void> {
+export async function handleAdminCommand(
+  args: AdminCommandArgs,
+): Promise<void> {
   const handler = new AdminCommandHandler();
   await handler.handleCommand(args);
 }

@@ -290,18 +290,23 @@ export class UnifiedModelManager {
    */
   async downloadModel(modelName: string): Promise<void> {
     const allModels = await this.listAllModels();
-    const targetModel = allModels.find(m => m.name === modelName);
+    const targetModel = allModels.find((m) => m.name === modelName);
 
     if (!targetModel) {
       // If not found in current models, try to determine backend from model name patterns
       if (this.isOllamaModelName(modelName)) {
         console.log(`📥 Pulling model ${modelName} via Ollama...`);
-        const success = await this.ollamaClient.pullModel(modelName, (progress) => {
-          process.stdout.write(`\r${progress}`);
-        });
-        
+        const success = await this.ollamaClient.pullModel(
+          modelName,
+          (progress) => {
+            process.stdout.write(`\r${progress}`);
+          },
+        );
+
         if (success) {
-          console.log(`\n✅ Model ${modelName} downloaded successfully via Ollama`);
+          console.log(
+            `\n✅ Model ${modelName} downloaded successfully via Ollama`,
+          );
           this.clearCache(); // Refresh cache
         } else {
           throw new Error(`Failed to download ${modelName} via Ollama`);
@@ -310,26 +315,33 @@ export class UnifiedModelManager {
       } else {
         // Try HuggingFace
         const hfModels = this.trustModelManager.listAvailableModels();
-        const hfModel = hfModels.find(m => m.name === modelName);
+        const hfModel = hfModels.find((m) => m.name === modelName);
         if (hfModel) {
           await this.trustModelManager.downloadModel(modelName);
           this.clearCache(); // Refresh cache
           return;
         }
       }
-      
-      throw new Error(`Model ${modelName} not found in any backend. Available models: ${allModels.map(m => m.name).join(', ')}`);
+
+      throw new Error(
+        `Model ${modelName} not found in any backend. Available models: ${allModels.map((m) => m.name).join(', ')}`,
+      );
     }
 
     // Model found in current list - use its backend
     if (targetModel.backend === 'ollama') {
       console.log(`📥 Pulling model ${modelName} via Ollama...`);
-      const success = await this.ollamaClient.pullModel(modelName, (progress) => {
-        process.stdout.write(`\r${progress}`);
-      });
-      
+      const success = await this.ollamaClient.pullModel(
+        modelName,
+        (progress) => {
+          process.stdout.write(`\r${progress}`);
+        },
+      );
+
       if (success) {
-        console.log(`\n✅ Model ${modelName} downloaded successfully via Ollama`);
+        console.log(
+          `\n✅ Model ${modelName} downloaded successfully via Ollama`,
+        );
         this.clearCache(); // Refresh cache
       } else {
         throw new Error(`Failed to download ${modelName} via Ollama`);
@@ -338,7 +350,9 @@ export class UnifiedModelManager {
       await this.trustModelManager.downloadModel(modelName);
       this.clearCache(); // Refresh cache
     } else {
-      throw new Error(`Backend ${targetModel.backend} not supported for downloads`);
+      throw new Error(
+        `Backend ${targetModel.backend} not supported for downloads`,
+      );
     }
   }
 
@@ -348,7 +362,7 @@ export class UnifiedModelManager {
    */
   async deleteModel(modelName: string): Promise<void> {
     const allModels = await this.listAllModels();
-    const targetModel = allModels.find(m => m.name === modelName);
+    const targetModel = allModels.find((m) => m.name === modelName);
 
     if (!targetModel) {
       throw new Error(`Model ${modelName} not found in any backend`);
@@ -362,15 +376,19 @@ export class UnifiedModelManager {
       const { exec } = await import('child_process');
       const { promisify } = await import('util');
       const execAsync = promisify(exec);
-      
+
       try {
         await execAsync(`ollama rm ${modelName}`);
         console.log(`✅ Model ${modelName} deleted from Ollama backend`);
       } catch (error) {
-        throw new Error(`Failed to delete Ollama model ${modelName}: ${error instanceof Error ? error.message : String(error)}`);
+        throw new Error(
+          `Failed to delete Ollama model ${modelName}: ${error instanceof Error ? error.message : String(error)}`,
+        );
       }
     } else {
-      throw new Error(`Backend ${targetModel.backend} not supported for deletion`);
+      throw new Error(
+        `Backend ${targetModel.backend} not supported for deletion`,
+      );
     }
 
     this.clearCache(); // Refresh cache after deletion
@@ -381,7 +399,7 @@ export class UnifiedModelManager {
    */
   async switchModel(modelName: string): Promise<void> {
     const allModels = await this.listAllModels();
-    const targetModel = allModels.find(m => m.name === modelName);
+    const targetModel = allModels.find((m) => m.name === modelName);
 
     if (!targetModel) {
       throw new Error(`Model ${modelName} not found in any backend`);
@@ -393,7 +411,9 @@ export class UnifiedModelManager {
       this.ollamaClient.setModel(modelName);
       console.log(`✅ Switched to Ollama model: ${modelName}`);
     } else {
-      throw new Error(`Backend ${targetModel.backend} not supported for switching`);
+      throw new Error(
+        `Backend ${targetModel.backend} not supported for switching`,
+      );
     }
   }
 
@@ -544,6 +564,6 @@ export class UnifiedModelManager {
       /:.*b/i, // Contains colon followed by size in billions
     ];
 
-    return ollamaPatterns.some(pattern => pattern.test(modelName));
+    return ollamaPatterns.some((pattern) => pattern.test(modelName));
   }
 }
