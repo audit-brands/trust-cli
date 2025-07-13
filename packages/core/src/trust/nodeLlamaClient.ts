@@ -24,7 +24,6 @@ export class TrustNodeLlamaClient implements TrustModelClient {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private context: any = null;
   private currentModelConfig: TrustModelConfig | null = null;
-  private reusableSession: LlamaChatSession | null = null;
   private metrics: TrustModelMetrics = {
     tokensPerSecond: 0,
     memoryUsage: 0,
@@ -78,10 +77,6 @@ export class TrustNodeLlamaClient implements TrustModelClient {
 
   async unloadModel(): Promise<void> {
     try {
-      if (this.reusableSession) {
-        await this.reusableSession.dispose();
-        this.reusableSession = null;
-      }
       if (this.context) {
         await this.context.dispose();
         this.context = null;
@@ -106,18 +101,14 @@ export class TrustNodeLlamaClient implements TrustModelClient {
       throw new Error('Model not loaded');
     }
 
-    // Try reusing existing session first
-    if (this.reusableSession) {
-      console.log('🔄 Reusing existing chat session...');
-      return this.reusableSession;
-    }
-
     console.log('🆕 Creating new chat session...');
-    this.reusableSession = new LlamaChatSession({
-      contextSequence: this.context.getSequence(),
+    const contextSequence = this.context.getSequence();
+    const session = new LlamaChatSession({
+      contextSequence: contextSequence,
     });
+    console.log('✅ LlamaChatSession created successfully');
 
-    return this.reusableSession;
+    return session;
   }
 
   async generateText(
@@ -129,9 +120,10 @@ export class TrustNodeLlamaClient implements TrustModelClient {
     }
 
     const startTime = Date.now();
+    let session: LlamaChatSession | null = null;
 
     try {
-      const session = await this.createChatSession();
+      session = await this.createChatSession();
 
       // Build prompt options with native function calling support
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -161,6 +153,15 @@ export class TrustNodeLlamaClient implements TrustModelClient {
     } catch (error) {
       console.error('Error generating text:', error);
       throw new Error(`Text generation failed: ${error}`);
+    } finally {
+      // Properly dispose of the session to free the sequence
+      if (session) {
+        try {
+          await session.dispose();
+        } catch (disposeError) {
+          console.warn('Warning: Failed to dispose chat session:', disposeError);
+        }
+      }
     }
   }
 
@@ -174,9 +175,10 @@ export class TrustNodeLlamaClient implements TrustModelClient {
 
     const startTime = Date.now();
     let totalTokens = 0;
+    let session: LlamaChatSession | null = null;
 
     try {
-      const session = await this.createChatSession();
+      session = await this.createChatSession();
 
       // Build prompt options with native function calling support
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -236,6 +238,15 @@ export class TrustNodeLlamaClient implements TrustModelClient {
         throw new Error(
           `Stream generation failed: ${error}. Fallback failed: ${fallbackError}`,
         );
+      }
+    } finally {
+      // Properly dispose of the session to free the sequence
+      if (session) {
+        try {
+          await session.dispose();
+        } catch (disposeError) {
+          console.warn('Warning: Failed to dispose chat session:', disposeError);
+        }
       }
     }
   }
