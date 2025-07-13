@@ -22,6 +22,7 @@ import { TrustModelConfig, GenerationOptions, AIBackend } from './types.js';
 import { GBNFunctionRegistry } from './gbnfFunctionRegistry.js';
 import { JsonRepairParser } from './jsonRepairParser.js';
 import { UniversalToolInterface, UniversalToolDefinition } from './universalToolInterface.js';
+import { ToolExecutionEngine, ToolExecutionContext } from './toolExecutionEngine.js';
 import { OllamaContentGenerator } from './ollamaContentGenerator.js';
 import { TrustConfiguration } from '../config/trustConfig.js';
 
@@ -35,6 +36,7 @@ export class TrustContentGenerator implements ContentGenerator {
   private toolRegistry?: any; // Will be properly typed later
   private jsonRepairParser: JsonRepairParser;
   private universalToolInterface: UniversalToolInterface;
+  private toolExecutionEngine?: ToolExecutionEngine;
   private useOllama = false; // Flag to track if Ollama is available and preferred
   private trustConfig: TrustConfiguration;
   private backendInitHistory: Array<{
@@ -51,6 +53,17 @@ export class TrustContentGenerator implements ContentGenerator {
     this.jsonRepairParser = new JsonRepairParser();
     this.universalToolInterface = new UniversalToolInterface();
     this.trustConfig = new TrustConfiguration();
+    
+    // Initialize tool execution engine if tool registry is available
+    if (this.toolRegistry) {
+      this.toolExecutionEngine = new ToolExecutionEngine(this.toolRegistry, {
+        allowFileOperations: true,
+        allowNetworkAccess: false,
+        allowShellExecution: false,
+        maxExecutionTime: 30000,
+        allowedPaths: [process.cwd(), '/tmp']
+      });
+    }
   }
 
   async initialize(): Promise<void> {

@@ -26,6 +26,7 @@ import {
   ToolDefinition,
 } from './ollamaClient.js';
 import { OllamaToolRegistry } from './ollamaToolRegistry.js';
+import { UniversalToolInterface } from './universalToolInterface.js';
 
 export interface OllamaContentGeneratorConfig extends OllamaConfig {
   maxToolCalls?: number;
@@ -43,6 +44,7 @@ export class OllamaContentGenerator implements ContentGenerator {
   private toolRegistry: OllamaToolRegistry;
   private config: Config;
   private trustToolRegistry: ToolRegistry;
+  private universalToolInterface: UniversalToolInterface;
   private maxToolCalls: number;
   private enableToolCalling: boolean;
   private conversationHistory: OllamaMessage[] = [];
@@ -62,6 +64,9 @@ export class OllamaContentGenerator implements ContentGenerator {
 
     // Initialize tool registry
     this.toolRegistry = new OllamaToolRegistry(config, trustToolRegistry);
+    
+    // Initialize universal tool interface
+    this.universalToolInterface = new UniversalToolInterface();
   }
 
   /**
