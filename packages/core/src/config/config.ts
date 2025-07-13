@@ -125,6 +125,7 @@ export interface ConfigParameters {
   };
   contextCompression?: {
     preserveRecentTurns?: number;
+    maxHistoryTokens?: number; // New property
   };
   checkpointing?: boolean;
   proxy?: string;
@@ -212,6 +213,7 @@ export class Config {
     };
     this.contextCompression = {
       preserveRecentTurns: params.contextCompression?.preserveRecentTurns ?? 6,
+      maxHistoryTokens: params.contextCompression?.maxHistoryTokens ?? 3000, // Default to 3000 tokens
     };
     this.checkpointing = params.checkpointing ?? false;
     this.proxy = params.proxy;
@@ -236,6 +238,10 @@ export class Config {
     } else {
       console.log('Data collection is disabled.');
     }
+  }
+
+  getMaxHistoryTokens(): number {
+    return this.contextCompression.maxHistoryTokens;
   }
 
   async refreshAuth(authMethod: AuthType) {
