@@ -35,6 +35,10 @@ export * from './ollamaClient.js';
 export * from './ollamaToolRegistry.js';
 export * from './ollamaContentGenerator.js';
 export * from './hardwareOptimizer.js';
+export * from './universalToolInterface.js';
+export { ToolExecutionEngine, ToolExecutionContext } from './toolExecutionEngine.js';
+export { ModelSelector, TaskContext } from './modelSelector.js';
+export { InteractiveModelSelector } from './interactiveModelSelector.js';
 
 // Trust version and metadata
 // Trust: An Open System for Modern Assurance

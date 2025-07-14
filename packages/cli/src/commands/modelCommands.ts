@@ -8,6 +8,7 @@ import {
   TrustModelManagerImpl,
   TrustConfiguration,
   UnifiedModelManager,
+  InteractiveModelSelector,
   // UnifiedModel,
 } from '@trust-cli/trust-cli-core';
 import * as fs from 'fs/promises';
@@ -39,6 +40,7 @@ export class ModelCommandHandler {
   private modelManager: TrustModelManagerImpl;
   private unifiedManager: UnifiedModelManager;
   private config: TrustConfiguration;
+  private interactiveSelector?: InteractiveModelSelector;
 
   constructor() {
     this.config = new TrustConfiguration();
@@ -50,6 +52,30 @@ export class ModelCommandHandler {
     await this.config.initialize();
     await this.modelManager.initialize();
     await this.unifiedManager.initialize();
+    
+    // Initialize interactive selector with available models
+    const allModels = await this.unifiedManager.listAllModels();
+    // Convert UnifiedModel to TrustModelConfig format
+    const trustModels = allModels.map(model => {
+      // Map backend to valid model types
+      let modelType: 'llama' | 'phi' | 'qwen' | 'mistral' | 'gemma' | 'deepseek' = 'llama';
+      if (model.name.includes('phi')) modelType = 'phi';
+      else if (model.name.includes('qwen')) modelType = 'qwen';
+      else if (model.name.includes('mistral')) modelType = 'mistral';
+      else if (model.name.includes('gemma')) modelType = 'gemma';
+      else if (model.name.includes('deepseek')) modelType = 'deepseek';
+
+      return {
+        name: model.name,
+        path: model.metadata?.downloadUrl || `/models/${model.name}`, // Use downloadUrl or default path
+        type: modelType,
+        quantization: 'Q4_K_M' as const,
+        contextSize: model.contextSize || 4096,
+        ramRequirement: model.ramRequirement || '4GB',
+        description: model.description || 'No description available'
+      };
+    });
+    this.interactiveSelector = new InteractiveModelSelector(trustModels);
   }
 
   async handleCommand(args: ModelCommandArgs): Promise<void> {
@@ -325,118 +351,21 @@ export class ModelCommandHandler {
   }
 
   private async recommendModel(task: string, ramLimit?: number): Promise<void> {
-    console.log(`\n🎯 Model Recommendation for "${task}"`);
-    console.log('─'.repeat(40));
-
-    // Import hardware optimizer for comprehensive analysis
-    const { globalPerformanceMonitor, HardwareOptimizer } = await import(
-      '@trust-cli/trust-cli-core'
-    );
-    const hardwareOptimizer = new HardwareOptimizer(globalPerformanceMonitor);
-    const systemCapabilities = hardwareOptimizer.getSystemCapabilities();
-
-    console.log(
-      `System RAM: ${systemCapabilities.totalRAMGB.toFixed(1)}GB | Available: ${systemCapabilities.availableRAMGB.toFixed(1)}GB`,
-    );
-    console.log(
-      `CPU: ${systemCapabilities.cpuCores} cores @ ${systemCapabilities.cpuSpeed}MHz`,
-    );
-
-    const models = this.modelManager.listAvailableModels();
-    const modelRecommendations =
-      hardwareOptimizer.analyzeModelSuitability(models);
-
-    // Filter by task if specified
-    const taskFiltered = this.modelManager.getRecommendedModel(
-      task,
-      ramLimit || systemCapabilities.availableRAMGB,
-    );
-
-    if (modelRecommendations.length > 0) {
-      console.log(`\n🏆 Top Hardware-Optimized Recommendations:`);
-
-      // Show top 3 recommendations
-      const topRecommendations = modelRecommendations.slice(0, 3);
-
-      for (let i = 0; i < topRecommendations.length; i++) {
-        const rec = topRecommendations[i];
-        const rank = i === 0 ? '🥇' : i === 1 ? '🥈' : '🥉';
-
-        console.log(
-          `\n${rank} ${rec.model.name} (Score: ${rec.suitabilityScore.toFixed(0)}/100)`,
-        );
-        console.log(`   📝 ${rec.model.description}`);
-        console.log(
-          `   💾 RAM: ${rec.model.ramRequirement} | Trust: ⭐ ${rec.model.trustScore}/10`,
-        );
-        console.log(
-          `   🚀 Est. Performance: ${rec.performanceEstimate.tokensPerSecond} tokens/sec`,
-        );
-        console.log(
-          `   📊 CPU Usage: ${rec.performanceEstimate.cpuUtilization}%`,
-        );
-        console.log(`   💡 ${rec.reason}`);
-
-        if (rec.warnings && rec.warnings.length > 0) {
-          console.log(`   ⚠️  Warnings: ${rec.warnings.join(', ')}`);
-        }
-
-        const isDownloaded = await this.modelManager.verifyModel(
-          rec.model.path,
-        );
-        if (!isDownloaded) {
-          console.log(`   📥 Run: trust model download ${rec.model.name}`);
-        } else {
-          console.log(
-            `   ✅ Ready to use: trust model switch ${rec.model.name}`,
-          );
-        }
-      }
-
-      // Show task-specific recommendation if different
-      if (
-        taskFiltered &&
-        !topRecommendations.find((r) => r.model.name === taskFiltered.name)
-      ) {
-        console.log(`\n🎯 Task-Specific Recommendation for "${task}":`);
-        console.log(`   📌 ${taskFiltered.name}`);
-        console.log(`   📝 ${taskFiltered.description}`);
-        console.log(`   💾 RAM: ${taskFiltered.ramRequirement}`);
-      }
-
-      // Show optimization recommendations
-      const optimizations =
-        hardwareOptimizer.generateOptimizationRecommendations();
-      if (optimizations.length > 0) {
-        console.log(`\n⚡ Hardware Optimization Tips:`);
-        optimizations.slice(0, 3).forEach((opt, i) => {
-          const priorityIcon =
-            opt.priority === 'high'
-              ? '🔴'
-              : opt.priority === 'medium'
-                ? '🟡'
-                : '🟢';
-          console.log(`   ${i + 1}. ${priorityIcon} ${opt.title}`);
-          console.log(`      ${opt.description}`);
-          console.log(`      💡 ${opt.implementation}`);
-        });
-
-        console.log(
-          `\n   📊 View full optimization report: trust model optimize`,
-        );
-      }
-    } else {
-      console.log('❌ No suitable models found for your hardware');
-      console.log(`\n🔧 System Analysis:`);
-      console.log(
-        `   Available RAM: ${systemCapabilities.availableRAMGB.toFixed(1)}GB`,
-      );
-      console.log(`   CPU Cores: ${systemCapabilities.cpuCores}`);
-      console.log(
-        '💡 Try increasing available memory or choosing lighter models',
-      );
-      console.log('💡 Available task types: coding, quick, complex, default');
+    if (!this.interactiveSelector) {
+      console.error('❌ Interactive selector not initialized');
+      return;
     }
+
+    // Use enhanced interactive model selector for task-specific recommendations
+    if (task && task !== 'default') {
+      const recommendations = this.interactiveSelector.getTaskRecommendations(task);
+      console.log(recommendations);
+    } else {
+      // Show general model selection interface
+      const prompt = this.interactiveSelector.generateSelectionPrompt();
+      console.log(prompt);
+    }
+
   }
 
   private async optimizeHardware(): Promise<void> {
