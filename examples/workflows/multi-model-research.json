@@ -1,0 +1,118 @@
+{
+  "id": "multi_model_research",
+  "name": "Multi-Model Research Synthesis",
+  "description": "Comprehensive research workflow using multiple models for information gathering, analysis, and synthesis",
+  "strategy": "consensus",
+  "steps": [
+    {
+      "id": "research_planning",
+      "name": "Research Planning",
+      "type": "model_generation",
+      "modelSelectionCriteria": {
+        "taskType": "reasoning",
+        "minPerformanceScore": 6
+      },
+      "prompt": "Create a comprehensive research plan for the given topic. Include:\n1. Key research questions to investigate\n2. Important subtopics to explore\n3. Potential sources and methodologies\n4. Expected outcomes and deliverables\n\nProvide a structured research roadmap.",
+      "options": {
+        "temperature": 0.6,
+        "maxTokens": 400
+      }
+    },
+    {
+      "id": "information_gathering",
+      "name": "Information Gathering",
+      "type": "tool_execution",
+      "dependencies": ["research_planning"],
+      "tools": [
+        {
+          "name": "web_search",
+          "description": "Search for information online",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "query": {
+                "type": "string",
+                "description": "Search query based on research plan"
+              },
+              "num_results": {
+                "type": "number",
+                "description": "Number of results to retrieve",
+                "default": 10
+              }
+            },
+            "required": ["query"]
+          }
+        }
+      ]
+    },
+    {
+      "id": "analysis_perspective_1",
+      "name": "Analysis - Perspective 1",
+      "type": "model_generation",
+      "dependencies": ["information_gathering"],
+      "modelSelectionCriteria": {
+        "taskType": "analysis",
+        "preferredModels": ["claude", "gpt-4"]
+      },
+      "prompt": "Analyze the gathered information from a critical thinking perspective. Focus on:\n1. Identifying key themes and patterns\n2. Evaluating source credibility and bias\n3. Highlighting conflicting viewpoints\n4. Drawing preliminary conclusions\n\nProvide a thorough analytical assessment.",
+      "options": {
+        "temperature": 0.5,
+        "maxTokens": 600
+      }
+    },
+    {
+      "id": "analysis_perspective_2",
+      "name": "Analysis - Perspective 2",
+      "type": "model_generation",
+      "dependencies": ["information_gathering"],
+      "modelSelectionCriteria": {
+        "taskType": "creative",
+        "excludedModels": ["mini", "small"]
+      },
+      "prompt": "Analyze the gathered information from a creative and innovative perspective. Focus on:\n1. Novel connections and insights\n2. Alternative interpretations\n3. Emerging trends and implications\n4. Creative synthesis opportunities\n\nProvide an innovative analytical perspective.",
+      "options": {
+        "temperature": 0.7,
+        "maxTokens": 600
+      }
+    },
+    {
+      "id": "synthesis_validation",
+      "name": "Synthesis Validation",
+      "type": "validation",
+      "dependencies": ["analysis_perspective_1", "analysis_perspective_2"],
+      "validationRules": [
+        {
+          "type": "consensus",
+          "criteria": "analysis_quality",
+          "threshold": 0.75
+        },
+        {
+          "type": "content",
+          "criteria": "completeness",
+          "threshold": 0.8
+        }
+      ]
+    },
+    {
+      "id": "final_synthesis",
+      "name": "Research Synthesis Report",
+      "type": "model_generation",
+      "dependencies": ["analysis_perspective_1", "analysis_perspective_2", "synthesis_validation"],
+      "modelSelectionCriteria": {
+        "taskType": "creative",
+        "minPerformanceScore": 7
+      },
+      "prompt": "Create a comprehensive research synthesis report that combines insights from multiple analytical perspectives. Include:\n1. Executive summary\n2. Key findings and insights\n3. Recommendations and implications\n4. Areas for further research\n\nProvide a well-structured, professional research report.",
+      "options": {
+        "temperature": 0.6,
+        "maxTokens": 800
+      }
+    }
+  ],
+  "metadata": {
+    "version": "1.0",
+    "category": "research",
+    "estimatedDuration": "3-7 minutes",
+    "requiredModels": "3-4 models (analysis + creative capable)"
+  }
+}

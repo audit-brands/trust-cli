@@ -1,0 +1,88 @@
+{
+  "id": "advanced_code_review",
+  "name": "Advanced Code Review Workflow",
+  "description": "Comprehensive code review using multiple specialized models for analysis, security review, and optimization suggestions",
+  "strategy": "pipeline",
+  "steps": [
+    {
+      "id": "initial_analysis",
+      "name": "Initial Code Analysis",
+      "type": "model_generation",
+      "modelSelectionCriteria": {
+        "taskType": "coding",
+        "preferredModels": ["codellama", "deepseek-coder"],
+        "requiredCapabilities": ["tool_calling"]
+      },
+      "prompt": "Analyze the provided code for structural issues, potential bugs, code quality, and adherence to best practices. Focus on:\n1. Code structure and organization\n2. Potential bugs or logic errors\n3. Performance considerations\n4. Maintainability and readability\n\nProvide specific suggestions for improvement.",
+      "options": {
+        "temperature": 0.3,
+        "maxTokens": 600
+      }
+    },
+    {
+      "id": "security_review",
+      "name": "Security Assessment",
+      "type": "model_generation",
+      "dependencies": ["initial_analysis"],
+      "modelSelectionCriteria": {
+        "taskType": "analysis",
+        "excludedModels": ["mini", "small"],
+        "minPerformanceScore": 7
+      },
+      "prompt": "Conduct a security review of the code, focusing on:\n1. Input validation and sanitization\n2. Authentication and authorization\n3. Data exposure risks\n4. Injection vulnerabilities\n5. Cryptographic implementations\n\nProvide specific security recommendations and risk assessments.",
+      "options": {
+        "temperature": 0.2,
+        "maxTokens": 500
+      }
+    },
+    {
+      "id": "optimization_suggestions",
+      "name": "Performance Optimization",
+      "type": "model_generation",
+      "dependencies": ["initial_analysis"],
+      "modelSelectionCriteria": {
+        "taskType": "coding",
+        "requiredCapabilities": ["tool_calling"]
+      },
+      "prompt": "Analyze the code for performance optimization opportunities:\n1. Algorithm efficiency improvements\n2. Memory usage optimization\n3. Database query optimization\n4. Caching strategies\n5. Concurrency and parallelization\n\nProvide concrete optimization suggestions with code examples where applicable.",
+      "options": {
+        "temperature": 0.4,
+        "maxTokens": 700
+      }
+    },
+    {
+      "id": "peer_review_validation",
+      "name": "Peer Review Validation",
+      "type": "validation",
+      "dependencies": ["initial_analysis", "security_review", "optimization_suggestions"],
+      "modelSelectionCriteria": {
+        "excludedModels": [],
+        "minPerformanceScore": 6
+      },
+      "validationRules": [
+        {
+          "type": "content",
+          "criteria": "technical_accuracy",
+          "threshold": 0.8
+        },
+        {
+          "type": "consensus",
+          "criteria": "recommendation_quality",
+          "threshold": 0.7
+        }
+      ]
+    },
+    {
+      "id": "final_report",
+      "name": "Comprehensive Review Report",
+      "type": "aggregation",
+      "dependencies": ["initial_analysis", "security_review", "optimization_suggestions", "peer_review_validation"]
+    }
+  ],
+  "metadata": {
+    "version": "1.0",
+    "category": "code_review",
+    "estimatedDuration": "2-5 minutes",
+    "requiredModels": "2-3 models (coding + analysis capable)"
+  }
+}

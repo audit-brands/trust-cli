@@ -142,6 +142,20 @@ export {
   type TransformationContext
 } from './providerTransformers.js';
 
+// Multi-Model Orchestrator
+export {
+  MultiModelOrchestrator,
+  type ExecutionStrategy,
+  type MultiModelWorkflow,
+  type WorkflowStep,
+  type ModelSelectionCriteria,
+  type ValidationRule,
+  type MultiModelExecutionResult,
+  type ModelPerformanceMetrics,
+  type SharedWorkflowContext,
+  type ModelCapabilityScore
+} from './multiModelOrchestrator.js';
+
 // Trust version and metadata
 // Trust: An Open System for Modern Assurance
 export const TRUST_VERSION = '0.1.0';
