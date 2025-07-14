@@ -39,6 +39,8 @@ export * from './universalToolInterface.js';
 export { ToolExecutionEngine, ToolExecutionContext } from './toolExecutionEngine.js';
 export { ModelSelector, TaskContext } from './modelSelector.js';
 export { InteractiveModelSelector } from './interactiveModelSelector.js';
+export { ProviderAutoDetection, ProviderCapability, AutoDetectionResult } from './providerAutoDetection.js';
+export { ProviderConfigManager, ProviderConfig, BackendConfiguration } from './providerConfigManager.js';
 
 // Trust version and metadata
 // Trust: An Open System for Modern Assurance

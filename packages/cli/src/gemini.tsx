@@ -208,6 +208,31 @@ export async function main() {
     }
   }
 
+  // Provider management commands
+  if (args[0] === 'provider') {
+    const { handleProviderCommand } = await import('./commands/providerCommands.js');
+
+    const action = args[1];
+    const providerId = args[2];
+    const allFlags = args.slice(2);
+
+    try {
+      await handleProviderCommand({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        action: action as any,
+        providerId,
+        priority: allFlags.includes('--priority')
+          ? parseInt(allFlags[allFlags.indexOf('--priority') + 1], 10)
+          : undefined,
+        verbose: allFlags.includes('--verbose') || allFlags.includes('-v'),
+      });
+      return;
+    } catch (error) {
+      console.error(`❌ Provider command failed: ${error}`);
+      process.exit(1);
+    }
+  }
+
   // Status command
   if (args[0] === 'status') {
     const { handleStatusCommand } = await import(
