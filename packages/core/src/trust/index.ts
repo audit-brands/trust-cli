@@ -125,6 +125,15 @@ export {
   type CloudToolFormat
 } from './cloudToolProvider.js';
 
+// Provider Transformers
+export {
+  ProviderTransformers,
+  ProviderTransformationUtils,
+  BatchTransformer,
+  type ProviderFormats,
+  type TransformationContext
+} from './providerTransformers.js';
+
 // Trust version and metadata
 // Trust: An Open System for Modern Assurance
 export const TRUST_VERSION = '0.1.0';
