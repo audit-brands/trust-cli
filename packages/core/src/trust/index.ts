@@ -103,6 +103,28 @@ export {
   type RecoveryDecoratorOptions
 } from './errorRecoveryDecorators.js';
 
+// Ollama Tool Provider
+export {
+  OllamaToolProvider,
+  createOllamaToolProvider,
+  defaultOllamaToolProvider,
+  type OllamaToolConfig,
+  type OllamaToolFormat
+} from './ollamaToolProvider.js';
+
+// Cloud Tool Provider
+export {
+  CloudToolProvider,
+  createCloudToolProvider,
+  createOpenAIToolProvider,
+  createAnthropicToolProvider,
+  createGeminiToolProvider,
+  createVertexAIToolProvider,
+  type CloudProvider,
+  type CloudToolConfig,
+  type CloudToolFormat
+} from './cloudToolProvider.js';
+
 // Trust version and metadata
 // Trust: An Open System for Modern Assurance
 export const TRUST_VERSION = '0.1.0';

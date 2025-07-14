@@ -15,6 +15,9 @@ import {
 } from '../unifiedModelInterface.js';
 import { UniversalToolCall } from '../universalToolInterface.js';
 import { StreamingIntegrationHelpers } from '../streamingBufferManager.js';
+import { CloudToolProvider, createCloudToolProvider, CloudProvider } from '../cloudToolProvider.js';
+import { UniversalToolDefinition } from '../universalToolInterface.js';
+import { executeWithRecovery } from '../errorRecoveryDecorators.js';
 
 /**
  * Cloud-specific model context implementation
@@ -91,6 +94,7 @@ export interface CloudProviderConfig {
 export class CloudModelAdapter extends BaseUnifiedModel {
   private config: CloudProviderConfig;
   private rateLimiter?: RateLimiter;
+  private toolProvider?: CloudToolProvider;
 
   constructor(
     name: string,
@@ -119,6 +123,23 @@ export class CloudModelAdapter extends BaseUnifiedModel {
     // Initialize rate limiter if limits are specified
     if (capabilities?.rateLimits) {
       this.rateLimiter = new RateLimiter(capabilities.rateLimits);
+    }
+
+    // Initialize tool provider based on the provider type
+    try {
+      this.toolProvider = createCloudToolProvider(this.config.provider as CloudProvider, {
+        provider: this.config.provider as CloudProvider,
+        format: this.getDefaultToolFormat(),
+        maxParallelCalls: 3,
+        toolChoice: 'auto',
+        errorHandling: {
+          retryFailedCalls: true,
+          fallbackToText: true,
+          maxRetries: 2
+        }
+      });
+    } catch (error) {
+      console.warn(`Failed to initialize tool provider for ${this.config.provider}:`, error);
     }
   }
 
@@ -199,7 +220,27 @@ export class CloudModelAdapter extends BaseUnifiedModel {
 
   async generateWithTools(
     prompt: string,
-    tools: UniversalToolCall[],
+    tools: UniversalToolCall[] | UniversalToolDefinition[],
+    options?: GenerationOptions
+  ): Promise<GenerationResult> {
+    return executeWithRecovery(
+      async () => this._generateWithToolsInternal(prompt, tools, options),
+      {
+        operationName: `${this.config.provider}.generateWithTools`,
+        category: 'tool_execution',
+        enableCircuitBreaker: true,
+        customStrategy: {
+          maxRetries: 2,
+          baseDelay: 1500,
+          fallbackOptions: ['text_only_generation', 'simplified_tools']
+        }
+      }
+    );
+  }
+
+  private async _generateWithToolsInternal(
+    prompt: string,
+    tools: UniversalToolCall[] | UniversalToolDefinition[],
     options?: GenerationOptions
   ): Promise<GenerationResult> {
     this.ensureInitialized();
@@ -209,19 +250,60 @@ export class CloudModelAdapter extends BaseUnifiedModel {
       throw new Error('This model does not support tool calling');
     }
 
-    try {
-      switch (this.config.provider) {
-        case 'gemini':
-          return await this.generateGeminiWithTools(prompt, tools, options);
-        case 'openai':
-          return await this.generateOpenAIWithTools(prompt, tools, options);
-        case 'anthropic':
-          return await this.generateAnthropicWithTools(prompt, tools, options);
-        case 'vertex-ai':
-          return await this.generateVertexAIWithTools(prompt, tools, options);
-        default:
-          throw new Error(`Tool calling not supported for provider: ${this.config.provider}`);
+    if (!this.toolProvider) {
+      // Fallback to legacy implementation without universal tools
+      return await this.generateWithToolsLegacy(prompt, tools as UniversalToolCall[], options);
+    }
+
+    // Convert tools to UniversalToolDefinition format
+    const toolDefinitions: UniversalToolDefinition[] = tools.map(tool => {
+      if ('parameters' in tool) {
+        return tool as UniversalToolDefinition;
+      } else {
+        const toolCall = tool as UniversalToolCall;
+        return {
+          name: toolCall.name,
+          description: toolCall.description || `Tool: ${toolCall.name}`,
+          parameters: {
+            type: 'object',
+            properties: Object.keys(toolCall.arguments).reduce((props, key) => {
+              props[key] = { type: 'string', description: `Parameter: ${key}` };
+              return props;
+            }, {} as Record<string, any>),
+            required: Object.keys(toolCall.arguments)
+          }
+        };
       }
+    });
+
+    try {
+      // Generate enhanced prompt with tool information
+      const toolPrompt = this.toolProvider.getToolPrompt(toolDefinitions);
+      const enhancedPrompt = `${prompt}\n\n${toolPrompt}`;
+
+      // Generate response using provider-specific implementation
+      const response = await this.generateProviderResponse(enhancedPrompt, toolDefinitions, options);
+      
+      // Parse tool calls using universal provider
+      const toolCalls = this.toolProvider.parseToolCalls(response);
+
+      // Clean response text
+      let cleanText = response;
+      if (toolCalls.length > 0) {
+        cleanText = this.cleanResponseText(response, this.config.provider);
+      }
+
+      return {
+        text: cleanText,
+        toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
+        finishReason: toolCalls.length > 0 ? 'tool_call' : 'stop',
+        usage: {
+          promptTokens: Math.ceil(enhancedPrompt.length / 4),
+          completionTokens: Math.ceil(response.length / 4),
+          totalTokens: Math.ceil((enhancedPrompt.length + response.length) / 4)
+        }
+      };
+
     } catch (error) {
       return {
         text: '',
@@ -302,6 +384,140 @@ export class CloudModelAdapter extends BaseUnifiedModel {
       case 'vertex-ai':
         this._capabilities.maxContextSize = 32000; // Varies by model
         break;
+    }
+  }
+
+  /**
+   * Get default tool format for the provider
+   */
+  private getDefaultToolFormat(): any {
+    switch (this.config.provider) {
+      case 'openai':
+        return 'openai_tools';
+      case 'anthropic':
+        return 'anthropic_tools';
+      case 'gemini':
+        return 'gemini_functions';
+      case 'vertex-ai':
+        return 'vertex_functions';
+      default:
+        return 'openai_tools';
+    }
+  }
+
+  /**
+   * Generate response using provider-specific implementation
+   */
+  private async generateProviderResponse(
+    prompt: string, 
+    tools: UniversalToolDefinition[], 
+    options?: GenerationOptions
+  ): Promise<string> {
+    switch (this.config.provider) {
+      case 'gemini':
+        return await this.generateGemini(prompt, options);
+      case 'openai':
+        return await this.generateOpenAI(prompt, options);
+      case 'anthropic':
+        return await this.generateAnthropic(prompt, options);
+      case 'vertex-ai':
+        return await this.generateVertexAI(prompt, options);
+      default:
+        throw new Error(`Unsupported provider: ${this.config.provider}`);
+    }
+  }
+
+  /**
+   * Clean response text by removing tool-specific formatting
+   */
+  private cleanResponseText(response: string, provider: string): string {
+    let cleanText = response;
+    
+    switch (provider) {
+      case 'openai':
+        // Remove function call JSON blocks
+        cleanText = cleanText.replace(/"function_call":\s*{[^}]*}/g, '');
+        cleanText = cleanText.replace(/"tool_calls":\s*\[[^\]]*\]/g, '');
+        break;
+      case 'anthropic':
+        // Remove tool_use blocks
+        cleanText = cleanText.replace(/<tool_use>.*?<\/tool_use>/gs, '');
+        break;
+      case 'gemini':
+      case 'vertex-ai':
+        // Remove function call blocks
+        cleanText = cleanText.replace(/"functionCall":\s*{[^}]*}/g, '');
+        break;
+    }
+    
+    return cleanText.trim();
+  }
+
+  /**
+   * Legacy tool implementation for backward compatibility
+   */
+  private async generateWithToolsLegacy(
+    prompt: string,
+    tools: UniversalToolCall[],
+    options?: GenerationOptions
+  ): Promise<GenerationResult> {
+    // Use the existing simplified implementation
+    const response = await this.generateText(prompt, options);
+    
+    return {
+      text: response,
+      finishReason: 'stop',
+      usage: {
+        promptTokens: Math.ceil(prompt.length / 4),
+        completionTokens: Math.ceil(response.length / 4),
+        totalTokens: Math.ceil((prompt.length + response.length) / 4)
+      }
+    };
+  }
+
+  /**
+   * Get the tool provider instance
+   */
+  getToolProvider(): CloudToolProvider | undefined {
+    return this.toolProvider;
+  }
+
+  /**
+   * Update tool provider configuration
+   */
+  updateToolConfig(config: any): void {
+    if (this.toolProvider) {
+      this.toolProvider.updateConfig(config);
+    }
+  }
+
+  /**
+   * Test tool calling capability
+   */
+  async testToolCalling(): Promise<boolean> {
+    if (!this.toolProvider) return false;
+
+    const testTool: UniversalToolDefinition = {
+      name: 'get_time',
+      description: 'Get the current time',
+      parameters: {
+        type: 'object',
+        properties: {},
+        required: []
+      }
+    };
+
+    try {
+      const result = await this.generateWithTools(
+        'What time is it? Use the get_time function.',
+        [testTool],
+        { maxTokens: 100, timeout: 10000 }
+      );
+
+      return !!(result.toolCalls && result.toolCalls.length > 0);
+    } catch (error) {
+      console.warn('Tool calling test failed:', error);
+      return false;
     }
   }
 

@@ -17,6 +17,8 @@ import {
 import { UniversalToolCall } from '../universalToolInterface.js';
 import { StreamingIntegrationHelpers } from '../streamingBufferManager.js';
 import { executeWithRecovery } from '../errorRecoveryDecorators.js';
+import { OllamaToolProvider, createOllamaToolProvider } from '../ollamaToolProvider.js';
+import { UniversalToolDefinition } from '../universalToolInterface.js';
 
 /**
  * Ollama-specific model context implementation
@@ -83,6 +85,7 @@ class OllamaModelContext implements ModelContext {
 export class OllamaModelAdapter extends BaseUnifiedModel {
   private endpoint: string;
   private client?: any; // Ollama client would be injected
+  private toolProvider: OllamaToolProvider;
 
   constructor(
     name: string,
@@ -103,6 +106,17 @@ export class OllamaModelAdapter extends BaseUnifiedModel {
 
     super(name, 'ollama', type, defaultCapabilities);
     this.endpoint = endpoint;
+    
+    // Initialize tool provider with XML format (Ollama's strength)
+    this.toolProvider = createOllamaToolProvider({
+      format: 'xml',
+      enableChaining: true,
+      errorRecovery: {
+        retryInvalidCalls: true,
+        fallbackToNatural: true,
+        maxRetries: 2
+      }
+    });
   }
 
   protected async doInitialize(): Promise<void> {
@@ -258,7 +272,27 @@ export class OllamaModelAdapter extends BaseUnifiedModel {
 
   async generateWithTools(
     prompt: string,
-    tools: UniversalToolCall[],
+    tools: UniversalToolCall[] | UniversalToolDefinition[],
+    options?: GenerationOptions
+  ): Promise<GenerationResult> {
+    return executeWithRecovery(
+      async () => this._generateWithToolsInternal(prompt, tools, options),
+      {
+        operationName: 'ollama.generateWithTools',
+        category: 'tool_execution',
+        enableCircuitBreaker: true,
+        customStrategy: {
+          maxRetries: 2,
+          baseDelay: 1000,
+          fallbackOptions: ['natural_language', 'simplified_tools']
+        }
+      }
+    );
+  }
+
+  private async _generateWithToolsInternal(
+    prompt: string,
+    tools: UniversalToolCall[] | UniversalToolDefinition[],
     options?: GenerationOptions
   ): Promise<GenerationResult> {
     this.ensureInitialized();
@@ -267,54 +301,50 @@ export class OllamaModelAdapter extends BaseUnifiedModel {
       throw new Error('This model does not support tool calling');
     }
 
-    // Format tools as XML for Ollama (following the XML format from universalToolInterface)
-    const toolsXml = tools.map(tool => 
-      `<tool name="${tool.name}">${tool.description}</tool>`
-    ).join('\n');
+    // Convert UniversalToolCall[] to UniversalToolDefinition[] if needed
+    const toolDefinitions: UniversalToolDefinition[] = tools.map(tool => {
+      if ('parameters' in tool) {
+        // Already a UniversalToolDefinition
+        return tool as UniversalToolDefinition;
+      } else {
+        // Convert UniversalToolCall to UniversalToolDefinition
+        const toolCall = tool as UniversalToolCall;
+        return {
+          name: toolCall.name,
+          description: toolCall.description || `Tool: ${toolCall.name}`,
+          parameters: {
+            type: 'object',
+            properties: Object.keys(toolCall.arguments).reduce((props, key) => {
+              props[key] = { type: 'string', description: `Parameter: ${key}` };
+              return props;
+            }, {} as Record<string, any>),
+            required: Object.keys(toolCall.arguments)
+          }
+        };
+      }
+    });
 
-    const enhancedPrompt = `${prompt}
-
-Available tools:
-${toolsXml}
-
-Use tools by responding with XML in this format:
-<tool_call>
-<name>tool_name</name>
-<arguments>
-<arg_name>value</arg_name>
-</arguments>
-</tool_call>`;
+    // Generate tool prompt using the universal provider
+    const toolPrompt = this.toolProvider.getToolPrompt(toolDefinitions);
+    const enhancedPrompt = `${prompt}\n\n${toolPrompt}`;
 
     try {
-      const response = await this.generateText(enhancedPrompt, options);
+      const response = await this._generateTextInternal(enhancedPrompt, options);
       
-      // Parse tool calls from response (simplified XML parsing)
-      const toolCallRegex = /<tool_call>\s*<name>(.*?)<\/name>\s*<arguments>(.*?)<\/arguments>\s*<\/tool_call>/gs;
-      const toolCalls: UniversalToolCall[] = [];
-      let match;
+      // Parse tool calls using the universal provider
+      const toolCalls = this.toolProvider.parseToolCalls(response);
 
-      while ((match = toolCallRegex.exec(response)) !== null) {
-        const name = match[1].trim();
-        const argsXml = match[2];
-        
-        // Simple argument parsing
-        const args: Record<string, any> = {};
-        const argRegex = /<(\w+)>(.*?)<\/\1>/gs;
-        let argMatch;
-        while ((argMatch = argRegex.exec(argsXml)) !== null) {
-          args[argMatch[1]] = argMatch[2].trim();
-        }
-
-        toolCalls.push({
-          id: `tool_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-          name,
-          arguments: args,
-          description: tools.find(t => t.name === name)?.description || ''
-        });
+      // Clean response text (remove tool call XML/JSON)
+      let cleanText = response;
+      if (toolCalls.length > 0) {
+        // Remove function_calls blocks
+        cleanText = cleanText.replace(/<function_calls>.*?<\/function_calls>/gs, '');
+        // Remove tool_call blocks
+        cleanText = cleanText.replace(/<tool_call>.*?<\/tool_call>/gs, '');
+        // Remove JSON blocks
+        cleanText = cleanText.replace(/```json.*?```/gs, '');
+        cleanText = cleanText.trim();
       }
-
-      // Clean response text (remove tool calls)
-      const cleanText = response.replace(toolCallRegex, '').trim();
 
       return {
         text: cleanText,
@@ -398,5 +428,54 @@ Use tools by responding with XML in this format:
         issues: [error instanceof Error ? error.message : String(error)]
       };
     }
+  }
+
+  /**
+   * Get the tool provider instance
+   */
+  getToolProvider(): OllamaToolProvider {
+    return this.toolProvider;
+  }
+
+  /**
+   * Update tool provider configuration
+   */
+  updateToolConfig(config: any): void {
+    this.toolProvider.updateConfig(config);
+  }
+
+  /**
+   * Test tool calling with a simple tool
+   */
+  async testToolCalling(): Promise<boolean> {
+    const testTool: UniversalToolDefinition = {
+      name: 'test_tool',
+      description: 'A simple test tool that returns the current time',
+      parameters: {
+        type: 'object',
+        properties: {},
+        required: []
+      }
+    };
+
+    try {
+      const result = await this.generateWithTools(
+        'Please use the test_tool to get the current time',
+        [testTool],
+        { maxTokens: 100, timeout: 10000 }
+      );
+
+      return !!(result.toolCalls && result.toolCalls.length > 0);
+    } catch (error) {
+      console.warn('Tool calling test failed:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Get supported tool formats
+   */
+  getSupportedToolFormats(): string[] {
+    return this.toolProvider.getSupportedFormats();
   }
 }
