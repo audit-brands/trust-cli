@@ -7,7 +7,7 @@
 import {
   TrustModelManagerImpl,
   TrustConfiguration,
-  UnifiedModelManager,
+  EnhancedUnifiedModelManager,
   InteractiveModelSelector,
   // UnifiedModel,
 } from '@trust-cli/trust-cli-core';
@@ -38,14 +38,14 @@ export interface ModelCommandArgs {
 
 export class ModelCommandHandler {
   private modelManager: TrustModelManagerImpl;
-  private unifiedManager: UnifiedModelManager;
+  private unifiedManager: EnhancedUnifiedModelManager;
   private config: TrustConfiguration;
   private interactiveSelector?: InteractiveModelSelector;
 
   constructor() {
     this.config = new TrustConfiguration();
     this.modelManager = new TrustModelManagerImpl();
-    this.unifiedManager = new UnifiedModelManager(this.config);
+    this.unifiedManager = new EnhancedUnifiedModelManager();
   }
 
   async initialize(): Promise<void> {

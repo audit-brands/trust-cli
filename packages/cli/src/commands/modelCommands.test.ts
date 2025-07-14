@@ -260,6 +260,39 @@ vi.mock('../../../core/dist/index.js', () => ({
    Expected Improvement: Better response quality with minimal speed impact
     `),
   })),
+  EnhancedUnifiedModelManager: vi.fn().mockImplementation(() => ({
+    initialize: vi.fn(),
+    listAllModels: vi.fn().mockReturnValue([
+      {
+        name: 'qwen2.5-1.5b-instruct',
+        backend: 'huggingface',
+        type: 'qwen',
+        parameters: '1.5B',
+        contextSize: 4096,
+        ramRequirement: '2GB',
+        description: 'Lightweight model for quick questions - 1.5B parameters',
+        trustScore: 9,
+        available: true,
+        metadata: {
+          quantization: 'Q4_K_M',
+          verificationHash: 'sha256:d7efb072e...',
+          downloadUrl: 'https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-gguf',
+        },
+      },
+    ]),
+    switchModel: vi.fn(),
+    downloadModel: vi.fn(),
+    deleteModel: vi.fn(),
+    getModel: vi.fn(),
+    getCurrentModel: vi.fn().mockReturnValue({
+      name: 'qwen2.5-1.5b-instruct',
+      backend: 'huggingface',
+    }),
+  })),
+  InteractiveModelSelector: vi.fn().mockImplementation(() => ({
+    showModelList: vi.fn(),
+    selectModel: vi.fn().mockReturnValue('qwen2.5-1.5b-instruct'),
+  })),
 }));
 
 // Mock console methods

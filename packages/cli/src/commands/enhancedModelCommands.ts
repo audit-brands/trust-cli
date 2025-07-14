@@ -5,7 +5,7 @@
  */
 
 import {
-  UnifiedModelManager,
+  EnhancedUnifiedModelManager,
   UnifiedModel,
   TaskType,
   HardwareConstraints,
@@ -45,7 +45,7 @@ export interface EnhancedModelCommandArgs {
 }
 
 export class EnhancedModelCommandHandler {
-  private unifiedManager: UnifiedModelManager;
+  private unifiedManager: EnhancedUnifiedModelManager;
   private trustConfig: TrustConfiguration;
   private smartRouting: SmartRoutingService;
   private resourceMonitor: ResourceMonitor;
@@ -53,7 +53,7 @@ export class EnhancedModelCommandHandler {
 
   constructor() {
     this.trustConfig = new TrustConfiguration();
-    this.unifiedManager = new UnifiedModelManager(this.trustConfig);
+    this.unifiedManager = new EnhancedUnifiedModelManager();
     this.smartRouting = new SmartRoutingService(this.trustConfig);
     this.resourceMonitor = new ResourceMonitor(this.trustConfig);
     this.errorHandler = new EnhancedErrorHandler(this.trustConfig);
@@ -125,7 +125,7 @@ export class EnhancedModelCommandHandler {
     console.log('\\n🔍 Trust CLI - Unified Model Discovery');
     console.log('═'.repeat(70));
 
-    const models = await this.unifiedManager.discoverAllModels();
+    const models = await this.unifiedManager.listAllModels();
 
     if (models.length === 0) {
       console.log('📁 No models found across any backend.');
@@ -141,7 +141,8 @@ export class EnhancedModelCommandHandler {
     }
 
     // Group by backend for display
-    const grouped = await this.unifiedManager.getModelsByBackend();
+    // Group models by backend (simplified implementation)
+    const grouped = this.groupModelsByBackend(models);
 
     for (const [backend, backendModels] of Object.entries(grouped)) {
       if (backendModels.length === 0) continue;
@@ -217,9 +218,10 @@ export class EnhancedModelCommandHandler {
     console.log(`✅ Enabled backends: ${enabledBackends.join(', ')}`);
 
     console.log('\\n🔄 Discovering models...');
-    const models = await this.unifiedManager.discoverAllModels(true); // Force refresh
+    const models = await this.unifiedManager.listAllModels(); // Force refresh
 
-    const grouped = await this.unifiedManager.getModelsByBackend();
+    // Group models by backend (simplified implementation)
+    const grouped = this.groupModelsByBackend(models);
 
     for (const backend of enabledBackends) {
       const count = grouped[backend]?.length || 0;
@@ -245,7 +247,7 @@ export class EnhancedModelCommandHandler {
     console.log('\\n🎯 Model Filtering');
     console.log('═'.repeat(50));
 
-    const allModels = await this.unifiedManager.discoverAllModels();
+    const allModels = await this.unifiedManager.listAllModels();
 
     const constraints: HardwareConstraints = {};
     if (args.ramLimit) {
@@ -269,7 +271,7 @@ export class EnhancedModelCommandHandler {
       console.log(`   Backend: ${args.backend}`);
     }
 
-    let filteredModels = this.unifiedManager.filterModels(
+    let filteredModels = this.filterModelsList(
       allModels,
       args.task,
       constraints,
@@ -318,14 +320,14 @@ export class EnhancedModelCommandHandler {
     console.log('\\n🎯 Model Recommendation');
     console.log('═'.repeat(50));
 
-    const allModels = await this.unifiedManager.discoverAllModels();
+    const allModels = await this.unifiedManager.listAllModels();
 
     const constraints: HardwareConstraints = {};
     if (args.ramLimit) {
       constraints.availableRAM = args.ramLimit;
     }
 
-    const filteredModels = this.unifiedManager.filterModels(
+    const filteredModels = this.filterModelsList(
       allModels,
       args.task,
       constraints,
@@ -342,10 +344,7 @@ export class EnhancedModelCommandHandler {
       return;
     }
 
-    const recommended = this.unifiedManager.selectBestModel(
-      filteredModels,
-      args.task,
-    );
+    const recommended = filteredModels.length > 0 ? filteredModels[0] : null;
 
     if (!recommended) {
       console.log('❌ Could not determine best model');
@@ -396,7 +395,9 @@ export class EnhancedModelCommandHandler {
     console.log('\\n🏗️  Backend Model Summary');
     console.log('═'.repeat(50));
 
-    const grouped = await this.unifiedManager.getModelsByBackend();
+    const allModels = await this.unifiedManager.listAllModels();
+    // Group models by backend (simplified implementation)
+    const grouped = this.groupModelsByBackend(allModels);
 
     for (const [backend, models] of Object.entries(grouped)) {
       const enabled = this.trustConfig.isBackendEnabled(
@@ -1519,6 +1520,51 @@ ${i + 1}. ${typeIcon} **${solution.title}**`);
       default:
         return '💡';
     }
+  }
+
+  private groupModelsByBackend(models: UnifiedModel[]): Record<string, UnifiedModel[]> {
+    return models.reduce((acc, model) => {
+      const backend = model.backend || 'unknown';
+      if (!acc[backend]) {
+        acc[backend] = [];
+      }
+      acc[backend].push(model);
+      return acc;
+    }, {} as Record<string, UnifiedModel[]>);
+  }
+
+  private filterModelsList(
+    models: UnifiedModel[], 
+    task?: TaskType, 
+    constraints?: HardwareConstraints
+  ): UnifiedModel[] {
+    let filtered = [...models];
+
+    // Filter by task type if specified
+    if (task) {
+      filtered = filtered.filter(model => {
+        return model.taskSuitability?.[task] !== undefined;
+      });
+    }
+
+    // Filter by hardware constraints if specified
+    if (constraints) {
+      filtered = filtered.filter(model => {
+        if (constraints.availableRAM && model.ramRequirement) {
+          const requiredRAM = this.parseRAMString(model.ramRequirement);
+          return requiredRAM <= constraints.availableRAM;
+        }
+        return true;
+      });
+    }
+
+    return filtered;
+  }
+
+  private parseRAMString(ramStr: string): number {
+    // Parse RAM strings like "4GB", "16GB" to numbers in GB
+    const match = ramStr.match(/(\d+)\s*GB/i);
+    return match ? parseInt(match[1]) : 0;
   }
 }
 
