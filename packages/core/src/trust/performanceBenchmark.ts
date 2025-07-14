@@ -8,6 +8,9 @@ import { PerformanceMonitor } from './performanceMonitor.js';
 import { HardwareOptimizer } from './hardwareOptimizer.js';
 import { TrustModelConfig } from './types.js';
 import { TrustModelManagerImpl } from './modelManager.js';
+import { EnhancedUnifiedModelManager } from './unifiedModelManager.js';
+import { UnifiedModelInterface, GenerationOptions } from './unifiedModelInterface.js';
+import { executeWithRecovery } from './errorRecoveryDecorators.js';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
@@ -20,6 +23,7 @@ export interface BenchmarkTest {
   timeout?: number;
   category: 'speed' | 'quality' | 'reasoning' | 'coding' | 'general';
   difficulty: 'easy' | 'medium' | 'hard';
+  options?: Partial<GenerationOptions>;
 }
 
 export interface BenchmarkResult {
@@ -87,16 +91,19 @@ export class PerformanceBenchmark {
   private performanceMonitor: PerformanceMonitor;
   private hardwareOptimizer: HardwareOptimizer;
   private modelManager: TrustModelManagerImpl;
+  private unifiedModelManager: EnhancedUnifiedModelManager;
   private benchmarkSuites: Map<string, BenchmarkSuite> = new Map();
   private results: BenchmarkResult[] = [];
 
   constructor(
     performanceMonitor: PerformanceMonitor,
     modelManager: TrustModelManagerImpl,
+    unifiedModelManager?: EnhancedUnifiedModelManager,
   ) {
     this.performanceMonitor = performanceMonitor;
     this.hardwareOptimizer = new HardwareOptimizer(performanceMonitor);
     this.modelManager = modelManager;
+    this.unifiedModelManager = unifiedModelManager || new EnhancedUnifiedModelManager();
     this.initializeStandardSuites();
   }
 
@@ -116,6 +123,7 @@ export class PerformanceBenchmark {
           timeout: 5000,
           category: 'speed',
           difficulty: 'easy',
+          options: { temperature: 0.3, maxTokens: 20 },
         },
         {
           id: 'short-summary',
@@ -127,6 +135,7 @@ export class PerformanceBenchmark {
           timeout: 10000,
           category: 'speed',
           difficulty: 'medium',
+          options: { temperature: 0.5, maxTokens: 50 },
         },
         {
           id: 'list-generation',
@@ -137,6 +146,7 @@ export class PerformanceBenchmark {
           timeout: 8000,
           category: 'speed',
           difficulty: 'easy',
+          options: { temperature: 0.4, maxTokens: 40 },
         },
       ],
       createdAt: new Date(),
@@ -158,6 +168,7 @@ export class PerformanceBenchmark {
           timeout: 30000,
           category: 'quality',
           difficulty: 'medium',
+          options: { temperature: 0.7, maxTokens: 200 },
         },
         {
           id: 'creative-writing',
@@ -169,6 +180,7 @@ export class PerformanceBenchmark {
           timeout: 45000,
           category: 'quality',
           difficulty: 'hard',
+          options: { temperature: 0.8, maxTokens: 300 },
         },
         {
           id: 'detailed-analysis',
@@ -180,6 +192,7 @@ export class PerformanceBenchmark {
           timeout: 60000,
           category: 'quality',
           difficulty: 'medium',
+          options: { temperature: 0.6, maxTokens: 350 },
         },
       ],
       createdAt: new Date(),
@@ -201,6 +214,7 @@ export class PerformanceBenchmark {
           timeout: 20000,
           category: 'coding',
           difficulty: 'easy',
+          options: { temperature: 0.3, maxTokens: 120 },
         },
         {
           id: 'debug-code',
@@ -212,6 +226,7 @@ export class PerformanceBenchmark {
           timeout: 30000,
           category: 'coding',
           difficulty: 'medium',
+          options: { temperature: 0.4, maxTokens: 180 },
         },
         {
           id: 'algorithm-design',
@@ -223,6 +238,7 @@ export class PerformanceBenchmark {
           timeout: 60000,
           category: 'coding',
           difficulty: 'hard',
+          options: { temperature: 0.5, maxTokens: 400 },
         },
       ],
       createdAt: new Date(),
@@ -244,6 +260,7 @@ export class PerformanceBenchmark {
           timeout: 15000,
           category: 'reasoning',
           difficulty: 'easy',
+          options: { temperature: 0.3, maxTokens: 80 },
         },
         {
           id: 'math-problem',
@@ -255,6 +272,7 @@ export class PerformanceBenchmark {
           timeout: 25000,
           category: 'reasoning',
           difficulty: 'medium',
+          options: { temperature: 0.4, maxTokens: 150 },
         },
         {
           id: 'complex-reasoning',
@@ -266,6 +284,7 @@ export class PerformanceBenchmark {
           timeout: 40000,
           category: 'reasoning',
           difficulty: 'hard',
+          options: { temperature: 0.5, maxTokens: 200 },
         },
       ],
       createdAt: new Date(),
@@ -378,43 +397,107 @@ export class PerformanceBenchmark {
     test: BenchmarkTest,
     modelName: string,
   ): Promise<BenchmarkResult> {
+    return executeWithRecovery(
+      async () => this._runSingleTestInternal(test, modelName),
+      {
+        operationName: `benchmark.${test.id}`,
+        category: 'model',
+        enableCircuitBreaker: true,
+        customStrategy: {
+          maxRetries: 2,
+          baseDelay: 500,
+          fallbackOptions: ['reduced_tokens', 'simplified_test']
+        }
+      }
+    );
+  }
+
+  private async _runSingleTestInternal(
+    test: BenchmarkTest,
+    modelName: string,
+  ): Promise<BenchmarkResult> {
     const startTime = Date.now();
     const initialMetrics = this.performanceMonitor.getSystemMetrics();
 
-    // Switch to the target model
-    await this.modelManager.switchModel(modelName);
+    try {
+      // Get the unified model instance
+      const model = await this.unifiedModelManager.getModel(modelName);
+      
+      if (!model) {
+        throw new Error(`Model ${modelName} not found or not initialized`);
+      }
 
-    // TODO: Replace with actual inference call when content generator is available
-    // For now, we'll simulate the inference with timing and metrics
-    const simulatedInferenceTime = Math.random() * 100 + 50; // 50-150ms for tests
-    const simulatedTokens =
-      test.expectedTokens || 50 + Math.floor(Math.random() * 100);
+      // Ensure model is initialized
+      await model.initialize(); // This will be idempotent if already initialized
 
-    await new Promise((resolve) => setTimeout(resolve, simulatedInferenceTime));
+      // Prepare generation options
+      const generationOptions: GenerationOptions = {
+        maxTokens: test.expectedTokens || 150,
+        temperature: 0.7,
+        timeout: test.timeout || 30000,
+        ...test.options
+      };
 
-    const endTime = Date.now();
-    const finalMetrics = this.performanceMonitor.getSystemMetrics();
-    const inferenceTime = endTime - startTime;
+      // Record prompt token count
+      const promptTokens = this.estimateTokens(test.prompt);
+      
+      // Run the actual inference
+      const response = await model.generateText(test.prompt, generationOptions);
+      
+      const endTime = Date.now();
+      const finalMetrics = this.performanceMonitor.getSystemMetrics();
+      const inferenceTime = endTime - startTime;
+      
+      // Calculate metrics
+      const responseTokens = this.estimateTokens(response);
+      const totalTokens = promptTokens + responseTokens;
+      const tokensPerSecond = totalTokens / (inferenceTime / 1000);
+      const memoryUsed = finalMetrics.memoryUsage.used - initialMetrics.memoryUsage.used;
+      const cpuUsage = finalMetrics.cpuUsage;
 
-    const result: BenchmarkResult = {
-      testId: test.id,
-      modelName,
-      success: true,
-      metrics: {
-        tokensPerSecond: (simulatedTokens / inferenceTime) * 1000,
-        totalTokens: simulatedTokens,
-        inferenceTime,
-        memoryUsed:
-          finalMetrics.memoryUsage.used - initialMetrics.memoryUsage.used,
-        cpuUsage: finalMetrics.cpuUsage,
-        promptTokens: test.prompt.split(/\s+/).length,
-        responseTokens: simulatedTokens,
-      },
-      response: `[Simulated response for ${test.name}]`,
-      timestamp: new Date(),
-    };
+      const result: BenchmarkResult = {
+        testId: test.id,
+        modelName,
+        success: true,
+        metrics: {
+          tokensPerSecond,
+          totalTokens,
+          inferenceTime,
+          memoryUsed,
+          cpuUsage,
+          promptTokens,
+          responseTokens,
+        },
+        response,
+        timestamp: new Date(),
+      };
 
-    return result;
+      return result;
+
+    } catch (error) {
+      const endTime = Date.now();
+      const inferenceTime = endTime - startTime;
+      
+      // Return error result
+      const result: BenchmarkResult = {
+        testId: test.id,
+        modelName,
+        success: false,
+        metrics: {
+          tokensPerSecond: 0,
+          totalTokens: 0,
+          inferenceTime,
+          memoryUsed: 0,
+          cpuUsage: 0,
+          promptTokens: this.estimateTokens(test.prompt),
+          responseTokens: 0,
+        },
+        error: error instanceof Error ? error.message : String(error),
+        timestamp: new Date(),
+      };
+
+      return result;
+    }
   }
 
   /**
@@ -638,5 +721,13 @@ export class PerformanceBenchmark {
    */
   clearResults(): void {
     this.results = [];
+  }
+
+  /**
+   * Estimate token count from text
+   */
+  private estimateTokens(text: string): number {
+    // Simple token estimation: roughly 4 characters per token for modern models
+    return Math.ceil(text.length / 4);
   }
 }

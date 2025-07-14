@@ -25,6 +25,14 @@ export * from './contextManager.js';
 export * from './gitIntegration.js';
 export * from './helpSystem.js';
 export * from './benchmarkSystem.js';
+export { 
+  PerformanceBenchmark,
+  type BenchmarkTest,
+  type BenchmarkResult,
+  type BenchmarkSuite,
+  type BenchmarkReport,
+  type ModelBenchmarkSummary
+} from './performanceBenchmark.js';
 export * from './schemaEnforcement.js';
 export * from './logitBiasManager.js';
 export * from './modelProfiler.js';

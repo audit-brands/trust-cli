@@ -5,8 +5,10 @@
  */
 
 import {
-  // PerformanceBenchmark, // TODO: Class not implemented yet
+  PerformanceBenchmark,
   TrustModelManagerImpl,
+  EnhancedUnifiedModelManager,
+  globalPerformanceMonitor,
 } from '@trust-cli/trust-cli-core';
 import type {
   BenchmarkReport,
@@ -27,15 +29,18 @@ export interface BenchmarkCommandArgs {
 }
 
 export class BenchmarkCommandHandler {
-  // private performanceBenchmark: PerformanceBenchmark; // TODO: Class not implemented yet
+  private performanceBenchmark: PerformanceBenchmark;
   private modelManager: TrustModelManagerImpl;
+  private unifiedModelManager: EnhancedUnifiedModelManager;
 
   constructor() {
     this.modelManager = new TrustModelManagerImpl();
-    // this.performanceBenchmark = new PerformanceBenchmark(
-    //   globalPerformanceMonitor,
-    //   this.modelManager,
-    // ); // TODO: Class not implemented yet
+    this.unifiedModelManager = new EnhancedUnifiedModelManager();
+    this.performanceBenchmark = new PerformanceBenchmark(
+      globalPerformanceMonitor,
+      this.modelManager,
+      this.unifiedModelManager,
+    );
   }
 
   async initialize(): Promise<void> {
@@ -43,19 +48,35 @@ export class BenchmarkCommandHandler {
   }
 
   async handleCommand(args: BenchmarkCommandArgs): Promise<void> {
-    console.log(
-      chalk.yellow(
-        '⚠️  Performance benchmarking is not available in this release',
-      ),
-    );
-    console.log(chalk.gray('This feature is planned for a future version.'));
-    console.log(chalk.cyan('\n💡 Alternative options:'));
-    console.log('   • Use trust model list to see available models');
-    console.log('   • Use trust status to monitor system performance');
-    console.log('   • Use ollama ps to see running models');
-
-    if (args.action === 'help' || !args.action) {
-      this.showHelp();
+    try {
+      switch (args.action) {
+        case 'run':
+          await this.runBenchmark(args);
+          break;
+        case 'list':
+          await this.listSuites(args.verbose);
+          break;
+        case 'results':
+          await this.showResults(args);
+          break;
+        case 'compare':
+          await this.compareModels(args);
+          break;
+        case 'export':
+          await this.exportResults(args);
+          break;
+        case 'help':
+        default:
+          this.showHelp();
+          break;
+      }
+    } catch (error) {
+      console.error(
+        chalk.red(
+          `❌ Benchmark command failed: ${error instanceof Error ? error.message : String(error)}`,
+        ),
+      );
+      throw error;
     }
   }
 
@@ -75,19 +96,31 @@ export class BenchmarkCommandHandler {
     console.log(`📊 Testing ${models.length} model(s): ${models.join(', ')}`);
     console.log('─'.repeat(60));
 
-    const _startTime = Date.now();
-    const _lastProgress = 0;
+    const startTime = Date.now();
 
     try {
-      console.log(
-        chalk.yellow('⚠️  Performance benchmarking is not yet implemented'),
+      const report = await this.performanceBenchmark.runBenchmarkSuite(
+        suite,
+        models,
+        (status: string, progress: number) => {
+          if (args.verbose) {
+            console.log(`📊 ${status} (${progress.toFixed(1)}%)`);
+          }
+        },
       );
-      console.log(chalk.gray('This feature is planned for a future release.'));
-      console.log(chalk.cyan('\n💡 Alternative options:'));
-      console.log('   • Use ollama ps to see running models');
-      console.log('   • Use trust model list to see available models');
-      console.log('   • Monitor system resources with trust status');
-      return;
+
+      const duration = Date.now() - startTime;
+      console.log(`\n✅ Benchmark completed in ${(duration / 1000).toFixed(1)}s`);
+      
+      // Display results
+      console.log(this.performanceBenchmark.generateTextReport(report));
+
+      // Save results if output specified
+      if (args.output) {
+        await this.saveReport(report, args.output, args.format || 'json');
+        console.log(`💾 Results saved to: ${args.output}`);
+      }
+
     } catch (error) {
       console.error(
         `❌ Benchmark failed: ${error instanceof Error ? error.message : String(error)}`,
@@ -100,21 +133,7 @@ export class BenchmarkCommandHandler {
     }
   }
 
-  private async listSuites(_verbose = false): Promise<void> {
-    console.log(
-      chalk.yellow('⚠️  Performance benchmarking is not yet implemented'),
-    );
-    console.log(chalk.gray('This feature is planned for a future release.'));
-    console.log(chalk.cyan('\n📋 Planned Benchmark Suites:'));
-    console.log('   • Speed benchmarks (inference latency)');
-    console.log('   • Quality benchmarks (response accuracy)');
-    console.log('   • Efficiency benchmarks (resource usage)');
-    console.log('   • Coding benchmarks (programming tasks)');
-
-    console.log(chalk.cyan('\n💡 Alternative options:'));
-    console.log('   • Use trust model list to see available models');
-    console.log('   • Use trust status to monitor system performance');
-    /*
+  private async listSuites(verbose = false): Promise<void> {
     const suites = this.performanceBenchmark.getBenchmarkSuites();
 
     console.log('\n📋 Available Benchmark Suites');
@@ -143,13 +162,9 @@ export class BenchmarkCommandHandler {
     console.log(
       `   trust benchmark run --suite speed --models phi-3.5-mini-instruct`,
     );
-    */
   }
 
-  private async showResults(_args: BenchmarkCommandArgs): Promise<void> {
-    // TODO: Implement PerformanceBenchmark class
-    throw new Error('PerformanceBenchmark class not yet implemented');
-    /*
+  private async showResults(args: BenchmarkCommandArgs): Promise<void> {
     const results = this.performanceBenchmark.getResults(
       args.filter,
       undefined,
@@ -196,22 +211,17 @@ export class BenchmarkCommandHandler {
         console.log('   Individual Tests:');
         for (const result of modelResults) {
           const status = result.success ? '✅' : '❌';
-          // TODO: Fix when BenchmarkResult.metrics type is properly defined
           console.log(
-            `     ${status} ${result.testId}: [metrics not implemented] tokens/sec`,
+            `     ${status} ${result.testId}: ${result.metrics.tokensPerSecond.toFixed(1)} tokens/sec`,
           );
         }
       }
     }
 
     console.log('\n💡 Use --verbose for detailed results');
-    */
   }
 
-  private async compareModels(_args: BenchmarkCommandArgs): Promise<void> {
-    // TODO: Implement PerformanceBenchmark class
-    throw new Error('PerformanceBenchmark class not yet implemented');
-    /*
+  private async compareModels(args: BenchmarkCommandArgs): Promise<void> {
     const models = args.models || [];
 
     if (models.length < 2) {
@@ -279,13 +289,9 @@ export class BenchmarkCommandHandler {
         `   ${fastest.model} is ${speedDiff.toFixed(1)}% faster than ${slowest.model}`,
       );
     }
-    */
   }
 
-  private async exportResults(_args: BenchmarkCommandArgs): Promise<void> {
-    // TODO: Implement PerformanceBenchmark class
-    throw new Error('PerformanceBenchmark class not yet implemented');
-    /*
+  private async exportResults(args: BenchmarkCommandArgs): Promise<void> {
     const results = this.performanceBenchmark.getResults();
 
     if (results.length === 0) {
@@ -305,17 +311,13 @@ export class BenchmarkCommandHandler {
       );
       throw error;
     }
-    */
   }
 
   private async saveReport(
-    _report: BenchmarkReport,
-    _outputPath: string,
-    _format: string,
+    report: BenchmarkReport,
+    outputPath: string,
+    format: string,
   ): Promise<void> {
-    // TODO: Implement PerformanceBenchmark class
-    throw new Error('PerformanceBenchmark class not yet implemented');
-    /*
     const dir = path.dirname(outputPath);
     await fs.mkdir(dir, { recursive: true });
 
@@ -336,7 +338,6 @@ export class BenchmarkCommandHandler {
       default:
         throw new Error(`Unsupported format: ${format}`);
     }
-    */
   }
 
   private async exportToFile(
@@ -373,8 +374,16 @@ export class BenchmarkCommandHandler {
       'Best Categories',
     ];
 
-    // TODO: Implement when BenchmarkReport.models type is properly defined
-    const rows: string[][] = []; // Placeholder for future implementation
+    const rows: string[][] = report.models.map((model) => [
+      model.modelName,
+      model.overallScore.toFixed(2),
+      model.averageSpeed.toFixed(2),
+      model.efficiency.toFixed(2),
+      model.reliability.toFixed(2),
+      model.totalTests.toString(),
+      model.successfulTests.toString(),
+      model.bestCategories.join(';'),
+    ]);
 
     return [headers.join(','), ...rows.map((row) => row.join(','))].join('\n');
   }
@@ -392,17 +401,16 @@ export class BenchmarkCommandHandler {
       'CPU Usage (%)',
     ];
 
-    // TODO: Fix when BenchmarkResult.metrics type is properly defined
     const rows = results.map((result) => [
       result.timestamp.toISOString(),
       result.modelName,
       result.testId,
       result.success.toString(),
-      '0', // result.metrics.tokensPerSecond.toFixed(2),
-      '0', // result.metrics.totalTokens.toString(),
-      '0', // result.metrics.inferenceTime.toString(),
-      '0', // result.metrics.memoryUsed.toString(),
-      '0', // result.metrics.cpuUsage.toFixed(1),
+      result.metrics.tokensPerSecond.toFixed(2),
+      result.metrics.totalTokens.toString(),
+      result.metrics.inferenceTime.toString(),
+      result.metrics.memoryUsed.toString(),
+      result.metrics.cpuUsage.toFixed(1),
     ]);
 
     return [headers.join(','), ...rows.map((row) => row.join(','))].join('\n');
