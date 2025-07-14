@@ -443,7 +443,7 @@ describe('SmartRoutingService', () => {
       vi.spyOn(mockRouter, 'routeToOptimalModel').mockRejectedValue(
         new Error('Router failed'),
       );
-      vi.spyOn(mockUnifiedManager, 'discoverAllModels').mockRejectedValue(
+      vi.spyOn(mockUnifiedManager, 'listAllModels').mockRejectedValue(
         new Error('Discovery failed'),
       );
 

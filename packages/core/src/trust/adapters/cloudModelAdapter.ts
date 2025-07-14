@@ -14,6 +14,7 @@ import {
   ModelHealth
 } from '../unifiedModelInterface.js';
 import { UniversalToolCall } from '../universalToolInterface.js';
+import { StreamingIntegrationHelpers } from '../streamingBufferManager.js';
 
 /**
  * Cloud-specific model context implementation
@@ -332,14 +333,19 @@ export class CloudModelAdapter extends BaseUnifiedModel {
   }
 
   private async* generateGeminiStream(prompt: string, options?: GenerationOptions): AsyncIterable<string> {
-    // Simplified streaming implementation
+    // Use optimized streaming with buffer management
     const fullResponse = await this.generateGemini(prompt, options);
-    const words = fullResponse.split(' ');
     
-    for (const word of words) {
-      yield word + ' ';
-      await new Promise(resolve => setTimeout(resolve, 20));
-    }
+    yield* StreamingIntegrationHelpers.createFakeStream(fullResponse, {
+      chunkSize: 6,        // 6 words per chunk for balanced flow
+      delayMs: 25,         // 25ms for responsive cloud streaming
+      config: { 
+        maxBufferSize: 24 * 1024, // 24KB buffer for cloud responses
+        maxChunkSize: 3 * 1024,   // 3KB max chunk size
+        enableMetrics: true,
+        enableBackpressure: false  // Cloud APIs handle their own backpressure
+      }
+    });
   }
 
   private async generateGeminiWithTools(
@@ -369,7 +375,17 @@ export class CloudModelAdapter extends BaseUnifiedModel {
 
   private async* generateOpenAIStream(prompt: string, options?: GenerationOptions): AsyncIterable<string> {
     const response = await this.generateOpenAI(prompt, options);
-    yield response;
+    
+    yield* StreamingIntegrationHelpers.createFakeStream(response, {
+      chunkSize: 8,        // 8 words per chunk
+      delayMs: 20,         // Fast streaming for OpenAI
+      config: { 
+        maxBufferSize: 32 * 1024, // 32KB buffer
+        maxChunkSize: 4 * 1024,   // 4KB max chunk size
+        enableMetrics: true,
+        enableBackpressure: false
+      }
+    });
   }
 
   private async generateOpenAIWithTools(
@@ -391,7 +407,17 @@ export class CloudModelAdapter extends BaseUnifiedModel {
 
   private async* generateAnthropicStream(prompt: string, options?: GenerationOptions): AsyncIterable<string> {
     const response = await this.generateAnthropic(prompt, options);
-    yield response;
+    
+    yield* StreamingIntegrationHelpers.createFakeStream(response, {
+      chunkSize: 7,        // 7 words per chunk for natural flow
+      delayMs: 30,         // Moderate streaming pace
+      config: { 
+        maxBufferSize: 28 * 1024, // 28KB buffer
+        maxChunkSize: 3.5 * 1024, // 3.5KB max chunk size
+        enableMetrics: true,
+        enableBackpressure: false
+      }
+    });
   }
 
   private async generateAnthropicWithTools(
@@ -413,7 +439,17 @@ export class CloudModelAdapter extends BaseUnifiedModel {
 
   private async* generateVertexAIStream(prompt: string, options?: GenerationOptions): AsyncIterable<string> {
     const response = await this.generateVertexAI(prompt, options);
-    yield response;
+    
+    yield* StreamingIntegrationHelpers.createFakeStream(response, {
+      chunkSize: 6,        // 6 words per chunk
+      delayMs: 35,         // Slightly slower for enterprise model
+      config: { 
+        maxBufferSize: 20 * 1024, // 20KB buffer
+        maxChunkSize: 2.5 * 1024, // 2.5KB max chunk size
+        enableMetrics: true,
+        enableBackpressure: false
+      }
+    });
   }
 
   private async generateVertexAIWithTools(

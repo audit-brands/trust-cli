@@ -18,6 +18,7 @@ import { OllamaModelAdapter } from './adapters/ollamaModelAdapter.js';
 import { HuggingFaceModelAdapter } from './adapters/huggingfaceModelAdapter.js';
 import { CloudModelAdapter, CloudProviderConfig } from './adapters/cloudModelAdapter.js';
 import { ProviderConfigManager } from './providerConfigManager.js';
+import { SmartContextManager, ContextManagerFactory, ContextManagementConfig } from './smartContextManager.js';
 
 export interface UnifiedModel {
   name: string;
@@ -61,10 +62,12 @@ export class EnhancedUnifiedModelManager {
   private providerManager: ProviderConfigManager;
   private factories: Map<string, UnifiedModelFactory> = new Map();
   private currentModel?: UnifiedModelInterface;
+  private contextManagerConfig?: ContextManagementConfig;
 
-  constructor() {
+  constructor(contextConfig?: ContextManagementConfig) {
     this.registry = globalModelRegistry;
     this.providerManager = new ProviderConfigManager();
+    this.contextManagerConfig = contextConfig;
     this.initializeFactories();
   }
 
@@ -165,6 +168,85 @@ export class EnhancedUnifiedModelManager {
     }
 
     return await this.currentModel.generateWithTools(prompt, tools, options);
+  }
+
+  /**
+   * Create a managed context for the current model
+   */
+  async createManagedContext(options?: any): Promise<any> {
+    if (!this.currentModel) {
+      throw new Error('No model selected. Use switchModel() first.');
+    }
+
+    const context = await this.currentModel.createContext(options);
+    const contextManager = ContextManagerFactory.getManager(
+      this.currentModel.name,
+      this.currentModel.capabilities,
+      this.contextManagerConfig
+    );
+
+    // Return wrapped context with auto-compression
+    return {
+      context,
+      manager: contextManager,
+      
+      async addMessage(role: 'user' | 'assistant' | 'system', content: string): Promise<void> {
+        context.addMessage(role, content);
+        await contextManager.manageContext(context);
+      },
+
+      getMessages() {
+        return context.getMessages();
+      },
+
+      clear() {
+        context.clear();
+      },
+
+      getTokenCount() {
+        return context.getTokenCount();
+      },
+
+      clone() {
+        return context.clone();
+      },
+
+      getMetrics() {
+        return contextManager.getMetrics();
+      },
+
+      async compressContext() {
+        return await contextManager.compressContext(context);
+      },
+
+      needsCompression() {
+        return contextManager.needsCompression(context);
+      },
+
+      getOptimalBatchSize() {
+        return contextManager.getOptimalBatchSize();
+      },
+
+      estimateTokens(text: string) {
+        return contextManager.estimateTokens(text);
+      }
+    };
+  }
+
+  /**
+   * Get context management metrics for all models
+   */
+  getContextMetrics(): Record<string, any> {
+    return ContextManagerFactory.getAllMetrics();
+  }
+
+  /**
+   * Configure context management settings
+   */
+  configureContextManagement(config: ContextManagementConfig): void {
+    this.contextManagerConfig = config;
+    // Clear cache to apply new config to future managers
+    ContextManagerFactory.clearCache();
   }
 
   /**

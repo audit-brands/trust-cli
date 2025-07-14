@@ -14,6 +14,7 @@ import {
   ModelHealth
 } from '../unifiedModelInterface.js';
 import { UniversalToolCall } from '../universalToolInterface.js';
+import { StreamingIntegrationHelpers } from '../streamingBufferManager.js';
 
 /**
  * HuggingFace-specific model context implementation
@@ -183,15 +184,20 @@ export class HuggingFaceModelAdapter extends BaseUnifiedModel {
     const processedPrompt = this.preprocessPrompt(prompt, options);
     
     try {
-      // Simulate streaming generation
+      // Generate full response then stream it efficiently
       const fullResponse = await this.simulateGeneration(processedPrompt, options);
-      const words = fullResponse.split(' ');
       
-      for (const word of words) {
-        yield word + ' ';
-        // Simulate streaming delay
-        await new Promise(resolve => setTimeout(resolve, 50));
-      }
+      // Use optimized fake streaming with better performance
+      yield* StreamingIntegrationHelpers.createFakeStream(fullResponse, {
+        chunkSize: 8,        // 8 words per chunk for better flow
+        delayMs: 30,         // Reduced from 50ms to 30ms
+        config: { 
+          maxBufferSize: 16 * 1024, // 16KB buffer
+          maxChunkSize: 2 * 1024,   // 2KB max chunk size for word-based chunking
+          enableMetrics: true,
+          enableBackpressure: false  // Not needed for fake streaming
+        }
+      });
 
     } catch (error) {
       throw new Error(`HuggingFace streaming failed: ${error}`);

@@ -63,6 +63,46 @@ export { ReliableJsonGenerator, JsonGenerationOptions, JsonGenerationResult, Mod
 export { EnhancedFunctionCalling, FunctionCallingConfig, FunctionCallingResult, globalFunctionCalling } from './enhancedFunctionCalling.js';
 export { FunctionCallingCoordinator, FunctionCallingMetrics, ModelFunctionCallingStats, globalFunctionCallingCoordinator } from './functionCallingCoordinator.js';
 
+// Streaming Performance Optimization
+export { StreamingIntegrationHelpers } from './streamingBufferManager.js';
+
+// Context Management
+export { 
+  SmartContextManager,
+  ContextManagerFactory,
+  type ContextManagementConfig,
+  type ContextMetrics,
+  type EnhancedMessage,
+  type CompressionResult
+} from './smartContextManager.js';
+
+// Error Recovery System
+export {
+  ErrorRecoverySystem,
+  globalErrorRecovery,
+  type ErrorSeverity,
+  type ErrorCategory,
+  type RecoveryAction,
+  type ErrorContext,
+  type RecoveryStrategy,
+  type RecoveryResult,
+  type RecoveryMetrics
+} from './errorRecoverySystem.js';
+
+export {
+  withRecovery,
+  withClassRecovery,
+  executeWithRecovery,
+  executeWithRecoveryResult,
+  ErrorRecoveryMixin,
+  withRecoveryWrapper,
+  retryOnError,
+  withTimeout,
+  withFallback,
+  withCircuitBreaker,
+  type RecoveryDecoratorOptions
+} from './errorRecoveryDecorators.js';
+
 // Trust version and metadata
 // Trust: An Open System for Modern Assurance
 export const TRUST_VERSION = '0.1.0';

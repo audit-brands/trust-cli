@@ -15,6 +15,8 @@ import {
   UnifiedModelInterface
 } from '../unifiedModelInterface.js';
 import { UniversalToolCall } from '../universalToolInterface.js';
+import { StreamingIntegrationHelpers } from '../streamingBufferManager.js';
+import { executeWithRecovery } from '../errorRecoveryDecorators.js';
 
 /**
  * Ollama-specific model context implementation
@@ -145,6 +147,22 @@ export class OllamaModelAdapter extends BaseUnifiedModel {
   }
 
   async generateText(prompt: string, options?: GenerationOptions): Promise<string> {
+    return executeWithRecovery(
+      async () => this._generateTextInternal(prompt, options),
+      {
+        operationName: 'ollama.generateText',
+        category: 'model',
+        enableCircuitBreaker: true,
+        customStrategy: {
+          maxRetries: 3,
+          baseDelay: 1000,
+          fallbackOptions: ['cached_response', 'alternative_model']
+        }
+      }
+    );
+  }
+
+  private async _generateTextInternal(prompt: string, options?: GenerationOptions): Promise<string> {
     this.ensureInitialized();
 
     const requestBody = {
@@ -169,14 +187,31 @@ export class OllamaModelAdapter extends BaseUnifiedModel {
       });
 
       if (!response.ok) {
-        throw new Error(`Ollama API error: ${response.statusText}`);
+        // Classify errors for better recovery
+        if (response.status === 429) {
+          throw new Error(`Rate limit exceeded: ${response.statusText}`);
+        } else if (response.status >= 500) {
+          throw new Error(`Server error: ${response.statusText}`);
+        } else if (response.status === 404) {
+          throw new Error(`Model not found: ${this.name}`);
+        } else {
+          throw new Error(`Ollama API error: ${response.statusText}`);
+        }
       }
 
       const data = await response.json();
       return data.response || '';
 
     } catch (error) {
-      throw new Error(`Generation failed: ${error}`);
+      // Re-throw with better error categorization
+      if (error instanceof Error) {
+        if (error.message.includes('fetch')) {
+          throw new Error(`Network error: ${error.message}`);
+        } else if (error.message.includes('timeout')) {
+          throw new Error(`Request timeout: ${error.message}`);
+        }
+      }
+      throw error;
     }
   }
 
@@ -208,42 +243,13 @@ export class OllamaModelAdapter extends BaseUnifiedModel {
         throw new Error(`Ollama API error: ${response.statusText}`);
       }
 
-      const reader = response.body?.getReader();
-      if (!reader) {
-        throw new Error('No response body');
-      }
-
-      const decoder = new TextDecoder();
-      let buffer = '';
-
-      try {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split('\n');
-          buffer = lines.pop() || '';
-
-          for (const line of lines) {
-            if (line.trim()) {
-              try {
-                const data = JSON.parse(line);
-                if (data.response) {
-                  yield data.response;
-                }
-                if (data.done) {
-                  return;
-                }
-              } catch {
-                // Skip invalid JSON lines
-              }
-            }
-          }
-        }
-      } finally {
-        reader.releaseLock();
-      }
+      // Use optimized streaming buffer manager for better performance
+      yield* StreamingIntegrationHelpers.enhanceOllamaStream(response, {
+        maxBufferSize: 32 * 1024, // 32KB for faster response
+        maxChunkSize: 8 * 1024,   // 8KB chunks
+        enableBackpressure: true,
+        enableMetrics: true
+      });
 
     } catch (error) {
       throw new Error(`Streaming generation failed: ${error}`);
