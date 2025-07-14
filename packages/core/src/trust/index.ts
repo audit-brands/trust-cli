@@ -59,6 +59,9 @@ export { OllamaModelAdapter } from './adapters/ollamaModelAdapter.js';
 export { HuggingFaceModelAdapter } from './adapters/huggingfaceModelAdapter.js';
 export { CloudModelAdapter, CloudProviderConfig } from './adapters/cloudModelAdapter.js';
 export { EnhancedUnifiedModelManager } from './unifiedModelManager.js';
+export { ReliableJsonGenerator, JsonGenerationOptions, JsonGenerationResult, ModelJsonPerformance, globalJsonGenerator } from './reliableJsonGenerator.js';
+export { EnhancedFunctionCalling, FunctionCallingConfig, FunctionCallingResult, globalFunctionCalling } from './enhancedFunctionCalling.js';
+export { FunctionCallingCoordinator, FunctionCallingMetrics, ModelFunctionCallingStats, globalFunctionCallingCoordinator } from './functionCallingCoordinator.js';
 
 // Trust version and metadata
 // Trust: An Open System for Modern Assurance
