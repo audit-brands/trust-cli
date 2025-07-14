@@ -13,7 +13,8 @@ export interface UniversalToolCall {
   id: string;
   name: string;
   arguments: Record<string, any>;
-  format: 'json' | 'xml';
+  description?: string;
+  format?: 'json' | 'xml';
 }
 
 /**

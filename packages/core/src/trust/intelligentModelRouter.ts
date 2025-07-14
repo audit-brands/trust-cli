@@ -5,7 +5,7 @@
  */
 
 import {
-  UnifiedModelManager,
+  EnhancedUnifiedModelManager,
   UnifiedModel,
   TaskType,
   HardwareConstraints,
@@ -78,14 +78,14 @@ export interface RouterSystemResources {
  * Intelligent Model Router implementing the 4-step UX Philosophy routing process
  */
 export class IntelligentModelRouter {
-  private unifiedManager: UnifiedModelManager;
+  private unifiedManager: EnhancedUnifiedModelManager;
   private trustConfig: TrustConfiguration;
   private ollamaClient: OllamaClient;
   private modelManager: TrustModelManagerImpl;
 
   constructor(trustConfig?: TrustConfiguration) {
     this.trustConfig = trustConfig || new TrustConfiguration();
-    this.unifiedManager = new UnifiedModelManager(this.trustConfig);
+    this.unifiedManager = new EnhancedUnifiedModelManager();
     this.ollamaClient = new OllamaClient();
     this.modelManager = new TrustModelManagerImpl();
   }
@@ -109,7 +109,7 @@ export class IntelligentModelRouter {
 
     // Step 1: Consolidate - Build master list from all backends
     const step1Start = Date.now();
-    const allModels = await this.unifiedManager.discoverAllModels();
+    const allModels = await this.unifiedManager.listAllModels();
     const backendCounts = this.calculateBackendCounts(allModels);
     const step1Duration = Date.now() - step1Start;
 
@@ -249,9 +249,8 @@ export class IntelligentModelRouter {
 
     // Apply hardware constraints if specified
     if (config.hardwareConstraints) {
-      const hardwareSuitable = this.unifiedManager.filterModels(
+      const hardwareSuitable = this.filterModelsByConstraints(
         working,
-        undefined,
         config.hardwareConstraints,
       );
       hardwareFiltered = working.length - hardwareSuitable.length;
@@ -533,11 +532,6 @@ export class IntelligentModelRouter {
     return num;
   }
 
-  private parseRAMRequirement(ram: string): number {
-    const match = ram.match(/(\d+(?:\.\d+)?)/);
-    if (!match) return 8; // Default assumption
-    return parseFloat(match[1]);
-  }
 
   private async estimateDiskSpace(): Promise<number> {
     // Simplified disk space estimation
@@ -572,5 +566,63 @@ export class IntelligentModelRouter {
     }
 
     return backends;
+  }
+
+  /**
+   * Filter models by hardware constraints
+   */
+  private filterModelsByConstraints(
+    models: UnifiedModel[],
+    constraints: HardwareConstraints,
+  ): UnifiedModel[] {
+    return models.filter(model => {
+      // Filter by RAM if specified
+      if (constraints.availableRAM && model.ramRequirement) {
+        const modelRAM = this.parseRAMRequirement(model.ramRequirement);
+        if (modelRAM > constraints.availableRAM) return false;
+      }
+      
+      // Filter by preferred size
+      if (constraints.preferredSize && model.parameters) {
+        const modelSize = this.parseModelSize(model.parameters);
+        const preferredSize = this.parseModelSize(constraints.preferredSize);
+        if (modelSize > preferredSize * 1.5) return false; // Allow 50% tolerance
+      }
+      
+      return true;
+    });
+  }
+
+  /**
+   * Parse RAM requirement string to number in GB
+   */
+  private parseRAMRequirement(ram: string): number {
+    const match = ram.match(/(\d+)\s*(GB|MB)/i);
+    if (!match) return 0;
+    
+    const value = parseInt(match[1]);
+    const unit = match[2].toUpperCase();
+    
+    return unit === 'GB' ? value : value / 1024;
+  }
+
+  /**
+   * Parse model size parameter to number
+   */
+  private parseModelSize(params: string): number {
+    const match = params.match(/(\d+(?:\.\d+)?)\s*([bBkKmMgGtT])/i);
+    if (!match) return 0;
+    
+    const value = parseFloat(match[1]);
+    const unit = match[2].toLowerCase();
+    
+    switch (unit) {
+      case 'b': return value;
+      case 'k': return value * 1000;
+      case 'm': return value * 1000000;
+      case 'g': return value * 1000000000;
+      case 't': return value * 1000000000000;
+      default: return value;
+    }
   }
 }

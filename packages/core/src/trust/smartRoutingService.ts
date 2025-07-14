@@ -10,7 +10,7 @@ import {
   RoutingConfig,
 } from './intelligentModelRouter.js';
 import {
-  UnifiedModelManager,
+  EnhancedUnifiedModelManager,
   UnifiedModel,
   TaskType,
 } from './unifiedModelManager.js';
@@ -49,14 +49,14 @@ export interface DefaultModelSelection {
  */
 export class SmartRoutingService {
   private router: IntelligentModelRouter;
-  private unifiedManager: UnifiedModelManager;
+  private unifiedManager: EnhancedUnifiedModelManager;
   private trustConfig: TrustConfiguration;
   private lastRoutingDecision?: ModelRoutingDecision;
 
   constructor(trustConfig?: TrustConfiguration) {
     this.trustConfig = trustConfig || new TrustConfiguration();
     this.router = new IntelligentModelRouter(this.trustConfig);
-    this.unifiedManager = new UnifiedModelManager(this.trustConfig);
+    this.unifiedManager = new EnhancedUnifiedModelManager();
   }
 
   /**
@@ -295,12 +295,12 @@ export class SmartRoutingService {
   ): Promise<DefaultModelSelection> {
     try {
       // Try to get a simple model list and pick the first available
-      const models = await this.unifiedManager.discoverAllModels();
-      const availableModels = models.filter((m) => m.available);
+      const models = await this.unifiedManager.listAllModels();
+      const availableModels = models.filter((m: UnifiedModel) => m.available);
 
       if (availableModels.length > 0) {
         // Prefer smaller models for fallback
-        const sortedBySize = availableModels.sort((a, b) => {
+        const sortedBySize = availableModels.sort((a: UnifiedModel, b: UnifiedModel) => {
           const aSize = this.parseModelSize(a.parameters || '');
           const bSize = this.parseModelSize(b.parameters || '');
           return aSize - bSize;

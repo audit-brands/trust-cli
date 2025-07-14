@@ -41,6 +41,24 @@ export { ModelSelector, TaskContext } from './modelSelector.js';
 export { InteractiveModelSelector } from './interactiveModelSelector.js';
 export { ProviderAutoDetection, ProviderCapability, AutoDetectionResult } from './providerAutoDetection.js';
 export { ProviderConfigManager, ProviderConfig, BackendConfiguration } from './providerConfigManager.js';
+export { 
+  UnifiedModelInterface, 
+  BaseUnifiedModel, 
+  UnifiedModelRegistry, 
+  UnifiedModelFactory,
+  ModelCapabilities,
+  GenerationOptions,
+  GenerationResult,
+  ContextOptions,
+  ModelContext,
+  ModelHealth,
+  ModelInterfaceUtils,
+  globalModelRegistry
+} from './unifiedModelInterface.js';
+export { OllamaModelAdapter } from './adapters/ollamaModelAdapter.js';
+export { HuggingFaceModelAdapter } from './adapters/huggingfaceModelAdapter.js';
+export { CloudModelAdapter, CloudProviderConfig } from './adapters/cloudModelAdapter.js';
+export { EnhancedUnifiedModelManager } from './unifiedModelManager.js';
 
 // Trust version and metadata
 // Trust: An Open System for Modern Assurance
