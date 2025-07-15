@@ -16,7 +16,8 @@ export interface ConfigCommandArgs {
     | 'backend'
     | 'fallback'
     | 'export'
-    | 'import';
+    | 'import'
+    | 'wizard';
   key?: string;
   value?: string;
   backend?: 'ollama' | 'huggingface' | 'cloud';
@@ -83,6 +84,9 @@ export class ConfigCommandHandler {
           throw new Error('Import file path required for import command');
         }
         await this.importConfig(args.file);
+        break;
+      case 'wizard':
+        await this.launchConfigWizard();
         break;
       default:
         throw new Error(`Unknown config action: ${args.action}`);
@@ -396,6 +400,21 @@ export class ConfigCommandHandler {
     ];
 
     keys.forEach((key) => console.log(`   ${key}`));
+  }
+
+  private async launchConfigWizard(): Promise<void> {
+    console.log('🧙‍♂️ Interactive Configuration Wizard');
+    console.log('This feature will launch an interactive configuration interface.');
+    console.log('For now, use the individual config commands:');
+    console.log('');
+    console.log('Available commands:');
+    console.log('  trust config show           # View current configuration');
+    console.log('  trust config set <key> <value>  # Set configuration value');
+    console.log('  trust config get <key>      # Get configuration value');
+    console.log('  trust config backend <name> # Set AI backend');
+    console.log('  trust config reset          # Reset to defaults');
+    console.log('');
+    console.log('💡 Full interactive wizard coming soon!');
   }
 }
 
