@@ -18,6 +18,7 @@ import { DEFAULT_GEMINI_MODEL } from '../config/models.js';
 import { Config } from '../config/config.js';
 import { getEffectiveModel } from './modelCheck.js';
 import { UserTierId } from '../code_assist/types.js';
+import { OllamaContentGenerator } from '../providers/ollama.js';
 
 /**
  * Interface abstracting the core functionalities for generating content and counting tokens.
@@ -52,6 +53,14 @@ export type ContentGeneratorConfig = {
   authType?: AuthType | undefined;
   proxy?: string | undefined;
 };
+
+export function extractProviderAndModel(modelString: string): { provider: string; modelName: string } {
+  const parts = modelString.split(':');
+  if (parts.length === 2) {
+    return { provider: parts[0], modelName: parts[1] };
+  }
+  return { provider: 'gemini', modelName: modelString };
+}
 
 export function createContentGeneratorConfig(
   config: Config,
@@ -115,6 +124,15 @@ export async function createContentGenerator(
       'User-Agent': `GeminiCLI/${version} (${process.platform}; ${process.arch})`,
     },
   };
+
+  // Check if model is using Ollama provider
+  const { provider, modelName } = extractProviderAndModel(config.model);
+  
+  if (provider === 'ollama') {
+    const ollamaBaseUrl = process.env.OLLAMA_BASE_URL || 'http://localhost:11434';
+    return new OllamaContentGenerator(modelName, ollamaBaseUrl);
+  }
+
   if (
     config.authType === AuthType.LOGIN_WITH_GOOGLE ||
     config.authType === AuthType.CLOUD_SHELL
